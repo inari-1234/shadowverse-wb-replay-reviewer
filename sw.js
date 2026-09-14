@@ -1,5 +1,5 @@
-const CACHE='wb-review-v3-7-20260914-07';
-const ASSETS=['./','./index.html','./manifest.webmanifest','./fix-v3.7.js'];
+const CACHE='wb-review-v3-7-1-20260914-08';
+const ASSETS=['./','./index.html','./manifest.webmanifest','./fix-v3.7.js','./fix-v3.7.1.js'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});
 self.addEventListener('activate',e=>{e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))]))});
 self.addEventListener('fetch',e=>{
@@ -12,8 +12,9 @@ self.addEventListener('fetch',e=>{
         const clean=text
           .replace(/<script src="\.\/fix-v3\.5\.js[^>]*><\/script>/g,'')
           .replace(/<script src="\.\/fix-v3\.6\.js[^>]*><\/script>/g,'')
-          .replace(/<script src="\.\/fix-v3\.7\.js[^>]*><\/script>/g,'');
-        const patched=clean.replace('</body>','<script src="./fix-v3.7.js?v=3.7-20260914-07"></script></body>');
+          .replace(/<script src="\.\/fix-v3\.7\.js[^>]*><\/script>/g,'')
+          .replace(/<script src="\.\/fix-v3\.7\.1\.js[^>]*><\/script>/g,'');
+        const patched=clean.replace('</body>','<script src="./fix-v3.7.js?v=3.7-20260914-07"></script><script src="./fix-v3.7.1.js?v=3.7.1-20260914-08"></script></body>');
         return new Response(patched,{status:r.status,statusText:r.statusText,headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}});
       }catch(err){
         const cached=await caches.match('./index.html');
@@ -22,8 +23,9 @@ self.addEventListener('fetch',e=>{
         const clean=text
           .replace(/<script src="\.\/fix-v3\.5\.js[^>]*><\/script>/g,'')
           .replace(/<script src="\.\/fix-v3\.6\.js[^>]*><\/script>/g,'')
-          .replace(/<script src="\.\/fix-v3\.7\.js[^>]*><\/script>/g,'');
-        const patched=clean.replace('</body>','<script src="./fix-v3.7.js?v=3.7-20260914-07"></script></body>');
+          .replace(/<script src="\.\/fix-v3\.7\.js[^>]*><\/script>/g,'')
+          .replace(/<script src="\.\/fix-v3\.7\.1\.js[^>]*><\/script>/g,'');
+        const patched=clean.replace('</body>','<script src="./fix-v3.7.js?v=3.7-20260914-07"></script><script src="./fix-v3.7.1.js?v=3.7.1-20260914-08"></script></body>');
         return new Response(patched,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}});
       }
     })());return;
