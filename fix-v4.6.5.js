@@ -3,7 +3,6 @@
   const $q=s=>document.querySelector(s);
   const safeLog=(type,data={})=>{try{log(type,{patch:PATCH,...data})}catch{}};
   const v=()=>typeof video!=='undefined'?video:$q('#video');
-  const fmt2=s=>{try{return fmt(s)}catch{return Number(s).toFixed(1)+'s'}};
   const safeName=s=>String(s||'replay').replace(/\.[^.]+$/,'').replace(/[^\w\u3040-\u30ff\u3400-\u9fff-]+/g,'_').slice(0,54);
   const size=n=>n<1048576?`${Math.round(n/1024)} KB`:`${(n/1048576).toFixed(1)} MB`;
   let busy=false,pendingFile=null;
@@ -46,5 +45,11 @@
   }
   async function savePending(){const status=$q('#fullMatchStatus465');if(!pendingFile)return;try{if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[pendingFile]}))){await navigator.share({files:[pendingFile],title:'Shadowverse WB 試合全体短評ZIP'});if(status)status.textContent='共有シートを開きました。「ファイルに保存」を選んでください。'}else if(status)status.textContent='この環境ではファイル保存用共有シートを利用できません。';}catch(e){if(e?.name==='AbortError'){if(status)status.textContent='保存をキャンセルしました。ZIPは残っています。';return}if(status)status.textContent='保存画面を開けませんでした：'+(e?.message||String(e))}}
 
-  let tries=0;const timer=setInterval(()=>{tries++;if(mount()||tries>100)clearInterval(timer)},150);const header=$q('header h1'),sub=$q('header p');if(header)header.textContent='シャドバWB リプレイ診断 v4.6.5';if(sub)sub.textContent='Build 2026.09.14-32 / 試合全体短評 + ナイトメア判定改善';safeLog('patch-v465-active',{feature:'full-match-short-review'});
+  function mountUpdate(){
+    $q('#wbLatestBar462')?.remove();$q('#wbLatestBar463')?.remove();const head=$q('header');if(!head||$q('#wbLatestBar465'))return;
+    const bar=document.createElement('div');bar.id='wbLatestBar465';bar.style.cssText='display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px';bar.innerHTML='<button id="wbForceLatest465" type="button" style="padding:7px 10px;background:#2563eb">最新版に更新</button><span id="wbUpdateStatus465" style="font-size:11px;color:#9ba8bf">v4.6.5 / 試合全体短評</span>';head.appendChild(bar);
+    const b=$q('#wbForceLatest465'),st=$q('#wbUpdateStatus465');b?.addEventListener('click',async()=>{if(b.disabled)return;b.disabled=true;if(st)st.textContent='最新版を確認中…';try{if('serviceWorker'in navigator){const reg=await navigator.serviceWorker.register('./sw.js?v=4.6.5-20260914-32',{updateViaCache:'none'});await reg.update()}if('caches'in window){const keys=await caches.keys();await Promise.all(keys.filter(k=>k.startsWith('wb-review-')&&k!=='wb-review-v4-6-5-20260914-32').map(k=>caches.delete(k)))}if(st)st.textContent='更新確認完了。最新版で再起動します…';setTimeout(()=>{const u=new URL(location.href);u.searchParams.set('latest','465-'+Date.now());u.hash='';location.replace(u.href)},180)}catch(e){if(st)st.textContent='更新確認に失敗しました。通信を確認してください。';b.disabled=false;safeLog('force-latest-error-v465',{message:e?.message||String(e)})}})
+  }
+
+  let tries=0;const timer=setInterval(()=>{tries++;if(mount()||tries>100)clearInterval(timer)},150);const header=$q('header h1'),sub=$q('header p');if(header)header.textContent='シャドバWB リプレイ診断 v4.6.5';if(sub)sub.textContent='Build 2026.09.14-32 / 試合全体短評 + ナイトメア判定改善';mountUpdate();safeLog('patch-v465-active',{feature:'full-match-short-review'});
 })();
