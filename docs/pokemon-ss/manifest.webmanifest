@@ -1,0 +1,11 @@
+{
+  "name": "ソウルシルバー 図鑑・育成ナビ",
+  "short_name": "SS図鑑ナビ",
+  "description": "ポケモン ソウルシルバーの捕獲・出現・育成情報を進行度別に確認するナビ",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f7fb",
+  "theme_color": "#0f172a"
+}
