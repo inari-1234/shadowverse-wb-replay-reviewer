@@ -1,5 +1,5 @@
-const CACHE='wb-review-v3-5-20260914-05';
-const ASSETS=['./','./index.html','./manifest.webmanifest','./fix-v3.5.js'];
+const CACHE='wb-review-v3-6-20260914-06';
+const ASSETS=['./','./index.html','./manifest.webmanifest','./fix-v3.6.js'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});
 self.addEventListener('activate',e=>{e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))]))});
 self.addEventListener('fetch',e=>{
@@ -9,14 +9,16 @@ self.addEventListener('fetch',e=>{
     e.respondWith((async()=>{
       try{
         const r=await fetch(req,{cache:'no-store'}),text=await r.text();
-        const patched=text.includes('fix-v3.5.js')?text:text.replace('</body>','<script src="./fix-v3.5.js?v=3.5-20260914-05"></script></body>');
+        const clean=text.replace(/<script src="\.\/fix-v3\.5\.js[^>]*><\/script>/g,'').replace(/<script src="\.\/fix-v3\.6\.js[^>]*><\/script>/g,'');
+        const patched=clean.replace('</body>','<script src="./fix-v3.6.js?v=3.6-20260914-06"></script></body>');
         return new Response(patched,{status:r.status,statusText:r.statusText,headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}});
       }catch(err){
         const cached=await caches.match('./index.html');
         if(!cached) throw err;
         const text=await cached.text();
-        const patched=text.includes('fix-v3.5.js')?text:text.replace('</body>','<script src="./fix-v3.5.js?v=3.5-20260914-05"></script></body>');
-        return new Response(patched,{headers:{'Content-Type':'text/html; charset=utf-8'}});
+        const clean=text.replace(/<script src="\.\/fix-v3\.5\.js[^>]*><\/script>/g,'').replace(/<script src="\.\/fix-v3\.6\.js[^>]*><\/script>/g,'');
+        const patched=clean.replace('</body>','<script src="./fix-v3.6.js?v=3.6-20260914-06"></script></body>');
+        return new Response(patched,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}});
       }
     })());return;
   }
