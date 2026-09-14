@@ -1,9 +1,7 @@
 (()=>{
-  const PATCH='4.3-bootstrap-20260914-17b';
+  const PATCH='4.4-bootstrap-20260914-18';
   const $q=s=>document.querySelector(s);
 
-  // 旧Service Worker(v4.3)に捕まっていても、最新v4.3.1を直接読み込めるようにする互換ブートストラップ。
-  // v4.3.1側が参照するマリガン表示パネルだけ先に確保する。
   const prepPanel=$q('#autoPrepPanel42');
   let mullPanel=$q('#mulliganPanel43');
   if(!mullPanel){
@@ -15,17 +13,28 @@
     if(anchor) anchor.parentNode.insertBefore(mullPanel,anchor.nextSibling);
   }
 
-  function loadLatest(){
-    if(window.__wb431Loading)return;
+  function load44(){
+    if(window.__wb44Loading)return;
+    window.__wb44Loading=true;
+    const s=document.createElement('script');
+    s.src='./fix-v4.4.js?v=4.4-20260914-18';
+    s.dataset.wbLatest='44';
+    s.onload=()=>{window.__wb44Loaded=true;try{log('patch-v44-bootstrap-loaded',{patch:PATCH})}catch{}};
+    s.onerror=()=>{window.__wb44Loading=false;const st=$q('#mulliganStatus43');if(st)st.textContent='v4.4の読み込みに失敗しました。Safariを再読み込みしてください。';};
+    document.head.appendChild(s);
+  }
+
+  function load431(){
+    if(window.__wb431Loading){setTimeout(load44,250);return}
     window.__wb431Loading=true;
     const s=document.createElement('script');
-    s.src='./fix-v4.3.1.js?v=4.3.1-20260914-17b';
+    s.src='./fix-v4.3.1.js?v=4.3.1-20260914-17c';
     s.dataset.wbLatest='431';
-    s.onload=()=>{window.__wb431Loaded=true;try{log('patch-v431-bootstrap-loaded',{patch:PATCH})}catch{}};
+    s.onload=()=>{window.__wb431Loaded=true;try{log('patch-v431-bootstrap-loaded',{patch:PATCH})}catch{};load44();};
     s.onerror=()=>{window.__wb431Loading=false;const st=$q('#mulliganStatus43');if(st)st.textContent='v4.3.1の読み込みに失敗しました。Safariを再読み込みしてください。';};
     document.head.appendChild(s);
   }
 
-  loadLatest();
-  try{log('patch-v43-bootstrap',{patch:PATCH})}catch{}
+  load431();
+  try{log('patch-v44-bootstrap',{patch:PATCH})}catch{}
 })();
