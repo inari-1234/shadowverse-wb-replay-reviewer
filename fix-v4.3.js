@@ -1,31 +1,43 @@
 (()=>{
-  const PATCH='4.5.2-bootstrap-20260914-24';
+  const PATCH='4.5.3-bootstrap-20260914-25';
   const $q=s=>document.querySelector(s);
   const prepPanel=$q('#autoPrepPanel42');
   let mullPanel=$q('#mulliganPanel43');
   if(!mullPanel){
     mullPanel=document.createElement('section');mullPanel.id='mulliganPanel43';mullPanel.className='panel';
-    mullPanel.innerHTML='<h2>3. マリガン自動抽出</h2><p id="mulliganStatus43" class="help">最新版を読み込み中…</p><div id="mulliganDetail43" class="ocrRead">v4.5.2 を準備しています。</div>';
+    mullPanel.innerHTML='<h2>3. マリガン自動抽出</h2><p id="mulliganStatus43" class="help">最新版を読み込み中…</p><div id="mulliganDetail43" class="ocrRead">v4.5.3 を準備しています。</div>';
     const anchor=prepPanel||$q('#scanTurns')?.closest('.panel');if(anchor)anchor.parentNode.insertBefore(mullPanel,anchor.nextSibling);
   }
-  function load452(){
-    if(window.__wb452Loading||window.__wb452Loaded)return;window.__wb452Loading=true;
-    const a=document.createElement('script');a.src='./fix-v4.5.js?v=4.5-20260914-22c';a.dataset.wbLatest='45';
-    a.onload=()=>{window.__wb45Loaded=true;const b=document.createElement('script');b.src='./fix-v4.5.1.js?v=4.5.1-20260914-23b';b.dataset.wbLatest='451';b.onload=()=>{window.__wb451Loaded=true;const c=document.createElement('script');c.src='./fix-v4.5.2.js?v=4.5.2-20260914-24';c.dataset.wbLatest='452';c.onload=()=>{window.__wb452Loaded=true;try{log('patch-v452-bootstrap-loaded',{patch:PATCH})}catch{}};c.onerror=()=>{window.__wb452Loading=false;const st=$q('#rangeStatus45')||$q('#mulliganStatus43');if(st)st.textContent='v4.5.2の読み込みに失敗しました。Safariを再読み込みしてください。';};document.head.appendChild(c)};b.onerror=()=>{window.__wb452Loading=false;const st=$q('#rangeStatus45')||$q('#mulliganStatus43');if(st)st.textContent='v4.5.1の読み込みに失敗しました。Safariを再読み込みしてください。';};document.head.appendChild(b)};
-    a.onerror=()=>{window.__wb452Loading=false;const st=$q('#rangeStatus45')||$q('#mulliganStatus43');if(st)st.textContent='v4.5の読み込みに失敗しました。Safariを再読み込みしてください。';};document.head.appendChild(a);
+  function load453(){
+    if(window.__wb453Loading||window.__wb453Loaded)return;window.__wb453Loading=true;
+    const a=document.createElement('script');a.src='./fix-v4.5.js?v=4.5-20260914-22d';a.dataset.wbLatest='45';
+    a.onload=()=>{window.__wb45Loaded=true;
+      const b=document.createElement('script');b.src='./fix-v4.5.1.js?v=4.5.1-20260914-23c';b.dataset.wbLatest='451';
+      b.onload=()=>{window.__wb451Loaded=true;
+        const c=document.createElement('script');c.src='./fix-v4.5.2.js?v=4.5.2-20260914-24b';c.dataset.wbLatest='452';
+        c.onload=()=>{window.__wb452Loaded=true;
+          const d=document.createElement('script');d.src='./fix-v4.5.3.js?v=4.5.3-20260914-25';d.dataset.wbLatest='453';
+          d.onload=()=>{window.__wb453Loaded=true;try{log('patch-v453-bootstrap-loaded',{patch:PATCH})}catch{}};
+          d.onerror=()=>{window.__wb453Loading=false;const st=$q('#rangeStatus45')||$q('#mulliganStatus43');if(st)st.textContent='v4.5.3の読み込みに失敗しました。Safariを再読み込みしてください。';};document.head.appendChild(d)
+        };
+        c.onerror=()=>{window.__wb453Loading=false;const st=$q('#rangeStatus45')||$q('#mulliganStatus43');if(st)st.textContent='v4.5.2の読み込みに失敗しました。';};document.head.appendChild(c)
+      };
+      b.onerror=()=>{window.__wb453Loading=false;const st=$q('#rangeStatus45')||$q('#mulliganStatus43');if(st)st.textContent='v4.5.1の読み込みに失敗しました。';};document.head.appendChild(b)
+    };
+    a.onerror=()=>{window.__wb453Loading=false;const st=$q('#rangeStatus45')||$q('#mulliganStatus43');if(st)st.textContent='v4.5の読み込みに失敗しました。';};document.head.appendChild(a);
   }
   function load443(){
-    if(window.__wb443Loading||window.__wb443Loaded){setTimeout(load452,180);return}
+    if(window.__wb443Loading||window.__wb443Loaded){setTimeout(load453,180);return}
     window.__wb443Loading=true;
-    const a=document.createElement('script');a.src='./fix-v4.4.2.js?v=4.4.2-20260914-20e';a.dataset.wbLatest='442';
-    a.onload=()=>{window.__wb442Loaded=true;const b=document.createElement('script');b.src='./fix-v4.4.3.js?v=4.4.3-20260914-21d';b.dataset.wbLatest='443';b.onload=()=>{window.__wb443Loaded=true;try{log('patch-v443-bootstrap-loaded',{patch:PATCH})}catch{};load452()};b.onerror=()=>{window.__wb443Loading=false;const st=$q('#mulliganStatus43');if(st)st.textContent='v4.4.3の読み込みに失敗しました。';};document.head.appendChild(b)};
+    const a=document.createElement('script');a.src='./fix-v4.4.2.js?v=4.4.2-20260914-20f';a.dataset.wbLatest='442';
+    a.onload=()=>{window.__wb442Loaded=true;const b=document.createElement('script');b.src='./fix-v4.4.3.js?v=4.4.3-20260914-21e';b.dataset.wbLatest='443';b.onload=()=>{window.__wb443Loaded=true;try{log('patch-v443-bootstrap-loaded',{patch:PATCH})}catch{};load453()};b.onerror=()=>{window.__wb443Loading=false;const st=$q('#mulliganStatus43');if(st)st.textContent='v4.4.3の読み込みに失敗しました。';};document.head.appendChild(b)};
     a.onerror=()=>{window.__wb443Loading=false;const st=$q('#mulliganStatus43');if(st)st.textContent='v4.4.2の読み込みに失敗しました。';};document.head.appendChild(a);
   }
   function load431(){
     if(window.__wb431Loading){setTimeout(load443,250);return}
-    window.__wb431Loading=true;const s=document.createElement('script');s.src='./fix-v4.3.1.js?v=4.3.1-20260914-17i';s.dataset.wbLatest='431';
+    window.__wb431Loading=true;const s=document.createElement('script');s.src='./fix-v4.3.1.js?v=4.3.1-20260914-17j';s.dataset.wbLatest='431';
     s.onload=()=>{window.__wb431Loaded=true;try{log('patch-v431-bootstrap-loaded',{patch:PATCH})}catch{};load443()};
     s.onerror=()=>{window.__wb431Loading=false;const st=$q('#mulliganStatus43');if(st)st.textContent='v4.3.1の読み込みに失敗しました。Safariを再読み込みしてください。';};document.head.appendChild(s);
   }
-  load431();try{log('patch-v452-root-bootstrap',{patch:PATCH})}catch{}
+  load431();try{log('patch-v453-root-bootstrap',{patch:PATCH})}catch{}
 })();
