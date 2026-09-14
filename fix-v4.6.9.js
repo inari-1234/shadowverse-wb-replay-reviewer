@@ -3,21 +3,14 @@
   const $q=s=>document.querySelector(s);
   const safeLog=(type,data={})=>{try{log(type,{patch:PATCH,...data})}catch{}};
 
-  function installTxtFilter(){
-    const Z=window.JSZip;
+  function patchZipPrototype(Z){
     if(!Z?.prototype?.generateAsync)return false;
     if(Z.prototype.__wbNoTxt469)return true;
     const original=Z.prototype.generateAsync;
     Z.prototype.generateAsync=async function(...args){
       try{
-        const names=Object.keys(this.files||{});
-        const removed=[];
-        for(const name of names){
-          if(/\.txt$/i.test(name)){
-            this.remove(name);
-            removed.push(name);
-          }
-        }
+        const names=Object.keys(this.files||{}),removed=[];
+        for(const name of names){if(/\.txt$/i.test(name)){this.remove(name);removed.push(name)}}
         if(removed.length)safeLog('zip-txt-removed-v469',{removed});
       }catch(e){safeLog('zip-txt-filter-error-v469',{message:e?.message||String(e)})}
       return original.apply(this,args);
@@ -27,42 +20,51 @@
     return true;
   }
 
+  function installLateJSZipTrap(){
+    if(patchZipPrototype(window.JSZip))return true;
+    const d=Object.getOwnPropertyDescriptor(window,'JSZip');
+    if(d&&!d.configurable)return false;
+    if(window.__wbJSZipTrap469)return true;
+    let stored=d?.value;
+    try{
+      Object.defineProperty(window,'JSZip',{
+        configurable:true,enumerable:true,
+        get(){return stored},
+        set(v){stored=v;setTimeout(()=>patchZipPrototype(v),0)}
+      });
+      window.__wbJSZipTrap469=true;
+      if(stored)patchZipPrototype(stored);
+      safeLog('late-jszip-trap-installed-v469');
+      return true;
+    }catch(e){safeLog('late-jszip-trap-error-v469',{message:e?.message||String(e)});return false}
+  }
+
   function hardDisableLegacyExport(){
-    const btn=$q('#exportJson');
-    const panel=btn?.closest?.('.panel');
+    const btn=$q('#exportJson'),panel=btn?.closest?.('.panel');
     if(panel)panel.style.display='none';
     if(btn)btn.disabled=true;
     return !!btn;
   }
 
   document.addEventListener('click',e=>{
-    const t=e.target?.closest?.('#exportJson');
-    if(!t)return;
-    e.preventDefault();
-    e.stopPropagation();
-    e.stopImmediatePropagation?.();
-    const modern=$q('#fullMatchPanel465')||$q('#rangeReviewPanel462');
-    modern?.scrollIntoView?.({behavior:'smooth',block:'start'});
+    const t=e.target?.closest?.('#exportJson');if(!t)return;
+    e.preventDefault();e.stopPropagation();e.stopImmediatePropagation?.();
+    ($q('#fullMatchPanel465')||$q('#rangeReviewPanel462'))?.scrollIntoView?.({behavior:'smooth',block:'start'});
     safeLog('legacy-export-blocked-v469');
   },true);
 
   function labelDiagnostic(){
-    const btn=$q('#exportDiag');
-    if(!btn)return false;
-    const panel=btn.closest('.panel');
-    if(panel&&!$q('#diagNote469')){
-      const p=document.createElement('p');
-      p.id='diagNote469';p.className='help';
+    const btn=$q('#exportDiag');if(!btn)return false;
+    if(!$q('#diagNote469')){
+      const p=document.createElement('p');p.id='diagNote469';p.className='help';
       p.textContent='診断レポートは不具合確認用のJSONを1ファイルだけ出力します。ZIPやREADME.txtは生成しません。';
       btn.closest('.buttons')?.insertAdjacentElement('afterend',p);
     }
     return true;
   }
 
-  let n=0;const tm=setInterval(()=>{
-    n++;installTxtFilter();hardDisableLegacyExport();labelDiagnostic();
-    if(n>200)clearInterval(tm);
-  },100);
+  installLateJSZipTrap();
+  let n=0;const tm=setInterval(()=>{n++;patchZipPrototype(window.JSZip);hardDisableLegacyExport();labelDiagnostic();if(n>200)clearInterval(tm)},100);
 
   const header=$q('header h1'),sub=$q('header p');
   if(header)header.textContent='シャドバWB リプレイ診断 v4.6.9';
