@@ -1,5 +1,5 @@
-const CACHE='wb-review-v4-7-0-20260915-05';
-const ASSETS=['./','./index.html','./manifest.webmanifest','./fix-v3.7.js','./fix-v3.7.1.js','./fix-v3.9.js','./fix-v3.9.1.js','./fix-v3.9.2.js','./fix-v4.0.js','./fix-v4.1.js','./fix-v4.2.js','./fix-v4.3.js','./fix-v4.3.1.js','./fix-v4.4.2.js','./fix-v4.4.3.js','./fix-v4.6.2.js','./fix-v4.6.3.js','./fix-v4.6.4.js','./fix-v4.6.5.js','./fix-v4.6.6.js','./fix-v4.6.7.js','./fix-v4.6.8.js','./fix-v4.6.9.js','./fix-v4.7.0.js','./strategy/sea-pirate-royal-coaching-v1.json'];
+const CACHE='wb-review-v4-7-1-20260915-06';
+const ASSETS=['./','./index.html','./manifest.webmanifest','./fix-v3.7.js','./fix-v3.7.1.js','./fix-v3.9.js','./fix-v3.9.1.js','./fix-v3.9.2.js','./fix-v4.0.js','./fix-v4.1.js','./fix-v4.2.js','./fix-v4.3.js','./fix-v4.3.1.js','./fix-v4.4.2.js','./fix-v4.4.3.js','./fix-v4.6.2.js','./fix-v4.6.3.js','./fix-v4.6.4.js','./fix-v4.6.5.js','./fix-v4.6.6.js','./fix-v4.6.7.js','./fix-v4.6.8.js','./fix-v4.6.9.js','./fix-v4.7.0.js','./fix-v4.7.1.js','./strategy/sea-pirate-royal-coaching-v1.json'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});
 self.addEventListener('activate',e=>{e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))]))});
 function patchHtml(text){
@@ -36,8 +36,9 @@ function patchHtml(text){
     .replace(/<script src="\.\/fix-v4\.6\.7\.js[^>]*><\/script>/g,'')
     .replace(/<script src="\.\/fix-v4\.6\.8\.js[^>]*><\/script>/g,'')
     .replace(/<script src="\.\/fix-v4\.6\.9\.js[^>]*><\/script>/g,'')
-    .replace(/<script src="\.\/fix-v4\.7\.0\.js[^>]*><\/script>/g,'');
-  return clean.replace('</body>','<script src="./fix-v3.7.js?v=3.7-20260914-07"></script><script src="./fix-v3.7.1.js?v=3.7.1-20260914-08"></script><script src="./fix-v3.9.js?v=3.9-20260914-10"></script><script src="./fix-v3.9.1.js?v=3.9.1-20260914-11"></script><script src="./fix-v3.9.2.js?v=3.9.2-20260914-12"></script><script src="./fix-v4.0.js?v=4.0-20260914-13"></script><script src="./fix-v4.1.js?v=4.1-20260914-14"></script><script src="./fix-v4.2.js?v=4.2-20260914-15"></script><script src="./fix-v4.3.js?v=4.7.0-bootstrap-20260915-05"></script></body>');
+    .replace(/<script src="\.\/fix-v4\.7\.0\.js[^>]*><\/script>/g,'')
+    .replace(/<script src="\.\/fix-v4\.7\.1\.js[^>]*><\/script>/g,'');
+  return clean.replace('</body>','<script src="./fix-v3.7.js?v=3.7-20260914-07"></script><script src="./fix-v3.7.1.js?v=3.7.1-20260914-08"></script><script src="./fix-v3.9.js?v=3.9-20260914-10"></script><script src="./fix-v3.9.1.js?v=3.9.1-20260914-11"></script><script src="./fix-v3.9.2.js?v=3.9.2-20260914-12"></script><script src="./fix-v4.0.js?v=4.0-20260914-13"></script><script src="./fix-v4.1.js?v=4.1-20260914-14"></script><script src="./fix-v4.2.js?v=4.2-20260914-15"></script><script src="./fix-v4.3.js?v=4.7.0-bootstrap-20260915-05"></script><script src="./fix-v4.7.1.js?v=4.7.1-20260915-06"></script></body>');
 }
 self.addEventListener('fetch',e=>{
   const req=e.request,url=new URL(req.url);
