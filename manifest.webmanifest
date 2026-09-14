@@ -1,0 +1,9 @@
+{
+  "name": "シャドバWB リプレイ診断",
+  "short_name": "WB診断",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0a1020",
+  "theme_color": "#101827",
+  "lang": "ja"
+}
