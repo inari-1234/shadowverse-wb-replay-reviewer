@@ -1,7 +1,8 @@
-const CACHE='wb-review-v4-5-3-20260914-25';
-const ASSETS=['./','./index.html','./manifest.webmanifest','./fix-v3.7.js','./fix-v3.7.1.js','./fix-v3.9.js','./fix-v3.9.1.js','./fix-v3.9.2.js','./fix-v4.0.js','./fix-v4.1.js','./fix-v4.2.js','./fix-v4.3.js','./fix-v4.3.1.js','./fix-v4.4.js','./fix-v4.4.1.js','./fix-v4.4.2.js','./fix-v4.4.3.js','./fix-v4.5.js','./fix-v4.5.1.js','./fix-v4.5.2.js','./fix-v4.5.3.js'];
+const CACHE='wb-review-v4-5-4-20260914-26';
+const DOWNLOAD_CACHE='wb-generated-downloads-v454';
+const ASSETS=['./','./index.html','./manifest.webmanifest','./fix-v3.7.js','./fix-v3.7.1.js','./fix-v3.9.js','./fix-v3.9.1.js','./fix-v3.9.2.js','./fix-v4.0.js','./fix-v4.1.js','./fix-v4.2.js','./fix-v4.3.js','./fix-v4.3.1.js','./fix-v4.4.js','./fix-v4.4.1.js','./fix-v4.4.2.js','./fix-v4.4.3.js','./fix-v4.5.js','./fix-v4.5.1.js','./fix-v4.5.4.js'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});
-self.addEventListener('activate',e=>{e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))]))});
+self.addEventListener('activate',e=>{e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE&&k!==DOWNLOAD_CACHE).map(k=>caches.delete(k))))]))});
 function patchHtml(text){
   const clean=text
     .replace(/<script src="\.\/fix-v3\.5\.js[^>]*><\/script>/g,'')
@@ -24,12 +25,20 @@ function patchHtml(text){
     .replace(/<script src="\.\/fix-v4\.5\.js[^>]*><\/script>/g,'')
     .replace(/<script src="\.\/fix-v4\.5\.1\.js[^>]*><\/script>/g,'')
     .replace(/<script src="\.\/fix-v4\.5\.2\.js[^>]*><\/script>/g,'')
-    .replace(/<script src="\.\/fix-v4\.5\.3\.js[^>]*><\/script>/g,'');
-  return clean.replace('</body>','<script src="./fix-v3.7.js?v=3.7-20260914-07"></script><script src="./fix-v3.7.1.js?v=3.7.1-20260914-08"></script><script src="./fix-v3.9.js?v=3.9-20260914-10"></script><script src="./fix-v3.9.1.js?v=3.9.1-20260914-11"></script><script src="./fix-v3.9.2.js?v=3.9.2-20260914-12"></script><script src="./fix-v4.0.js?v=4.0-20260914-13"></script><script src="./fix-v4.1.js?v=4.1-20260914-14"></script><script src="./fix-v4.2.js?v=4.2-20260914-15"></script><script src="./fix-v4.3.js?v=4.5.3-bootstrap-20260914-25"></script></body>');
+    .replace(/<script src="\.\/fix-v4\.5\.3\.js[^>]*><\/script>/g,'')
+    .replace(/<script src="\.\/fix-v4\.5\.4\.js[^>]*><\/script>/g,'');
+  return clean.replace('</body>','<script src="./fix-v3.7.js?v=3.7-20260914-07"></script><script src="./fix-v3.7.1.js?v=3.7.1-20260914-08"></script><script src="./fix-v3.9.js?v=3.9-20260914-10"></script><script src="./fix-v3.9.1.js?v=3.9.1-20260914-11"></script><script src="./fix-v3.9.2.js?v=3.9.2-20260914-12"></script><script src="./fix-v4.0.js?v=4.0-20260914-13"></script><script src="./fix-v4.1.js?v=4.1-20260914-14"></script><script src="./fix-v4.2.js?v=4.2-20260914-15"></script><script src="./fix-v4.3.js?v=4.5.4-bootstrap-20260914-26"></script></body>');
 }
 self.addEventListener('fetch',e=>{
   const req=e.request,url=new URL(req.url);
   if(url.origin!==location.origin){e.respondWith(fetch(req));return;}
+  if(url.pathname.includes('/__wb_download__/')){
+    e.respondWith((async()=>{
+      const c=await caches.open(DOWNLOAD_CACHE);const r=await c.match(req.url);
+      if(!r)return new Response('Generated ZIP expired. Please create it again.',{status:404,headers:{'Content-Type':'text/plain; charset=utf-8'}});
+      return r;
+    })());return;
+  }
   if(req.mode==='navigate'||url.pathname.endsWith('/index.html')){
     e.respondWith((async()=>{try{const r=await fetch(req,{cache:'no-store'}),text=await r.text();return new Response(patchHtml(text),{status:r.status,statusText:r.statusText,headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}})}catch(err){const cached=await caches.match('./index.html');if(!cached)throw err;return new Response(patchHtml(await cached.text()),{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}})}})());return;
   }
