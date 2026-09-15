@@ -1,14 +1,14 @@
 (()=>{
-  const PATCH='3.9.2-20260915-stable-02';
+  const PATCH='3.9.2-20260915-stable-03';
   const $q=s=>document.querySelector(s);
   const header=$q('header h1'),sub=$q('header p');
   if(header) header.textContent='シャドバWB リプレイ診断 v3.9.2';
-  if(sub) sub.textContent='Build 2026.09.15-stable-02 / PP連続証拠 + ターン表示補正';
+  if(sub) sub.textContent='Build 2026.09.15-stable-03 / ターンボタン限定 + 演出遮蔽除外 + 1T復元';
 
   const play=$q('#playOrder');
   const scanPanel=$q('#scanTurns')?.closest('.panel');
   const warn=scanPanel?.querySelector('.warn');
-  if(warn) warn.textContent='単発のPP OCRはターン開始根拠にしません。近接フレームの連続証拠で誤認を除外し、右側のYOUR TURN / ENEMY TURN表示から開始時刻を補正します。';
+  if(warn) warn.textContent='単発のPP OCRはターン開始根拠にしません。右側ターンボタン本体だけを読み、全画面演出で隠れた瞬間は判定保留にします。先攻1TがOCRで欠けた場合は表示切替から復元します。';
 
   window.rejectedTurns392=[];
   function firstSide(){return play?.value==='先攻'?'bottom':'top'}
@@ -41,29 +41,40 @@
 
   function indicatorSignal392(){
     const vid=typeof video!=='undefined'?video:$q('#video');
-    if(!vid?.videoWidth||!vid?.videoHeight)return {side:null,diff:0,pixels:0};
-    const c=document.createElement('canvas');c.width=48;c.height=72;
+    if(!vid?.videoWidth||!vid?.videoHeight)return {side:null,diff:0,pixels:0,visible:false};
+    const c=document.createElement('canvas');c.width=48;c.height=64;
     const x=c.getContext('2d',{willReadFrequently:true});
-    const sx=Math.round(vid.videoWidth*.865),sy=Math.round(vid.videoHeight*.31),sw=Math.max(8,Math.round(vid.videoWidth*.10)),sh=Math.max(8,Math.round(vid.videoHeight*.25));
+    // Crop only the circular YOUR TURN / ENEMY TURN button. The older, wider crop
+    // also contained PP panels and board effects, so full-screen red/blue effects
+    // could masquerade as a side change.
+    const sx=Math.round(vid.videoWidth*.82),sy=Math.round(vid.videoHeight*.34),sw=Math.max(8,Math.round(vid.videoWidth*.09)),sh=Math.max(8,Math.round(vid.videoHeight*.21));
     x.drawImage(vid,sx,sy,sw,sh,0,0,c.width,c.height);
-    const d=x.getImageData(0,0,c.width,c.height).data;
-    let red=0,blue=0,count=0;
+    const d=x.getImageData(0,0,c.width,c.height).data,total=Math.max(1,d.length/4);
+    let red=0,blue=0,count=0,dark=0,white=0,gold=0;
     for(let i=0;i<d.length;i+=4){
-      const r=d[i],g=d[i+1],b=d[i+2],mx=Math.max(r,g,b),mn=Math.min(r,g,b);
-      if(mx<70||mx-mn<45)continue;
+      const r=d[i],g=d[i+1],b=d[i+2],mx=Math.max(r,g,b),mn=Math.min(r,g,b),sat=mx-mn;
+      if(mx<60)dark++;
+      if(mn>150&&sat<65)white++;
+      if(r>120&&g>70&&g<190&&b<110&&r-b>50)gold++;
+      if(mx<80||sat<40)continue;
       red+=Math.max(0,r-(b+g)/2);
       blue+=Math.max(0,b-(r+g)/2);
       count++;
     }
-    if(count<20)return {side:null,diff:0,pixels:count};
+    const darkFrac=dark/total,whiteFrac=white/total,goldFrac=gold/total;
+    // A real turn button contains a dark body plus white/gold UI detail.
+    // Full-screen attack/evolution effects tend to be almost uniformly red/blue.
+    const visible=(darkFrac>=.08&&(goldFrac>=.008||whiteFrac>=.012))||(goldFrac>=.015&&whiteFrac>=.012);
+    if(!visible||count<20)return {side:null,diff:0,pixels:count,visible:false,dark:+darkFrac.toFixed(3),white:+whiteFrac.toFixed(3),gold:+goldFrac.toFixed(3)};
     const diff=(red-blue)/count,target=$q('#targetSide')?.value||'bottom',opponent=target==='top'?'bottom':'top';
-    if(diff>20)return {side:opponent,diff:+diff.toFixed(2),pixels:count};
-    if(diff<-20)return {side:target,diff:+diff.toFixed(2),pixels:count};
-    return {side:null,diff:+diff.toFixed(2),pixels:count};
+    const base={diff:+diff.toFixed(2),pixels:count,visible:true,dark:+darkFrac.toFixed(3),white:+whiteFrac.toFixed(3),gold:+goldFrac.toFixed(3)};
+    if(diff>15)return {side:opponent,...base};
+    if(diff<-15)return {side:target,...base};
+    return {side:null,...base};
   }
   async function indicatorAt392(t){
     const vid=typeof video!=='undefined'?video:$q('#video');
-    if(!vid?.src||!Number.isFinite(vid.duration))return {time:t,side:null,diff:0,pixels:0};
+    if(!vid?.src||!Number.isFinite(vid.duration))return {time:t,side:null,diff:0,pixels:0,visible:false};
     t=Math.max(.05,Math.min(vid.duration-.08,t));
     try{
       if(typeof seek==='function')await seek(t,'turn-indicator-v392');
@@ -74,33 +85,46 @@
     }catch{}
     return {time:+t.toFixed(3),...indicatorSignal392()};
   }
+  async function usableIndicator392(anchor,side){
+    for(const off of [0,-.18,-.36,.18,.36,-.54,.54,-.72,.72]){
+      const s=await indicatorAt392(anchor+off);
+      if(s.side===side)return s;
+    }
+    return null;
+  }
+  async function resolvedIndicator392(t){
+    let s=await indicatorAt392(t);
+    if(s.side)return s;
+    for(const off of [-.10,.10,-.20,.20]){
+      const p=await indicatorAt392(t+off);
+      if(p.side)return p;
+    }
+    return s;
+  }
   async function refineTurnStart392(item){
     const anchor=Number(item.time);
     if(!Number.isFinite(anchor)||anchor<.7)return item;
-    const atAnchor=await indicatorAt392(anchor);
-    if(atAnchor.side!==item.side)return item;
-    let hi=anchor,lo=null;
-    for(let t=anchor-.5;t>=Math.max(.1,anchor-5.0)-.001;t-=.5){
+    const usable=await usableIndicator392(anchor,item.side);
+    if(!usable)return item;
+    let hi=usable.time,lo=null;
+    for(let t=hi-.5;t>=Math.max(.1,anchor-5.0)-.001;t-=.5){
       const s=await indicatorAt392(t);
       if(s.side===item.side){hi=t;continue}
       if(s.side&&s.side!==item.side){lo=t;break}
     }
     if(lo==null||hi<=lo)return item;
-    const loSig=await indicatorAt392(lo),hiSig=await indicatorAt392(hi);
+    const loSig=await resolvedIndicator392(lo),hiSig=await resolvedIndicator392(hi);
     if(loSig.side===item.side||hiSig.side!==item.side)return item;
     for(let i=0;i<5;i++){
-      const mid=(lo+hi)/2,s=await indicatorAt392(mid);
+      const mid=(lo+hi)/2,s=await resolvedIndicator392(mid);
       if(s.side===item.side)hi=mid;
       else if(s.side&&s.side!==item.side)lo=mid;
-      else{
-        const target=$q('#targetSide')?.value||'bottom',expectedRed=item.side!==target;
-        if((expectedRed&&s.diff>0)||(!expectedRed&&s.diff<0))hi=mid;else lo=mid;
-      }
+      else break;
     }
     const refined=+hi.toFixed(3),delta=anchor-refined;
-    if(delta<.08||delta>5.05)return item;
+    if(delta<.08||delta>5.2)return item;
     const out={...item,time:refined,source:'turn-indicator-refined-v3.9.2',ppStableTime:anchor,indicatorRefinedFrom:anchor};
-    try{log('turn-indicator-refined-v392',{side:item.side,turn:item.turn,from:anchor,to:refined,delta:+delta.toFixed(3),priorSource:item.source||''})}catch{}
+    try{log('turn-indicator-refined-v392',{side:item.side,turn:item.turn,from:anchor,to:refined,delta:+delta.toFixed(3),priorSource:item.source||'',buttonCrop:'tight-v3'})}catch{}
     return out;
   }
   async function refineAcceptedStarts392(clean){
@@ -116,6 +140,43 @@
       try{if(typeof seek==='function')await seek(restore,'return-after-indicator-v392');else if(vid)vid.currentTime=restore}catch{}
     }
     return out;
+  }
+  async function recoverMissingFirstTurn392(clean){
+    const first=firstSide(),second=first==='top'?'bottom':'top';
+    if(clean.some(x=>x.side===first&&Number(x.turn)===1))return clean;
+    const second1=clean.find(x=>x.side===second&&Number(x.turn)===1);
+    if(!second1)return clean;
+    const mulliganTime=Number(window.mulliganPreview442?.time);
+    const floor=Number.isFinite(mulliganTime)?Math.max(.1,mulliganTime-.6):Math.max(.1,second1.time-10);
+    let seed=null;
+    for(let t=second1.time-.15;t>=floor-.001;t-=.2){
+      const s=await indicatorAt392(t);
+      if(s.side===first){seed=t;break}
+    }
+    if(seed==null)return clean;
+    let hi=seed,lo=null,nullRun=0;
+    for(let t=seed-.2;t>=floor-.001;t-=.2){
+      const s=await indicatorAt392(t);
+      if(s.side===first){hi=t;nullRun=0;continue}
+      if(s.side&&s.side!==first){lo=t;break}
+      nullRun+=.2;
+      if(nullRun>=.6)break;
+    }
+    let recovered=hi;
+    if(lo!=null&&hi>lo){
+      for(let i=0;i<5;i++){
+        const mid=(lo+hi)/2,s=await resolvedIndicator392(mid);
+        if(s.side===first)hi=mid;
+        else if(s.side&&s.side!==first)lo=mid;
+        else break;
+      }
+      recovered=hi;
+    }
+    recovered=+recovered.toFixed(3);
+    if(!Number.isFinite(recovered)||recovered>=second1.time-.2)return clean;
+    const item={side:first,turn:1,time:recovered,source:'turn-indicator-recovered-v3.9.2',confidence:80,raw:'',score:6,inferScore:null,recoveredWithoutPPOCR:true};
+    try{log('turn-1-recovered-v392',{side:first,turn:1,time:recovered,nextSide:second,nextTime:second1.time,floor})}catch{}
+    return [...clean,item].sort((a,b)=>seqIndex(a.side,a.turn)-seqIndex(b.side,b.turn)||a.time-b.time);
   }
 
   async function sanitizeTimeline392(){
@@ -155,6 +216,7 @@
     const status=$q('#scanStatus');
     if(status)status.textContent='PP列を検証済み。ターン開始表示で時刻を補正中…';
     clean=await refineAcceptedStarts392(clean);
+    clean=await recoverMissingFirstTurn392(clean);
 
     window.turnTimeline39=clean;window.rejectedTurns392=rejected;
     const target=$q('#targetSide')?.value||'bottom';
@@ -167,14 +229,14 @@
       const rows=[];
       if(!clean.find(x=>x.side===first&&x.turn===1))rows.push(`${first==='top'?'上':'下'}1T  未確定（初期OCR根拠不足）`);
       for(const r of [...clean].sort((a,b)=>a.time-b.time||seqIndex(a.side,a.turn)-seqIndex(b.side,b.turn))){
-        const src=r.source==='turn-indicator-refined-v3.9.2'?'ターン表示補正':r.source==='ocr-stable-v3.9.1'?'安定OCR':r.source==='ocr-stable-forward-v3.9.2'?'連続OCR':(r.source?.includes('ocr')?'OCR':'補完');
+        const src=r.source==='turn-indicator-recovered-v3.9.2'?'ターン表示復元':r.source==='turn-indicator-refined-v3.9.2'?'ターン表示補正':r.source==='ocr-stable-v3.9.1'?'安定OCR':r.source==='ocr-stable-forward-v3.9.2'?'連続OCR':(r.source?.includes('ocr')?'OCR':'補完');
         rows.push(`${r.side==='top'?'上':'下'}${r.turn}T  ${fmt(r.time)}  ${src}`);
       }
       if(rejected.length)rows.push(`除外 ${rejected.length}件：`+rejected.map(x=>`${x.side==='top'?'上':'下'}${x.turn}T(${x.reason})`).join('、'));
       tlEl.textContent=rows.join('\n');
     }
-    if(status)status.textContent=`解析完了：${clean.length}件 / 誤認除外 ${rejected.length}件 / ターン表示で開始時刻補正`;
-    try{log('postprocess-v392',{patch:PATCH,firstSide:first,rejected:rejected.map(x=>({side:x.side,turn:x.turn,time:x.time,reason:x.reason})),timeline:clean.map(x=>({side:x.side,turn:x.turn,time:x.time,source:x.source,reanchoredFrom:x.reanchoredFrom||null,ppStableTime:x.ppStableTime||null}))})}catch{}
+    if(status)status.textContent=`解析完了：${clean.length}件 / 誤認除外 ${rejected.length}件 / ターンボタンで開始時刻補正・1T復元`;
+    try{log('postprocess-v392',{patch:PATCH,firstSide:first,rejected:rejected.map(x=>({side:x.side,turn:x.turn,time:x.time,reason:x.reason})),timeline:clean.map(x=>({side:x.side,turn:x.turn,time:x.time,source:x.source,reanchoredFrom:x.reanchoredFrom||null,ppStableTime:x.ppStableTime||null,recoveredWithoutPPOCR:!!x.recoveredWithoutPPOCR}))})}catch{}
   }
 
   const btn=$q('#scanTurns');
