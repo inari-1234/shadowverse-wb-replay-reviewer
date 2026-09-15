@@ -1,0 +1,93 @@
+{
+  "version": "sea-pirate-royal-coaching-v2",
+  "updatedAt": "2026-09-15",
+  "purpose": "公開情報トラッカーと組み合わせ、短評の前にリーサル候補を全探索し、反実仮想を独立再計算するためのルール。",
+  "reviewProtocol": {
+    "beforeAnyGrade": [
+      "現在ターンの合法なリーサル候補を1本で止めず、主要打点札ごとに全列挙する",
+      "手札、現在PP、Extra PP、EP、SEP、相手HP、守護、場の確定打点、海賊旗の枚数と各カウントを確認する",
+      "必要情報が欠ける場合は『リーサルなし』と断定せず『未検証』にする",
+      "公開情報トラッカーの情報は、その情報が利用可能になった時刻より前の評価へ逆流させない"
+    ],
+    "counterfactual": [
+      "代替プレイは分岐直前の状態から再計算する",
+      "実戦の最終HPから、起きなかった効果の数値だけを単純に加減して代替結果を作らない",
+      "相手が実戦と違う行動を選ぶ合理的可能性がある場合は分岐を複数残す",
+      "各分岐で自分HP、相手HP、盤面、手札、PP、Extra PP、EP、SEP、旗カウントを更新する"
+    ],
+    "output": {
+      "mustInclude": [
+        "確認したリーサル候補",
+        "使った資源",
+        "合計打点",
+        "成立を妨げる条件",
+        "未確認情報"
+      ],
+      "forbid": [
+        "最初に見つけた打点ルートだけでリーサル有無を確定する",
+        "実戦で使ったカードだけを候補にして手札の別フィニッシャーを無視する",
+        "相手の実戦行動が代替分岐でも必ず同じと仮定する"
+      ]
+    }
+  },
+  "gameRules": {
+    "extraPP": {
+      "effect": "後攻のみ、そのターン中に消費できるPPを1増やす",
+      "refresh": "6ターン目開始時に使用済みなら再使用可能",
+      "source": "https://shadowverse-wb.com/ja/help?tab=tab0"
+    },
+    "evolution": {
+      "attackBonus": 2,
+      "defenseBonus": 2,
+      "source": "https://shadowverse-wb.com/ja/help?tab=tab0"
+    },
+    "superEvolution": {
+      "attackBonus": 3,
+      "defenseBonus": 3,
+      "source": "https://shadowverse-wb.com/ja/help?tab=tab0"
+    }
+  },
+  "cardKnowledge": {
+    "pirateFlag": {
+      "name": "戦慄の海賊旗",
+      "kind": "amulet",
+      "countdown": 7,
+      "onSpellPlayedCountdownDelta": -1,
+      "lastWordsLeaderDamage": 2,
+      "source": "https://gamewith.jp/shadowverse-wb/573273"
+    },
+    "barbaros": {
+      "name": "逆行の咎人・バルバロス",
+      "cost": 7,
+      "attack": 4,
+      "defense": 3,
+      "storm": true,
+      "fanfare": {
+        "createPirateFlag": 1,
+        "allPirateFlagCountdownDelta": -5
+      },
+      "source": "https://gamewith.jp/shadowverse-wb/573272",
+      "lethalFormula": {
+        "existingFlagBreakCondition": "プレイ前カウントが5以下の既存の戦慄の海賊旗は-5で0以下になり、各2点。新たに出た旗は7→2なので通常はこのファンファーレだけでは割れない。",
+        "baseLeaderDamage": "4 + 2 × 割れる既存旗枚数",
+        "evolvedLeaderDamage": "6 + 2 × 割れる既存旗枚数",
+        "superEvolvedLeaderDamage": "7 + 2 × 割れる既存旗枚数"
+      }
+    },
+    "zetaBeatrix": {
+      "name": "真紅と群青・ゼタ＆ベアトリクス",
+      "baseCost": 4,
+      "enhanceCost": 6,
+      "attack": 3,
+      "defense": 2,
+      "enhance": "生成した同名カードは必殺、元カードは疾走。カード自体は突進を持つ。",
+      "source": "https://shadowverse-wb.com/ja/deck/cardslist/card/?card_id=10424110",
+      "lethalFormula": {
+        "baseLeaderDamage": 3,
+        "evolvedLeaderDamage": 5,
+        "superEvolvedLeaderDamage": 6,
+        "note": "守護処理や生成側の攻撃先は盤面依存なので、顔打点との両立可否を別途確認する。"
+      }
+    }
+  }
+}
