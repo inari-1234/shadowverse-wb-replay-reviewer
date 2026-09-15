@@ -74,7 +74,7 @@
   function hardenDiagnosticJson(){
     const old=$q('#exportDiag');if(!old)return false;
     if(old.dataset.wb494==='1')return true;
-    const b=old.cloneNode(true);b.dataset.wb494='1';old.replaceWith(b);
+    const b=old.cloneNode(true);b.dataset.wb494='1';b.dataset.wb493='1';b.dataset.wb492='1';old.replaceWith(b);
     const copy=$q('#copyDiag');if(copy){copy.disabled=true;copy.style.display='none'}
     const view=$q('#diagView');if(view){view.textContent='';view.style.display='none'}
     const oldNote=$q('#diagNote469');if(oldNote)oldNote.textContent='診断レポートはJSONを1ファイルだけ出力します。画面へのテキスト表示やTXTファイルは生成しません。';
@@ -133,7 +133,19 @@
     const h=$q('header h1'),s=$q('header p');
     if(h&&h.textContent!=='シャドバWB リプレイ診断 v4.9.4')h.textContent='シャドバWB リプレイ診断 v4.9.4';
     if(s&&s.textContent!=='Build 2026.09.15-14 / 手番表示・JSON出力・分岐同期を安定化')s.textContent='Build 2026.09.15-14 / 手番表示・JSON出力・分岐同期を安定化';
-    const st=$q('#wbUpdateStatus463')||$q('#wbUpdateStatus462');if(st&&!/v4\.9\.4/.test(st.textContent))st.textContent='v4.9.4 / 表示・JSON・分岐同期修正版';
+    const ub=$q('#wbForceLatest463')||$q('#wbForceLatest462');
+    const st=$q('#wbUpdateStatus463')||$q('#wbUpdateStatus462');if(st&&!ub?.disabled&&!/v4\.9\.4/.test(st.textContent))st.textContent='v4.9.4 / 表示・JSON・分岐同期修正版';
+  }
+  function observeHeader(){
+    if(!window.MutationObserver||document.documentElement.dataset.wb494HeaderObserver==='1')return;
+    const h=$q('header h1'),s=$q('header p');if(!h&&!s)return;
+    const mo=new MutationObserver(()=>{
+      document.documentElement.dataset.wbLatestUi='494';
+      if(h&&h.textContent!=='シャドバWB リプレイ診断 v4.9.4')h.textContent='シャドバWB リプレイ診断 v4.9.4';
+      if(s&&s.textContent!=='Build 2026.09.15-14 / 手番表示・JSON出力・分岐同期を安定化')s.textContent='Build 2026.09.15-14 / 手番表示・JSON出力・分岐同期を安定化';
+    });
+    if(h)mo.observe(h,{childList:true,subtree:true,characterData:true});if(s)mo.observe(s,{childList:true,subtree:true,characterData:true});
+    window.__wbHeaderObserver494=mo;document.documentElement.dataset.wb494HeaderObserver='1';
   }
 
   function updater(){
@@ -143,7 +155,7 @@
     return true;
   }
 
-  repairLegacyCutoffs();trapZip();
+  repairLegacyCutoffs();trapZip();observeHeader();
   let n=0;const tm=setInterval(()=>{n++;repairLegacyCutoffs();syncCounterfactualWindow();fixBranchCards();hardenDiagnosticJson();patchZip(window.JSZip);stableHeader();updater();if(n>900)clearInterval(tm)},120);
   safeLog('patch-v494-active',{feature:'stable-branch-label-json-only-export-and-export-sync'});
 })();
