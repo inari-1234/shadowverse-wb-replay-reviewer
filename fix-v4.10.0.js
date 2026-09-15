@@ -92,14 +92,19 @@
       else info.textContent=`${b.state?.turn}Tの自分資源テンプレートがありません。枝は作れますが、自動リーサル判定は行いません。`;
     }
   }
-  function refreshSources(){
+  let sourceListSignature='';
+  function refreshSources(force=false){
     const sel=$q('#asSource410');if(!sel)return false;
     const bs=getSession()?.branches||[],old=sel.value;
     const candidates=bs.filter(b=>b.state?.sideToAct==='相手');
+    const sig=candidates.map(b=>`${b.id}|${b.name}|${b.state?.turn??''}|${b.updatedAt||''}`).join('||');
+    if(!force&&sig===sourceListSignature)return true;
+    sourceListSignature=sig;
     sel.innerHTML=candidates.length?candidates.map(b=>`<option value="${b.id}">${esc(b.name)} / ${b.state?.turn??'?'}T</option>`).join(''):'<option value="">相手手番の起点がありません</option>';
-    if(candidates.some(b=>b.id===old))sel.value=old;
-    else if(candidates[0])sel.value=candidates[0].id;
-    fillFromSource();renderResults();return true;
+    const kept=candidates.some(b=>b.id===old);
+    if(kept)sel.value=old;else if(candidates[0])sel.value=candidates[0].id;
+    if(force||!kept)fillFromSource();
+    renderResults();return true;
   }
   function writeToLethal(st){
     setVal('#leTurn480',st.turn);setVal('#leOppHp480',st.opponentHP);setVal('#lePp480',st.pp);setVal('#leFlags480',(st.pirateFlagCountdowns||[]).join(','));setVal('#leBoard480',st.knownBoardLeaderDamage??0);setVal('#leOther480',st.otherConfirmedLeaderDamage??0);
@@ -135,7 +140,7 @@
   function mount(){
     if($q('#branchAssist410'))return true;const anchor=$q('#counterfactualPanel490');if(!anchor?.parentNode)return false;
     const p=document.createElement('section');p.id='branchAssist410';p.className='panel';p.innerHTML=`<h2>分岐アシスト</h2><p class="help">相手手番の起点を選び、相手の返し後に変わった情報だけ入力します。自分のPP・ExPP・EP/SEPは同ターンの保存済みリーサル状態から自動取得します。見つからない場合は推測しません。</p><label>起点<select id="asSource410"></select></label><div id="asTemplate410" class="help" style="margin:6px 0"></div><label>相手の返し名<input id="asName410" placeholder="例：強襲の特攻隊長を使わない"></label><div class="grid"><label>返し後 相手HP<input id="asOppHp410" type="number" min="0"></label><label>返し後 自分HP<input id="asSelfHp410" type="number" min="0"></label><label>返し後 旗カウント<input id="asFlags410" placeholder="例 3"></label><label>自分場から確定の顔打点<input id="asBoard410" type="number" min="0" value="0"></label><label>その他の確定顔打点<input id="asOther410" type="number" min="0" value="0"></label></div><label style="display:flex;gap:7px;align-items:center;margin:8px 0"><input id="asWard410" type="checkbox"> 返し後に相手守護あり</label><label>メモ（任意）<textarea id="asNote410" placeholder="この返しで変わった点だけ"></textarea></label><div class="buttons"><button id="asRun410" class="good">自分ターン枝を作成してリーサルまで確認</button></div><p id="asStatus410" class="help"></p><div id="asResults410"></div><p class="help">重要：反実仮想の判断時点は親枝を継承します。実戦の後の情報を過去へ逆流させません。</p>`;
-    anchor.parentNode.insertBefore(p,anchor.nextSibling);$q('#asSource410').addEventListener('change',fillFromSource);$q('#asRun410').addEventListener('click',createAndAnalyze);refreshSources();renderResults();return true;
+    anchor.parentNode.insertBefore(p,anchor.nextSibling);$q('#asSource410').addEventListener('change',fillFromSource);$q('#asRun410').addEventListener('click',createAndAnalyze);refreshSources(true);renderResults();return true;
   }
   function header(){
     const h=$q('header h1'),s=$q('header p');if(h)h.textContent='シャドバWB リプレイ診断 v4.10.0';if(s)s.textContent='Build 2026.09.15-15 / 分岐アシスト・資源自動引継ぎ';
@@ -145,7 +150,8 @@
     const old=$q('#wbForceLatest463')||$q('#wbForceLatest462');if(!old||old.dataset.wb410==='1')return false;const b=old.cloneNode(true);b.dataset.wb410='1';old.replaceWith(b);
     b.addEventListener('click',async()=>{if(b.disabled)return;b.disabled=true;const st=$q('#wbUpdateStatus463')||$q('#wbUpdateStatus462');if(st)st.textContent='最新版を確認中…';try{if('serviceWorker'in navigator){const reg=await navigator.serviceWorker.register('./sw.js?v=4.10.0-20260915-15',{updateViaCache:'none'});await reg.update()}if('caches'in window){const ks=await caches.keys();await Promise.all(ks.filter(k=>k.startsWith('wb-review-')&&k!=='wb-review-v4-10-0-20260915-15').map(k=>caches.delete(k)))}if(st)st.textContent='更新完了。v4.10.0で再起動します…';setTimeout(()=>{const u=new URL(location.href);u.searchParams.set('latest','4100-'+Date.now());u.hash='';location.replace(u.href)},180)}catch(err){if(st)st.textContent='更新確認に失敗しました。';b.disabled=false;safeLog('force-latest-error-v410',{message:err?.message||String(err)})}},true);return true;
   }
+  if(!document.documentElement.dataset.wb410Events){document.documentElement.dataset.wb410Events='1';document.addEventListener('click',e=>{if(e.target?.closest?.('#cfSave490,#cfNew490,[data-clone-cf],[data-edit-cf]'))setTimeout(()=>refreshSources(true),120)},true);$q('#videoFile')?.addEventListener('change',()=>setTimeout(()=>refreshSources(true),350));}
   window.__wbBranchAssistV1={version:'branch-assist-v1.0',deriveOwnTurnState,bestTemplate,validateSource,policy:{resourceRule:'PP/ExPP/EP/SEPは同ターンの保存済みリーサル状態からのみ取得。見つからなければnullで停止。',knowledgeRule:'knowledgeCutoffSecondsは親枝を継承。',branchRule:'相手手番起点から相手の返し後＝自分手番の子枝を作成。'}};
-  let n=0;const tm=setInterval(()=>{n++;window.__wbV410Active=true;mount();refreshSources();header();updater();if(n>900)clearInterval(tm)},150);
+  let n=0;const tm=setInterval(()=>{n++;window.__wbV410Active=true;mount();header();updater();if(n>900)clearInterval(tm)},150);
   safeLog('patch-v4100-active',{feature:'guided-counterfactual-response-to-lethal'});
 })();
