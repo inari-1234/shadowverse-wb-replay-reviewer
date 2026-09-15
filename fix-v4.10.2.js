@@ -1,5 +1,5 @@
 (()=>{
-  const PATCH='4.10.2-20260915-15d';
+  const PATCH='4.10.2-20260915-15e';
   const STORE='wb-counterfactual-v1';
   const $q=s=>document.querySelector(s);
   const clone=x=>{try{return structuredClone(x)}catch{return JSON.parse(JSON.stringify(x))}};
@@ -95,14 +95,14 @@
     for(const id of ['wbLatestBar462','wbLatestBar463'])$q('#'+id)?.remove();
     let bar=$q('#wbLatestBar4102');if(bar)return true;
     bar=document.createElement('div');bar.id='wbLatestBar4102';bar.style.cssText='display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px';
-    bar.innerHTML='<button id="wbForceLatest4102" type="button" style="padding:7px 10px;background:#2563eb">最新版に更新</button><button id="wbRecoverView4102" type="button" style="padding:7px 10px">表示を復旧</button><span id="wbUpdateStatus4102" style="font-size:11px;color:#9ba8bf">v4.10.2 / Build 15d</span>';
+    bar.innerHTML='<button id="wbForceLatest4102" type="button" style="padding:7px 10px;background:#2563eb">最新版に更新</button><button id="wbRecoverView4102" type="button" style="padding:7px 10px">表示を復旧</button><span id="wbUpdateStatus4102" style="font-size:11px;color:#9ba8bf">v4.10.2 / Build 15e</span>';
     header.appendChild(bar);
     $q('#wbRecoverView4102')?.addEventListener('click',()=>{recoverMain();window.scrollTo(0,0)});
     $q('#wbForceLatest4102')?.addEventListener('click',async()=>{
       const b=$q('#wbForceLatest4102'),st=$q('#wbUpdateStatus4102');if(!b||b.disabled)return;b.disabled=true;if(st)st.textContent='最新版を確認中…';
       try{
-        if('serviceWorker'in navigator){const reg=await navigator.serviceWorker.register('./sw.js?v=4.10.2-20260915-15d',{updateViaCache:'none'});await reg.update()}
-        if('caches'in window){const ks=await caches.keys();await Promise.all(ks.filter(k=>k.startsWith('wb-review-')&&k!=='wb-review-v4-10-2-20260915-15d').map(k=>caches.delete(k)))}
+        if('serviceWorker'in navigator){const reg=await navigator.serviceWorker.register('./sw.js?v=4.10.2-20260915-15e',{updateViaCache:'none'});await reg.update()}
+        if('caches'in window){const ks=await caches.keys();await Promise.all(ks.filter(k=>k.startsWith('wb-review-')&&k!=='wb-review-v4-10-2-20260915-15e').map(k=>caches.delete(k)))}
         if(st)st.textContent='更新完了。v4.10.2で再起動します…';setTimeout(()=>{const u=new URL(location.href);u.searchParams.set('latest','4102-'+Date.now());u.hash='';location.replace(u.href)},180);
       }catch(err){if(st)st.textContent='更新確認に失敗しました。';b.disabled=false;safeLog('force-latest-error-v4102',{message:err?.message||String(err)})}
     });
