@@ -1,5 +1,5 @@
 (()=>{
-  const PATCH='4.10.0-20260915-15';
+  const PATCH='4.10.0-20260915-15b';
   const CF_STORE='wb-counterfactual-v1';
   const $q=s=>document.querySelector(s);
   const uid=()=>`a${Date.now().toString(36)}${Math.random().toString(36).slice(2,7)}`;
@@ -143,12 +143,12 @@
     anchor.parentNode.insertBefore(p,anchor.nextSibling);$q('#asSource410').addEventListener('change',fillFromSource);$q('#asRun410').addEventListener('click',createAndAnalyze);refreshSources(true);renderResults();return true;
   }
   function header(){
-    const h=$q('header h1'),s=$q('header p');if(h)h.textContent='シャドバWB リプレイ診断 v4.10.0';if(s)s.textContent='Build 2026.09.15-15 / 分岐アシスト・資源自動引継ぎ';
+    const h=$q('header h1'),s=$q('header p');if(h)h.textContent='シャドバWB リプレイ診断 v4.10.0';if(s)s.textContent='Build 2026.09.15-15b / 分岐アシスト・資源自動引継ぎ';
     const st=$q('#wbUpdateStatus463')||$q('#wbUpdateStatus462');if(st&&!/最新版を確認中|更新完了/.test(st.textContent))st.textContent='v4.10.0 / 分岐アシスト';
   }
   function updater(){
     const old=$q('#wbForceLatest463')||$q('#wbForceLatest462');if(!old||old.dataset.wb410==='1')return false;const b=old.cloneNode(true);b.dataset.wb410='1';old.replaceWith(b);
-    b.addEventListener('click',async()=>{if(b.disabled)return;b.disabled=true;const st=$q('#wbUpdateStatus463')||$q('#wbUpdateStatus462');if(st)st.textContent='最新版を確認中…';try{if('serviceWorker'in navigator){const reg=await navigator.serviceWorker.register('./sw.js?v=4.10.0-20260915-15',{updateViaCache:'none'});await reg.update()}if('caches'in window){const ks=await caches.keys();await Promise.all(ks.filter(k=>k.startsWith('wb-review-')&&k!=='wb-review-v4-10-0-20260915-15').map(k=>caches.delete(k)))}if(st)st.textContent='更新完了。v4.10.0で再起動します…';setTimeout(()=>{const u=new URL(location.href);u.searchParams.set('latest','4100-'+Date.now());u.hash='';location.replace(u.href)},180)}catch(err){if(st)st.textContent='更新確認に失敗しました。';b.disabled=false;safeLog('force-latest-error-v410',{message:err?.message||String(err)})}},true);return true;
+    b.addEventListener('click',async()=>{if(b.disabled)return;b.disabled=true;const st=$q('#wbUpdateStatus463')||$q('#wbUpdateStatus462');if(st)st.textContent='最新版を確認中…';try{if('serviceWorker'in navigator){const reg=await navigator.serviceWorker.register('./sw.js?v=4.10.0-20260915-15b',{updateViaCache:'none'});await reg.update()}if('caches'in window){const ks=await caches.keys();await Promise.all(ks.filter(k=>k.startsWith('wb-review-')&&k!=='wb-review-v4-10-0-20260915-15b').map(k=>caches.delete(k)))}if(st)st.textContent='更新完了。v4.10.0で再起動します…';setTimeout(()=>{const u=new URL(location.href);u.searchParams.set('latest','4100b-'+Date.now());u.hash='';location.replace(u.href)},180)}catch(err){if(st)st.textContent='更新確認に失敗しました。';b.disabled=false;safeLog('force-latest-error-v410',{message:err?.message||String(err)})}},true);return true;
   }
   if(!document.documentElement.dataset.wb410Events){document.documentElement.dataset.wb410Events='1';document.addEventListener('click',e=>{if(e.target?.closest?.('#cfSave490,#cfNew490,[data-clone-cf],[data-edit-cf]'))setTimeout(()=>refreshSources(true),120)},true);$q('#videoFile')?.addEventListener('change',()=>setTimeout(()=>refreshSources(true),350));}
   window.__wbBranchAssistV1={version:'branch-assist-v1.0',deriveOwnTurnState,bestTemplate,validateSource,policy:{resourceRule:'PP/ExPP/EP/SEPは同ターンの保存済みリーサル状態からのみ取得。見つからなければnullで停止。',knowledgeRule:'knowledgeCutoffSecondsは親枝を継承。',branchRule:'相手手番起点から相手の返し後＝自分手番の子枝を作成。'}};
