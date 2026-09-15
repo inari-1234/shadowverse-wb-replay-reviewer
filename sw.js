@@ -1,10 +1,10 @@
-const CACHE='wb-review-v4-10-3-20260915-15f';
-const ASSETS=['./','./index.html','./manifest.webmanifest','./fix-v4.10.2-pre.js','./fix-v3.7.js','./fix-v3.7.1.js','./fix-v3.9.js','./fix-v3.9.1.js','./fix-v3.9.2.js','./fix-v4.0.js','./fix-v4.1.js','./fix-v4.2.js','./fix-v4.3.js','./fix-v4.3.1.js','./fix-v4.4.2.js','./fix-v4.4.3.js','./fix-v4.6.2.js','./fix-v4.6.3.js','./fix-v4.6.4.js','./fix-v4.6.5.js','./fix-v4.6.6.js','./fix-v4.6.7.js','./fix-v4.6.8.js','./fix-v4.6.9.js','./fix-v4.7.0.js','./fix-v4.7.1.js','./fix-v4.7.2.js','./fix-v4.8.0.js','./fix-v4.8.1.js','./fix-v4.9.0.js','./fix-v4.9.1.js','./fix-v4.9.2.js','./fix-v4.9.3.js','./fix-v4.9.4.js','./fix-v4.10.0.js','./fix-v4.10.2.js','./fix-v4.10.3.js','./strategy/sea-pirate-royal-coaching-v1.json','./strategy/sea-pirate-royal-coaching-v2.json'];
+const CACHE='wb-review-v4-10-4-20260915-16a';
+const ASSETS=["./","./index.html","./manifest.webmanifest","./fix-v4.10.2-pre.js","./fix-v3.7.js","./fix-v3.7.1.js","./fix-v3.9.js","./fix-v3.9.1.js","./fix-v3.9.2.js","./fix-v4.0.js","./fix-v4.1.js","./fix-v4.2.js","./fix-v4.3.js","./fix-v4.3.1.js","./fix-v4.4.2.js","./fix-v4.4.3.js","./fix-v4.6.2.js","./fix-v4.6.3.js","./fix-v4.6.4.js","./fix-v4.6.5.js","./fix-v4.6.6.js","./fix-v4.6.7.js","./fix-v4.6.8.js","./fix-v4.6.9.js","./fix-v4.7.0.js","./fix-v4.7.1.js","./fix-v4.7.2.js","./fix-v4.8.0.js","./fix-v4.8.1.js","./fix-v4.9.0.js","./fix-v4.9.1.js","./fix-v4.9.2.js","./fix-v4.9.3.js","./fix-v4.9.4.js","./fix-v4.10.0.js","./fix-v4.10.2.js","./fix-v4.10.3.js","./fix-v4.10.4.js","./strategy/sea-pirate-royal-coaching-v1.json","./strategy/sea-pirate-royal-coaching-v2.json"];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});
 self.addEventListener('activate',e=>{e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))]))});
 function patchHtml(text){
   const clean=text.replace(/<script src="\.\/fix-v[^\"]+\.js[^>]*><\/script>/g,'');
-  const scripts='<script src="./fix-v4.10.2-pre.js?v=4.10.3-pre-20260915-15f"></script>'+ 
+  const scripts='<script src="./fix-v4.10.2-pre.js?v=4.10.4-pre-20260915-16a"></script>'+ 
     '<script src="./fix-v3.7.js?v=3.7-20260914-07"></script>'+ 
     '<script src="./fix-v3.7.1.js?v=3.7.1-20260914-08"></script>'+ 
     '<script src="./fix-v3.9.js?v=3.9-20260914-10"></script>'+ 
@@ -25,7 +25,8 @@ function patchHtml(text){
     '<script src="./fix-v4.9.4.js?v=4.9.4-20260915-14d"></script>'+ 
     '<script src="./fix-v4.10.0.js?v=4.10.0-20260915-15b"></script>'+ 
     '<script src="./fix-v4.10.2.js?v=4.10.2-20260915-15e"></script>'+ 
-    '<script src="./fix-v4.10.3.js?v=4.10.3-20260915-15f"></script>';
+    '<script src="./fix-v4.10.3.js?v=4.10.3-20260915-15f"></script>'+ 
+    '<script src="./fix-v4.10.4.js?v=4.10.4-20260915-16a"></script>';
   return clean.replace('</body>',scripts+'</body>');
 }
 self.addEventListener('fetch',e=>{
