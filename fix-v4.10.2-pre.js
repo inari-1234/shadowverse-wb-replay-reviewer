@@ -1,5 +1,5 @@
 (()=>{
-  const VERSION='4.10.4',BUILD='2026.09.15-16a';
+  const VERSION='4.10.4',BUILD='2026.09.15-16b';
   window.__wbUiFinalVersion=VERSION;
   window.__wbLegacyUiFrozen=true;
   document.documentElement.dataset.wbLatestUi='4104';
