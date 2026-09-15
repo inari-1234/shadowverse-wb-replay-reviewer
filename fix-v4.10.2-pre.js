@@ -1,16 +1,18 @@
 (()=>{
-  const VERSION='4.10.2',BUILD='2026.09.15-15e';
+  const VERSION='4.10.3',BUILD='2026.09.15-15f';
   window.__wbUiFinalVersion=VERSION;
   window.__wbLegacyUiFrozen=true;
-  document.documentElement.dataset.wbLatestUi='4102';
+  document.documentElement.dataset.wbLatestUi='4103';
+  // Prevent v4.10.2 from globally wrapping seek(). v4.10.3 installs a scoped wrapper later.
+  window.__wbRobustSeek4102={installed:true,scopedBy:'v4.10.3-performance-fix'};
 
   const style=document.createElement('style');
   style.id='wbUiQuarantine4102';
   style.textContent=`
     header h1{font-size:0!important}
-    header h1::after{content:'シャドバWB リプレイ診断 v4.10.2';font-size:18px!important;font-weight:700}
+    header h1::after{content:'シャドバWB リプレイ診断 v4.10.3';font-size:18px!important;font-weight:700}
     header>p:first-of-type{font-size:0!important}
-    header>p:first-of-type::after{content:'Build 2026.09.15-15e / UI競合・本文描画・画像抽出を安定化';font-size:12px!important;color:#9ba8bf}
+    header>p:first-of-type::after{content:'Build 2026.09.15-15f / 解析速度を復元・画像抽出安全策は維持';font-size:12px!important;color:#9ba8bf}
   `;
   document.head.appendChild(style);
 
@@ -29,8 +31,8 @@
       return true;
     }catch{return false}
   }
-  freezeText(document.querySelector('header h1'),'シャドバWB リプレイ診断 v4.10.2');
-  freezeText(document.querySelector('header p'),`Build ${BUILD} / UI競合・本文描画・画像抽出を安定化`);
+  freezeText(document.querySelector('header h1'),'シャドバWB リプレイ診断 v4.10.3');
+  freezeText(document.querySelector('header p'),`Build ${BUILD} / 解析速度を復元・画像抽出安全策は維持`);
 
   function removeLegacyUpdateUi(){
     for(const id of ['wbLatestBar462','wbLatestBar463'])document.getElementById(id)?.remove();
