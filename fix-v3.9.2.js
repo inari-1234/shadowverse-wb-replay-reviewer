@@ -1,14 +1,14 @@
 (()=>{
-  const PATCH='3.9.2-20260915-stable-04';
+  const PATCH='3.9.2-20260915-stable-05';
   const $q=s=>document.querySelector(s);
   const header=$q('header h1'),sub=$q('header p');
   if(header) header.textContent='シャドバWB リプレイ診断 v3.9.2';
-  if(sub) sub.textContent='Build 2026.09.15-stable-04 / ターン補正高速化 + 長い演出対応';
+  if(sub) sub.textContent='Build 2026.09.15-stable-05 / ターン表示先行・OCR自動フォールバック';
 
   const play=$q('#playOrder');
   const scanPanel=$q('#scanTurns')?.closest('.panel');
   const warn=scanPanel?.querySelector('.warn');
-  if(warn) warn.textContent='単発のPP OCRはターン開始根拠にしません。右側ターンボタン本体だけを読み、演出中は判定保留。開始時刻は指数探索で絞り込み、精度を保ったまま追加シークを減らします。';
+  if(warn) warn.textContent='通常は右側ターンボタンだけを高速走査します。演出中は判定保留し、ターン列を安定取得できない場合だけ従来PP OCRへ自動フォールバックします。';
 
   window.rejectedTurns392=[];
   let indicatorSeekCount392=0;
@@ -61,7 +61,7 @@
     }
     const darkFrac=dark/total,whiteFrac=white/total,goldFrac=gold/total;
     const visible=(darkFrac>=.08&&(goldFrac>=.008||whiteFrac>=.012))||(goldFrac>=.015&&whiteFrac>=.012);
-    if(!visible||count<20)return {side:null,diff:0,pixels:count,visible:false,dark:+darkFrac.toFixed(3),white:+whiteFrac.toFixed(3),gold:+goldFrac.toFixed(3)};
+    if(!visible||count<900)return {side:null,diff:0,pixels:count,visible:false,dark:+darkFrac.toFixed(3),white:+whiteFrac.toFixed(3),gold:+goldFrac.toFixed(3)};
     const diff=(red-blue)/count,target=$q('#targetSide')?.value||'bottom',opponent=target==='top'?'bottom':'top';
     const base={diff:+diff.toFixed(2),pixels:count,visible:true,dark:+darkFrac.toFixed(3),white:+whiteFrac.toFixed(3),gold:+goldFrac.toFixed(3)};
     if(diff>15)return {side:opponent,...base};
@@ -174,6 +174,99 @@
     return [...clean,item].sort((a,b)=>seqIndex(a.side,a.turn)-seqIndex(b.side,b.turn)||a.time-b.time);
   }
 
+  async function refineFastBoundary392(priorSide,nextSide,scanStart,firstHit){
+    let lo=Math.max(.05,Number(scanStart)||.05),hi=Number(firstHit);
+    if(!Number.isFinite(hi)||hi<=lo)return hi;
+    let lastPrior=null,firstNext=null;
+    for(let t=lo;t<=hi+.001;t+=.1){
+      const s=await indicatorAt392(t);
+      if(s.side===priorSide)lastPrior=s.time;
+      else if(s.side===nextSide&&lastPrior!=null&&firstNext==null)firstNext=s.time;
+    }
+    if(firstNext==null)return hi;
+    if(lastPrior==null)return firstNext;
+    let a=lastPrior,b=firstNext;
+    for(let i=0;i<5;i++){
+      const mid=(a+b)/2,s=await indicatorAt392(mid);
+      if(s.side===nextSide)b=s.time;
+      else if(s.side===priorSide)a=s.time;
+      else{
+        const p=await indicatorAt392(Math.min(b,mid+.03));
+        if(p.side===nextSide)b=p.time;
+        else a=mid;
+      }
+    }
+    return +b.toFixed(3);
+  }
+
+  async function refineFastFirst392(side,start,firstHit){
+    let earliest=Number(firstHit);
+    for(let t=firstHit;t>=start-.001;t-=.1){
+      const s=await indicatorAt392(t);
+      if(s.side===side)earliest=s.time;
+      else if(earliest<firstHit-.05&&s.side&&s.side!==side)break;
+    }
+    return +earliest.toFixed(3);
+  }
+
+  function renderTimeline392(clean,rejected=[],mode='fast'){
+    window.turnTimeline39=clean;window.rejectedTurns392=rejected;
+    const target=$q('#targetSide')?.value||'bottom';
+    for(const k of Object.keys(turnMap))delete turnMap[k];
+    for(const r of clean.filter(x=>x.side===target))turnMap[r.turn]={time:r.time,source:`pp-v3.9.2-${r.source||'validated'}`,side:target,confidence:confidenceFrom(r),raw:r.raw||String(r.turn)};
+    renderTurnMap();updateTurnPick();
+    const tlEl=$q('#turnTimeline39');
+    if(tlEl){
+      const rows=clean.map(r=>`${r.side==='top'?'上':'下'}${r.turn}T  ${fmt(r.time)}  ${mode==='fast'?'ターン表示高速検出':'検証済み'}`);
+      if(rejected.length)rows.push(`除外 ${rejected.length}件：`+rejected.map(x=>`${x.side==='top'?'上':'下'}${x.turn}T(${x.reason})`).join('、'));
+      tlEl.textContent=rows.join('\n');
+    }
+  }
+
+  async function fastIndicatorTimeline392(){
+    const vid=typeof video!=='undefined'?video:$q('#video'),status=$q('#scanStatus');
+    const mulliganTime=Number(window.mulliganPreview442?.time);
+    if(!vid?.src||!Number.isFinite(vid.duration)||!Number.isFinite(mulliganTime))return null;
+    const first=firstSide(),other=first==='top'?'bottom':'top',start=Math.max(.1,mulliganTime+.5),step=.75,stableGap=1.6;
+    if(status)status.textContent='高速解析：ターンボタンを走査中…';
+    indicatorSeekCount392=0;
+    const coarse=[];
+    for(let t=start;t<vid.duration-.08;t+=step){
+      const s=await indicatorAt392(t);
+      coarse.push({time:+t.toFixed(3),side:s.side});
+      if(coarse.length%24===0&&status)status.textContent=`高速解析：${Math.min(99,Math.round(t/vid.duration*100))}% / OCRなし`;
+    }
+    let expected=first,prior=other,pending=[],lastAccepted=start;
+    const out=[],counts={top:0,bottom:0};
+    for(const row of coarse){
+      if(row.side===expected){
+        pending.push(row.time);
+        pending=pending.filter(x=>row.time-x<=stableGap);
+        if(pending.length>=2){
+          const firstHit=pending[0];
+          const priorHits=coarse.filter(x=>x.time>=lastAccepted&&x.time<firstHit&&x.side===prior);
+          const lo=priorHits.length?priorHits[priorHits.length-1].time:Math.max(start,firstHit-1.5);
+          const refined=out.length?await refineFastBoundary392(prior,expected,lo,firstHit):await refineFastFirst392(expected,start,firstHit);
+          counts[expected]++;
+          out.push({side:expected,turn:counts[expected],time:refined,source:'turn-indicator-fast-v3.9.2',confidence:88,raw:'',score:7,inferScore:null,indicatorOnly:true});
+          lastAccepted=refined;prior=expected;expected=expected==='top'?'bottom':'top';pending=[];
+        }
+      }else if(row.side===prior){
+        pending=[];
+      }
+    }
+    const firstCount=out.filter(x=>x.side===first).length,otherCount=out.filter(x=>x.side===other).length;
+    const structurallyValid=out.length>=4&&firstCount>=2&&otherCount>=1&&Math.abs(firstCount-otherCount)<=1&&out[0]?.side===first;
+    if(!structurallyValid){
+      try{log('fast-indicator-fallback-v392',{count:out.length,firstCount,otherCount,indicatorSeeks:indicatorSeekCount392})}catch{}
+      return null;
+    }
+    renderTimeline392(out,[],'fast');
+    if(status)status.textContent=`高速解析完了：${out.length}件 / PP OCR省略 / ターン表示シーク ${indicatorSeekCount392}回`;
+    try{log('fast-indicator-finish-v392',{patch:PATCH,firstSide:first,indicatorSeeks:indicatorSeekCount392,timeline:out.map(x=>({side:x.side,turn:x.turn,time:x.time,source:x.source}))})}catch{}
+    return out;
+  }
+
   async function sanitizeTimeline392(){
     indicatorSeekCount392=0;
     const rejected=[];
@@ -238,7 +331,28 @@
   const btn=$q('#scanTurns');
   if(btn&&typeof btn.onclick==='function'){
     const base=btn.onclick;
-    btn.onclick=async function(e){await base.call(this,e);await sanitizeTimeline392()}
+    btn.onclick=async function(e){
+      if(window.turnAnalysisBusy392)return;
+      window.turnAnalysisBusy392=true;
+      const diag=$q('#exportDiag'),diagWas=diag?.disabled;
+      if(diag)diag.disabled=true;
+      this.disabled=true;
+      const started=performance.now();
+      try{
+        const fast=await fastIndicatorTimeline392();
+        if(!fast){
+          const st=$q('#scanStatus');if(st)st.textContent='高速判定を確定できないため、従来PP OCRで再確認中…';
+          await base.call(this,e);await sanitizeTimeline392();
+          try{log('turn-analysis-mode-v392',{mode:'ocr-fallback',elapsedMs:Math.round(performance.now()-started)})}catch{}
+        }else{
+          try{log('turn-analysis-mode-v392',{mode:'indicator-fast',elapsedMs:Math.round(performance.now()-started),count:fast.length,indicatorSeeks:indicatorSeekCount392})}catch{}
+        }
+      }finally{
+        window.turnAnalysisBusy392=false;
+        this.disabled=false;
+        if(diag)diag.disabled=!!diagWas;
+      }
+    }
   }
   const exportBtn=$q('#exportDiag');
   if(exportBtn){
