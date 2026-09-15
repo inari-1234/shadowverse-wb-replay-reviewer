@@ -1,0 +1,37 @@
+(()=>{
+  const PATCH='4.9.2-20260915-12',STORE='wb-counterfactual-v1',$q=s=>document.querySelector(s);
+  const safeLog=(type,data={})=>{try{log(type,{patch:PATCH,...data})}catch{}};
+  let editId=null,inheritedCutoff=null,editCutoff=null;
+  function key(){return window.__wbCounterfactualV1?.sourceKey||null}
+  function readDb(){try{return JSON.parse(localStorage.getItem(STORE)||'null')}catch{return null}}
+  function getSession(db=readDb()){const k=key();return k?db?.sessions?.[k]:null}
+  function writeDb(db){try{localStorage.setItem(STORE,JSON.stringify(db));return true}catch{return false}}
+  function syncWindow(s){if(!window.__wbCounterfactualV1||!s)return;try{window.__wbCounterfactualV1.branches=JSON.parse(JSON.stringify(s.branches||[]))}catch{}}
+  function status(msg,color='#9aa8bf'){const e=$q('#cfStatus490');if(e){e.textContent=msg;e.style.color=color}}
+  function branchById(id){return getSession()?.branches?.find(b=>b.id===id)||null}
+  function addUi(){
+    const p=$q('#counterfactualPanel490');if(!p)return false;
+    if(!$q('#cfSide492')){const kind=$q('#cfKind490')?.closest('label');const lab=document.createElement('label');lab.innerHTML='次に動く側<select id="cfSide492"><option value="自分">自分</option><option value="相手">相手</option></select>';kind?.insertAdjacentElement('afterend',lab)}
+    if(!$q('#cfRetime492')){const row=$q('#cfSave490')?.closest('.buttons');const lab=document.createElement('label');lab.style.cssText='display:flex;align-items:center;gap:6px;margin:8px 0';lab.innerHTML='<input id="cfRetime492" type="checkbox"> 判断時点を現在の動画位置へ更新';row?.insertAdjacentElement('afterend',lab)}
+    return true;
+  }
+  function decorate(){const s=getSession(),bs=s?.branches||[],list=$q('#cfList490');if(!list)return false;for(const b of bs){const btn=list.querySelector(`[data-edit-cf="${b.id}"]`),card=btn?.closest('div[style*="border"]');if(!card)continue;const help=Array.from(card.children).find(x=>x.classList?.contains('help'));if(help){const base=help.textContent.replace(/\s*\/\s*手番:\s*(自分|相手)\s*$/,'');help.textContent=`${base} / 手番: ${b.state?.sideToAct||'自分'}`}}return true}
+  function patchAfterSave(side,retime,targetId,parentCutoff,oldCutoff){
+    const db=readDb(),s=getSession(db);if(!s)return;
+    let b=targetId?s.branches.find(x=>x.id===targetId):s.branches[s.branches.length-1];if(!b)return;
+    b.state=b.state||{};b.state.sideToAct=side;
+    if(!retime){if(targetId&&Number.isFinite(Number(oldCutoff)))b.knowledgeCutoffSeconds=oldCutoff;else if(!targetId&&Number.isFinite(Number(parentCutoff)))b.knowledgeCutoffSeconds=parentCutoff}
+    b.updatedAt=new Date().toISOString();writeDb(db);syncWindow(s);decorate();safeLog('counterfactual-side-cutoff-patched-v492',{id:b.id,side,cutoff:b.knowledgeCutoffSeconds});
+  }
+  function installEvents(){if(document.documentElement.dataset.wb492==='1')return true;document.documentElement.dataset.wb492='1';document.addEventListener('click',e=>{
+    const t=e.target;
+    const edit=t?.closest?.('[data-edit-cf]');if(edit){editId=edit.dataset.editCf;const b=branchById(editId);editCutoff=b?.knowledgeCutoffSeconds??null;inheritedCutoff=null;setTimeout(()=>{if($q('#cfSide492'))$q('#cfSide492').value=b?.state?.sideToAct||'自分';if($q('#cfRetime492'))$q('#cfRetime492').checked=false},0);return}
+    const clone=t?.closest?.('[data-clone-cf]');if(clone){editId=null;const b=branchById(clone.dataset.cloneCf);inheritedCutoff=b?.knowledgeCutoffSeconds??null;editCutoff=null;setTimeout(()=>{if($q('#cfSide492'))$q('#cfSide492').value=b?.state?.sideToAct==='相手'?'自分':'相手';if($q('#cfRetime492'))$q('#cfRetime492').checked=false},0);return}
+    if(t?.closest?.('#cfNew490')){editId=null;inheritedCutoff=null;editCutoff=null;setTimeout(()=>{if($q('#cfSide492'))$q('#cfSide492').value='自分';if($q('#cfRetime492'))$q('#cfRetime492').checked=false},0);return}
+    const send=t?.closest?.('[data-send-cf]');if(send){const b=branchById(send.dataset.sendCf);if(b?.state?.sideToAct==='相手'){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation?.();status('この枝は相手手番です。自分手番の子分岐を作ってからリーサル検証へ送ってください。','#fca5a5');return}}
+    if(t?.closest?.('#cfSave490')){const side=$q('#cfSide492')?.value||'自分',retime=!!$q('#cfRetime492')?.checked,target=editId,parentCut=inheritedCutoff,oldCut=editCutoff;setTimeout(()=>{patchAfterSave(side,retime,target,parentCut,oldCut);editId=null;inheritedCutoff=null;editCutoff=null;if($q('#cfRetime492'))$q('#cfRetime492').checked=false},50)}
+  },true);return true}
+  function updater(){const old=$q('#wbForceLatest463')||$q('#wbForceLatest462');if(!old||old.dataset.wb492==='1')return false;const b=old.cloneNode(true);b.dataset.wb492='1';old.replaceWith(b);const st=$q('#wbUpdateStatus463')||$q('#wbUpdateStatus462');if(st)st.textContent='v4.9.2 / 手番・判断時点';b.addEventListener('click',async()=>{if(b.disabled)return;b.disabled=true;if(st)st.textContent='最新版を確認中…';try{if('serviceWorker'in navigator){const reg=await navigator.serviceWorker.register('./sw.js?v=4.9.2-20260915-12',{updateViaCache:'none'});await reg.update()}if('caches'in window){const keys=await caches.keys();await Promise.all(keys.filter(k=>k.startsWith('wb-review-')&&k!=='wb-review-v4-9-2-20260915-12').map(k=>caches.delete(k)))}if(st)st.textContent='更新完了。v4.9.2で再起動します…';setTimeout(()=>{const u=new URL(location.href);u.searchParams.set('latest','492-'+Date.now());u.hash='';location.replace(u.href)},180)}catch(err){if(st)st.textContent='更新確認に失敗しました。';b.disabled=false;safeLog('force-latest-error-v492',{message:err?.message||String(err)})}});return true}
+  let n=0;const tm=setInterval(()=>{n++;addUi();installEvents();decorate();updater();const h=$q('header h1'),s=$q('header p');if(h)h.textContent='シャドバWB リプレイ診断 v4.9.2';if(s)s.textContent='Build 2026.09.15-12 / 分岐の手番・判断時点を厳密化';if(n>420)clearInterval(tm)},120);
+  safeLog('patch-v492-active',{feature:'branch-side-and-knowledge-cutoff'});
+})();
