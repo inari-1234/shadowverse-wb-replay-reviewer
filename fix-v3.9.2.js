@@ -1,16 +1,17 @@
 (()=>{
-  const PATCH='3.9.2-20260915-stable-03';
+  const PATCH='3.9.2-20260915-stable-04';
   const $q=s=>document.querySelector(s);
   const header=$q('header h1'),sub=$q('header p');
   if(header) header.textContent='シャドバWB リプレイ診断 v3.9.2';
-  if(sub) sub.textContent='Build 2026.09.15-stable-03 / ターンボタン限定 + 演出遮蔽除外 + 1T復元';
+  if(sub) sub.textContent='Build 2026.09.15-stable-04 / ターン補正高速化 + 長い演出対応';
 
   const play=$q('#playOrder');
   const scanPanel=$q('#scanTurns')?.closest('.panel');
   const warn=scanPanel?.querySelector('.warn');
-  if(warn) warn.textContent='単発のPP OCRはターン開始根拠にしません。右側ターンボタン本体だけを読み、全画面演出で隠れた瞬間は判定保留にします。先攻1TがOCRで欠けた場合は表示切替から復元します。';
+  if(warn) warn.textContent='単発のPP OCRはターン開始根拠にしません。右側ターンボタン本体だけを読み、演出中は判定保留。開始時刻は指数探索で絞り込み、精度を保ったまま追加シークを減らします。';
 
   window.rejectedTurns392=[];
+  let indicatorSeekCount392=0;
   function firstSide(){return play?.value==='先攻'?'bottom':'top'}
   function key(x){return `${x.side}:${x.turn}`}
   function seqIndex(side,turn){const first=firstSide(),second=first==='top'?'bottom':'top';return (turn-1)*2+(side===first?0:side===second?1:99)}
@@ -44,9 +45,6 @@
     if(!vid?.videoWidth||!vid?.videoHeight)return {side:null,diff:0,pixels:0,visible:false};
     const c=document.createElement('canvas');c.width=48;c.height=64;
     const x=c.getContext('2d',{willReadFrequently:true});
-    // Crop only the circular YOUR TURN / ENEMY TURN button. The older, wider crop
-    // also contained PP panels and board effects, so full-screen red/blue effects
-    // could masquerade as a side change.
     const sx=Math.round(vid.videoWidth*.82),sy=Math.round(vid.videoHeight*.34),sw=Math.max(8,Math.round(vid.videoWidth*.09)),sh=Math.max(8,Math.round(vid.videoHeight*.21));
     x.drawImage(vid,sx,sy,sw,sh,0,0,c.width,c.height);
     const d=x.getImageData(0,0,c.width,c.height).data,total=Math.max(1,d.length/4);
@@ -62,8 +60,6 @@
       count++;
     }
     const darkFrac=dark/total,whiteFrac=white/total,goldFrac=gold/total;
-    // A real turn button contains a dark body plus white/gold UI detail.
-    // Full-screen attack/evolution effects tend to be almost uniformly red/blue.
     const visible=(darkFrac>=.08&&(goldFrac>=.008||whiteFrac>=.012))||(goldFrac>=.015&&whiteFrac>=.012);
     if(!visible||count<20)return {side:null,diff:0,pixels:count,visible:false,dark:+darkFrac.toFixed(3),white:+whiteFrac.toFixed(3),gold:+goldFrac.toFixed(3)};
     const diff=(red-blue)/count,target=$q('#targetSide')?.value||'bottom',opponent=target==='top'?'bottom':'top';
@@ -75,7 +71,7 @@
   async function indicatorAt392(t){
     const vid=typeof video!=='undefined'?video:$q('#video');
     if(!vid?.src||!Number.isFinite(vid.duration))return {time:t,side:null,diff:0,pixels:0,visible:false};
-    t=Math.max(.05,Math.min(vid.duration-.08,t));
+    t=Math.max(.05,Math.min(vid.duration-.08,t));indicatorSeekCount392++;
     try{
       if(typeof seek==='function')await seek(t,'turn-indicator-v392');
       else if(Math.abs(vid.currentTime-t)>.025)await new Promise((resolve,reject)=>{
@@ -86,7 +82,7 @@
     return {time:+t.toFixed(3),...indicatorSignal392()};
   }
   async function usableIndicator392(anchor,side){
-    for(const off of [0,-.18,-.36,.18,.36,-.54,.54,-.72,.72]){
+    for(const off of [0,-.25,.25,-.5,.5,-1,1,-1.5,1.5,-2,2]){
       const s=await indicatorAt392(anchor+off);
       if(s.side===side)return s;
     }
@@ -95,7 +91,7 @@
   async function resolvedIndicator392(t){
     let s=await indicatorAt392(t);
     if(s.side)return s;
-    for(const off of [-.10,.10,-.20,.20]){
+    for(const off of [-.12,.12,-.28,.28]){
       const p=await indicatorAt392(t+off);
       if(p.side)return p;
     }
@@ -106,25 +102,24 @@
     if(!Number.isFinite(anchor)||anchor<.7)return item;
     const usable=await usableIndicator392(anchor,item.side);
     if(!usable)return item;
-    let hi=usable.time,lo=null;
-    for(let t=hi-.5;t>=Math.max(.1,anchor-5.0)-.001;t-=.5){
-      const s=await indicatorAt392(t);
-      if(s.side===item.side){hi=t;continue}
-      if(s.side&&s.side!==item.side){lo=t;break}
+    let hi=usable.time,lo=null,lastSame=hi;
+    for(const back of [.75,1.5,3,4.5,6,7.5,8.5]){
+      const s=await resolvedIndicator392(Math.max(.1,hi-back));
+      if(s.side===item.side){lastSame=s.time;continue}
+      if(s.side&&s.side!==item.side){lo=s.time;break}
     }
-    if(lo==null||hi<=lo)return item;
-    const loSig=await resolvedIndicator392(lo),hiSig=await resolvedIndicator392(hi);
-    if(loSig.side===item.side||hiSig.side!==item.side)return item;
-    for(let i=0;i<5;i++){
+    if(lo==null||lastSame<=lo)return item;
+    hi=lastSame;
+    for(let i=0;i<6;i++){
       const mid=(lo+hi)/2,s=await resolvedIndicator392(mid);
-      if(s.side===item.side)hi=mid;
-      else if(s.side&&s.side!==item.side)lo=mid;
+      if(s.side===item.side)hi=s.time;
+      else if(s.side&&s.side!==item.side)lo=s.time;
       else break;
     }
     const refined=+hi.toFixed(3),delta=anchor-refined;
-    if(delta<.08||delta>5.2)return item;
+    if(delta<.08||delta>8.7)return item;
     const out={...item,time:refined,source:'turn-indicator-refined-v3.9.2',ppStableTime:anchor,indicatorRefinedFrom:anchor};
-    try{log('turn-indicator-refined-v392',{side:item.side,turn:item.turn,from:anchor,to:refined,delta:+delta.toFixed(3),priorSource:item.source||'',buttonCrop:'tight-v3'})}catch{}
+    try{log('turn-indicator-refined-v392',{side:item.side,turn:item.turn,from:anchor,to:refined,delta:+delta.toFixed(3),priorSource:item.source||'',buttonCrop:'tight-v4',search:'exponential'})}catch{}
     return out;
   }
   async function refineAcceptedStarts392(clean){
@@ -180,6 +175,7 @@
   }
 
   async function sanitizeTimeline392(){
+    indicatorSeekCount392=0;
     const rejected=[];
     let tl=(window.turnTimeline39||[]).map(x=>reanchor392({...x},rejected)).filter(Boolean);
     const first=firstSide(),second=first==='top'?'bottom':'top';
@@ -214,7 +210,7 @@
 
     let clean=[...map.values()].sort((a,b)=>seqIndex(a.side,a.turn)-seqIndex(b.side,b.turn)||a.time-b.time);
     const status=$q('#scanStatus');
-    if(status)status.textContent='PP列を検証済み。ターン開始表示で時刻を補正中…';
+    if(status)status.textContent='PP列を検証済み。ターン開始表示を高速補正中…';
     clean=await refineAcceptedStarts392(clean);
     clean=await recoverMissingFirstTurn392(clean);
 
@@ -235,8 +231,8 @@
       if(rejected.length)rows.push(`除外 ${rejected.length}件：`+rejected.map(x=>`${x.side==='top'?'上':'下'}${x.turn}T(${x.reason})`).join('、'));
       tlEl.textContent=rows.join('\n');
     }
-    if(status)status.textContent=`解析完了：${clean.length}件 / 誤認除外 ${rejected.length}件 / ターンボタンで開始時刻補正・1T復元`;
-    try{log('postprocess-v392',{patch:PATCH,firstSide:first,rejected:rejected.map(x=>({side:x.side,turn:x.turn,time:x.time,reason:x.reason})),timeline:clean.map(x=>({side:x.side,turn:x.turn,time:x.time,source:x.source,reanchoredFrom:x.reanchoredFrom||null,ppStableTime:x.ppStableTime||null,recoveredWithoutPPOCR:!!x.recoveredWithoutPPOCR}))})}catch{}
+    if(status)status.textContent=`解析完了：${clean.length}件 / 誤認除外 ${rejected.length}件 / ターン補正シーク ${indicatorSeekCount392}回`;
+    try{log('postprocess-v392',{patch:PATCH,firstSide:first,indicatorSeeks:indicatorSeekCount392,rejected:rejected.map(x=>({side:x.side,turn:x.turn,time:x.time,reason:x.reason})),timeline:clean.map(x=>({side:x.side,turn:x.turn,time:x.time,source:x.source,reanchoredFrom:x.reanchoredFrom||null,ppStableTime:x.ppStableTime||null,recoveredWithoutPPOCR:!!x.recoveredWithoutPPOCR}))})}catch{}
   }
 
   const btn=$q('#scanTurns');
@@ -247,7 +243,7 @@
   const exportBtn=$q('#exportDiag');
   if(exportBtn){
     exportBtn.onclick=()=>{
-      try{log('diagnostic-export-v392',{timelineCount:window.turnTimeline39?.length||0,rejectedCount:window.rejectedTurns392?.length||0,firstSide:firstSide()})}catch{}
+      try{log('diagnostic-export-v392',{timelineCount:window.turnTimeline39?.length||0,rejectedCount:window.rejectedTurns392?.length||0,firstSide:firstSide(),indicatorSeeks:indicatorSeekCount392})}catch{}
       const compact=(window.ocrSamples39||[]).map(x=>({side:x.side,time:x.time,n:x.n,raw:x.raw,confidence:x.confidence,quality:x.quality,pattern:x.pattern,variant:x.variant}));
       const data={format:'shadowverse-wb-diagnostic-v3.9.2',build:PATCH,createdAt:new Date().toISOString(),userAgent:navigator.userAgent,video:videoFileMeta?{...videoFileMeta,duration:video.duration,currentTime:video.currentTime,width:video.videoWidth,height:video.videoHeight}:null,ppPoints:window.v39Points||points,targetSide:$q('#targetSide')?.value,playOrder:play?.value,firstSide:firstSide(),turnTimeline:window.turnTimeline39||[],rejectedTurns:window.rejectedTurns392||[],inference:window.inference39||[],ocrSamples:compact,turnMap,events};
       const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),a=document.createElement('a');
