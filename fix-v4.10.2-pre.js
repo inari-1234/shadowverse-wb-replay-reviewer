@@ -1,54 +1,38 @@
 (()=>{
-  const VERSION='4.10.3',BUILD='2026.09.15-15f';
+  const VERSION='4.10.4',BUILD='2026.09.15-16a';
   window.__wbUiFinalVersion=VERSION;
   window.__wbLegacyUiFrozen=true;
-  document.documentElement.dataset.wbLatestUi='4103';
-  // Prevent v4.10.2 from globally wrapping seek(). v4.10.3 installs a scoped wrapper later.
+  document.documentElement.dataset.wbLatestUi='4104';
+
+  // v4.10.2の全seekラップを防ぎ、v4.10.3のfull-match限定待ちだけを使う。
   window.__wbRobustSeek4102={installed:true,scopedBy:'v4.10.3-performance-fix'};
 
+  const legacyIds=['wbLatestBar462','wbLatestBar463','wbLatestBar4102','wbLatestBar4103'];
   const style=document.createElement('style');
-  style.id='wbUiQuarantine4102';
+  style.id='wbUiPre4104';
   style.textContent=`
-    header h1{font-size:0!important}
-    header h1::after{content:'シャドバWB リプレイ診断 v4.10.3';font-size:18px!important;font-weight:700}
-    header>p:first-of-type{font-size:0!important}
-    header>p:first-of-type::after{content:'Build 2026.09.15-15f / 解析速度を復元・画像抽出安全策は維持';font-size:12px!important;color:#9ba8bf}
+    #wbLatestBar462,#wbLatestBar463,#wbLatestBar4102,#wbLatestBar4103{display:none!important}
   `;
   document.head.appendChild(style);
 
-  function nativeTextDescriptor(){
-    let p=Node.prototype;
-    while(p){const d=Object.getOwnPropertyDescriptor(p,'textContent');if(d?.get&&d?.set)return d;p=Object.getPrototypeOf(p)}
-    return null;
-  }
-  const textDesc=nativeTextDescriptor();
-  function freezeText(el,target){
-    if(!el)return false;
-    try{if(textDesc)textDesc.set.call(el,target);else el.textContent=target}catch{}
-    if(!textDesc)return true;
-    try{
-      Object.defineProperty(el,'textContent',{configurable:true,enumerable:true,get(){return textDesc.get.call(this)},set(v){if(String(v)===target)textDesc.set.call(this,target)}});
-      return true;
-    }catch{return false}
-  }
-  freezeText(document.querySelector('header h1'),'シャドバWB リプレイ診断 v4.10.3');
-  freezeText(document.querySelector('header p'),`Build ${BUILD} / 解析速度を復元・画像抽出安全策は維持`);
-
   function removeLegacyUpdateUi(){
-    for(const id of ['wbLatestBar462','wbLatestBar463'])document.getElementById(id)?.remove();
+    for(const id of legacyIds) document.getElementById(id)?.remove();
   }
   removeLegacyUpdateUi();
+
+  try{window.__wbHeaderObserver494?.disconnect?.()}catch{}
+  try{window.__wbHeaderObserver4101?.disconnect?.()}catch{}
+  try{window.__wbLegacyUpdateUiObserver4102?.disconnect?.()}catch{}
+
   if(window.MutationObserver){
     const h=document.querySelector('header');
     if(h){
       const mo=new MutationObserver(()=>removeLegacyUpdateUi());
       mo.observe(h,{childList:true,subtree:true});
-      window.__wbLegacyUpdateUiObserver4102=mo;
+      window.__wbLegacyUpdateUiObserver4104=mo;
     }
   }
 
-  try{window.__wbHeaderObserver494?.disconnect?.()}catch{}
-  try{window.__wbHeaderObserver4101?.disconnect?.()}catch{}
   try{history.scrollRestoration='manual'}catch{}
   if(new URL(location.href).searchParams.has('latest')){
     const reset=()=>{try{window.scrollTo(0,0)}catch{}};
