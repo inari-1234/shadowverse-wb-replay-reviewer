@@ -4,6 +4,16 @@
   window.__wbLegacyUiFrozen=true;
   document.documentElement.dataset.wbLatestUi='4102';
 
+  const style=document.createElement('style');
+  style.id='wbUiQuarantine4102';
+  style.textContent=`
+    header h1{font-size:0!important}
+    header h1::after{content:'シャドバWB リプレイ診断 v4.10.2';font-size:18px!important;font-weight:700}
+    header>p:first-of-type{font-size:0!important}
+    header>p:first-of-type::after{content:'Build 2026.09.15-15d / UI競合・本文描画・画像抽出を安定化';font-size:12px!important;color:#9ba8bf}
+  `;
+  document.head.appendChild(style);
+
   function nativeTextDescriptor(){
     let p=Node.prototype;
     while(p){const d=Object.getOwnPropertyDescriptor(p,'textContent');if(d?.get&&d?.set)return d;p=Object.getPrototypeOf(p)}
