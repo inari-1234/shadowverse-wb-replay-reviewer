@@ -1,5 +1,5 @@
 (()=>{
-  const PATCH='4.9.4-20260915-14';
+  const PATCH='4.9.4-20260915-14b';
   const STORE='wb-counterfactual-v1';
   const $q=s=>document.querySelector(s);
   const safeLog=(type,data={})=>{try{log(type,{patch:PATCH,...data})}catch{}};
@@ -132,7 +132,7 @@
     document.documentElement.dataset.wbLatestUi='494';
     const h=$q('header h1'),s=$q('header p');
     if(h&&h.textContent!=='シャドバWB リプレイ診断 v4.9.4')h.textContent='シャドバWB リプレイ診断 v4.9.4';
-    if(s&&s.textContent!=='Build 2026.09.15-14 / 手番表示・JSON出力・分岐同期を安定化')s.textContent='Build 2026.09.15-14 / 手番表示・JSON出力・分岐同期を安定化';
+    if(s&&s.textContent!=='Build 2026.09.15-14b / 手番表示・JSON出力・分岐同期を安定化')s.textContent='Build 2026.09.15-14b / 手番表示・JSON出力・分岐同期を安定化';
     const ub=$q('#wbForceLatest463')||$q('#wbForceLatest462');
     const st=$q('#wbUpdateStatus463')||$q('#wbUpdateStatus462');if(st&&!ub?.disabled&&!/v4\.9\.4/.test(st.textContent))st.textContent='v4.9.4 / 表示・JSON・分岐同期修正版';
   }
@@ -142,7 +142,7 @@
     const mo=new MutationObserver(()=>{
       document.documentElement.dataset.wbLatestUi='494';
       if(h&&h.textContent!=='シャドバWB リプレイ診断 v4.9.4')h.textContent='シャドバWB リプレイ診断 v4.9.4';
-      if(s&&s.textContent!=='Build 2026.09.15-14 / 手番表示・JSON出力・分岐同期を安定化')s.textContent='Build 2026.09.15-14 / 手番表示・JSON出力・分岐同期を安定化';
+      if(s&&s.textContent!=='Build 2026.09.15-14b / 手番表示・JSON出力・分岐同期を安定化')s.textContent='Build 2026.09.15-14b / 手番表示・JSON出力・分岐同期を安定化';
     });
     if(h)mo.observe(h,{childList:true,subtree:true,characterData:true});if(s)mo.observe(s,{childList:true,subtree:true,characterData:true});
     window.__wbHeaderObserver494=mo;document.documentElement.dataset.wb494HeaderObserver='1';
@@ -151,7 +151,7 @@
   function updater(){
     const old=$q('#wbForceLatest463')||$q('#wbForceLatest462');if(!old||old.dataset.wb494==='1')return false;
     const b=old.cloneNode(true);b.dataset.wb494='1';b.dataset.wb493='1';b.dataset.wb492='1';old.replaceWith(b);
-    b.addEventListener('click',async()=>{if(b.disabled)return;b.disabled=true;const st=$q('#wbUpdateStatus463')||$q('#wbUpdateStatus462');if(st)st.textContent='最新版を確認中…';try{if('serviceWorker'in navigator){const reg=await navigator.serviceWorker.register('./sw.js?v=4.9.4-20260915-14',{updateViaCache:'none'});await reg.update()}if('caches'in window){const keys=await caches.keys();await Promise.all(keys.filter(k=>k.startsWith('wb-review-')&&k!=='wb-review-v4-9-4-20260915-14').map(k=>caches.delete(k)))}if(st)st.textContent='更新完了。v4.9.4で再起動します…';setTimeout(()=>{const u=new URL(location.href);u.searchParams.set('latest','494-'+Date.now());u.hash='';location.replace(u.href)},180)}catch(err){if(st)st.textContent='更新確認に失敗しました。';b.disabled=false;safeLog('force-latest-error-v494',{message:err?.message||String(err)})}},true);
+    b.addEventListener('click',async()=>{if(b.disabled)return;b.disabled=true;const st=$q('#wbUpdateStatus463')||$q('#wbUpdateStatus462');if(st)st.textContent='最新版を確認中…';try{if('serviceWorker'in navigator){const reg=await navigator.serviceWorker.register('./sw.js?v=4.9.4-20260915-14b',{updateViaCache:'none'});await reg.update()}if('caches'in window){const keys=await caches.keys();await Promise.all(keys.filter(k=>k.startsWith('wb-review-')&&k!=='wb-review-v4-9-4-20260915-14b').map(k=>caches.delete(k)))}if(st)st.textContent='更新完了。v4.9.4で再起動します…';setTimeout(()=>{const u=new URL(location.href);u.searchParams.set('latest','494b-'+Date.now());u.hash='';location.replace(u.href)},180)}catch(err){if(st)st.textContent='更新確認に失敗しました。';b.disabled=false;safeLog('force-latest-error-v494',{message:err?.message||String(err)})}},true);
     return true;
   }
 
