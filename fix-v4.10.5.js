@@ -1,5 +1,5 @@
 (()=>{
-  const PATCH='4.10.5-20260916-17';
+  const PATCH='4.10.5-20260916-17a';
   const $q=s=>document.querySelector(s);
   const safeLog=(type,data={})=>{try{log(type,{patch:PATCH,...data})}catch{}};
   let publicInfoHandler=null,lethalFillHandler=null;
@@ -78,8 +78,8 @@
       b.addEventListener('click',async()=>{
         const s=$q('#wbUpdateStatus4104');if(b.disabled)return;b.disabled=true;if(s)s.textContent='最新版を確認中…';
         try{
-          if('serviceWorker'in navigator){const reg=await navigator.serviceWorker.register('./sw.js?v=4.10.5-20260916-17',{updateViaCache:'none'});await reg.update()}
-          if('caches'in window){const ks=await caches.keys();await Promise.all(ks.filter(k=>k.startsWith('wb-review-')&&k!=='wb-review-v4-10-5-20260916-27').map(k=>caches.delete(k)))}
+          if('serviceWorker'in navigator){const reg=await navigator.serviceWorker.register('./sw.js?v=4.10.5-20260916-17a',{updateViaCache:'none'});await reg.update()}
+          if('caches'in window){const ks=await caches.keys();await Promise.all(ks.filter(k=>k.startsWith('wb-review-')&&k!=='wb-review-v4-10-5-20260916-28').map(k=>caches.delete(k)))}
           if(s)s.textContent='更新完了。v4.10.5で再起動します…';
           setTimeout(()=>{const u=new URL(location.href);u.searchParams.set('latest','4105-'+Date.now());u.hash='';location.replace(u.href)},180);
         }catch(err){if(s)s.textContent='更新確認に失敗しました。';b.disabled=false;safeLog('force-latest-error-v4105',{message:err?.message||String(err)})}
@@ -94,7 +94,7 @@
     window.__wbStateSafety4105=state;safeLog('state-safety-invariant-v4105',state);return state.ok;
   }
 
-  let tries=0;const tm=setInterval(()=>{tries++;installLatestUi();installPublicInfoFill();installLethalFill();if(tries%10===0)verify();if(tries>300)clearInterval(tm)},120);
+  let tries=0,readyStreak=0;const tm=setInterval(()=>{tries++;installLatestUi();const pi=installPublicInfoFill(),le=installLethalFill();readyStreak=pi&&le?readyStreak+1:0;if(tries%10===0)verify();if(readyStreak>=5||tries>60)clearInterval(tm)},120);
   [50,300,900,2200,5000].forEach(ms=>setTimeout(()=>{installLatestUi();installPublicInfoFill();installLethalFill();verify()},ms));
   window.__wbStateAcquisition4105={timelineContext,verify,ppMode:'manual-or-unknown-no-turn-derivation'};
   safeLog('patch-v4105-active',{feature:'state-source-safety-side-mapping-no-fake-pp'});
