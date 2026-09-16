@@ -1,8 +1,7 @@
 (()=>{
-  const PATCH='4.10.8.3-20260917-20e';
+  const PATCH='4.10.8.3-20260917-20f';
   const $q=s=>document.querySelector(s);
   const safeLog=(type,data={})=>{try{log(type,{patch:PATCH,...data})}catch{}};
-  const delay=ms=>new Promise(r=>setTimeout(r,ms));
   let busy=false;
 
   function videoEl(){return typeof video!=='undefined'?video:$q('#video')}
@@ -199,12 +198,13 @@
   function note(){
     const p=$q('#lethalPanel480');if(!p||$q('#leCanonicalNote41083'))return false;
     const n=document.createElement('p');n.id='leCanonicalNote41083';n.className='help';
-    n.textContent='状態取得20e：旧パッチの多重onclick連鎖を通さず、ターン→PP→相手HP→資源を1本の取得経路で処理します。相手守護は未確認／なし／ありを区別し、未確認のままではリーサル状態を保存しません。';
+    n.textContent='状態取得20f：旧パッチの多重onclick連鎖を通さず、ターン→PP→相手HP→資源を1本の取得経路で処理します。相手守護は未確認／なし／ありを区別し、未確認のままではリーサル状態を保存しません。';
     p.appendChild(n);return true
   }
   function buildStyle(){
     let s=$q('#wbUiFeature41083');if(!s){s=document.createElement('style');s.id='wbUiFeature41083';document.head.appendChild(s)}
-    s.textContent="header h1{font-size:0!important}header h1::after{content:'シャドバWB リプレイ診断 v4.10.8';font-size:18px!important;font-weight:700}header>p:first-of-type{font-size:0!important}header>p:first-of-type::after{content:'Build 2026.09.17-20e / 状態取得経路固定 + 守護三値化';font-size:12px!important;color:#9ba8bf}";
+    const css="header h1{font-size:0!important}header h1::after{content:'シャドバWB リプレイ診断 v4.10.8';font-size:18px!important;font-weight:700}header>p:first-of-type{font-size:0!important}header>p:first-of-type::after{content:'Build 2026.09.17-20f / 状態取得経路固定 + 守護三値化';font-size:12px!important;color:#9ba8bf}";
+    if(s.textContent!==css)s.textContent=css;
   }
   function verify(){
     const b=$q('#leFill480'),w=$q('#leWard480'),sel=$q('#leWardState41083');
