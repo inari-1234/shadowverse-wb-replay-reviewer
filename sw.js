@@ -1,5 +1,5 @@
-const CACHE='wb-review-v4-10-7-20260916-31';
-const ASSETS=["./","./index.html","./manifest.webmanifest","./fix-v4.10.2-pre.js","./fix-v3.7.js","./fix-v3.7.1.js","./fix-v3.9.js","./fix-v3.9.1.js","./fix-v3.9.2.js","./fix-v4.0.js","./fix-v4.1.js","./fix-v4.2.js","./fix-v4.3.js","./fix-v4.3.1.js","./fix-v4.4.2.js","./fix-v4.4.3.js","./fix-v4.6.2.js","./fix-v4.6.3.js","./fix-v4.6.4.js","./fix-v4.6.5.js","./fix-v4.6.6.js","./fix-v4.6.7.js","./fix-v4.6.8.js","./fix-v4.6.9.js","./fix-v4.7.0.js","./fix-v4.7.1.js","./fix-v4.7.2.js","./fix-v4.8.0.js","./fix-v4.8.1.js","./fix-v4.9.0.js","./fix-v4.9.1.js","./fix-v4.9.2.js","./fix-v4.9.3.js","./fix-v4.9.4.js","./fix-v4.10.0.js","./fix-v4.10.2.js","./fix-v4.10.3.js","./fix-v4.10.4.js","./fix-v4.10.5.js","./fix-v4.10.6.js","./fix-v4.10.7.js","./strategy/sea-pirate-royal-coaching-v1.json","./strategy/sea-pirate-royal-coaching-v2.json"];
+const CACHE='wb-review-v4-10-8-20260916-32';
+const ASSETS=["./","./index.html","./manifest.webmanifest","./fix-v4.10.2-pre.js","./fix-v3.7.js","./fix-v3.7.1.js","./fix-v3.9.js","./fix-v3.9.1.js","./fix-v3.9.2.js","./fix-v4.0.js","./fix-v4.1.js","./fix-v4.2.js","./fix-v4.3.js","./fix-v4.3.1.js","./fix-v4.4.2.js","./fix-v4.4.3.js","./fix-v4.6.2.js","./fix-v4.6.3.js","./fix-v4.6.4.js","./fix-v4.6.5.js","./fix-v4.6.6.js","./fix-v4.6.7.js","./fix-v4.6.8.js","./fix-v4.6.9.js","./fix-v4.7.0.js","./fix-v4.7.1.js","./fix-v4.7.2.js","./fix-v4.8.0.js","./fix-v4.8.1.js","./fix-v4.9.0.js","./fix-v4.9.1.js","./fix-v4.9.2.js","./fix-v4.9.3.js","./fix-v4.9.4.js","./fix-v4.10.0.js","./fix-v4.10.2.js","./fix-v4.10.3.js","./fix-v4.10.4.js","./fix-v4.10.5.js","./fix-v4.10.6.js","./fix-v4.10.7.js","./fix-v4.10.8.js","./strategy/sea-pirate-royal-coaching-v1.json","./strategy/sea-pirate-royal-coaching-v2.json"];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});
 self.addEventListener('activate',e=>{e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))]))});
 function patchHtml(text){
@@ -29,7 +29,8 @@ function patchHtml(text){
     '<script src="./fix-v4.10.4.js?v=4.10.4-20260915-16b"></script>'+ 
     '<script src="./fix-v4.10.5.js?v=4.10.5-20260916-17a"></script>'+ 
     '<script src="./fix-v4.10.6.js?v=4.10.6-20260916-18a"></script>'+ 
-    '<script src="./fix-v4.10.7.js?v=4.10.7-20260916-19a"></script>';
+    '<script src="./fix-v4.10.7.js?v=4.10.7-20260916-19a"></script>'+ 
+    '<script src="./fix-v4.10.8.js?v=4.10.8-20260916-20a"></script>';
   return clean.replace('</body>',scripts+'</body>');
 }
 self.addEventListener('fetch',e=>{
