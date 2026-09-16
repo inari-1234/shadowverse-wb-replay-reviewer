@@ -1,5 +1,5 @@
 (()=>{
-  const PATCH='4.10.6-20260916-18';
+  const PATCH='4.10.6-20260916-18a';
   const $q=s=>document.querySelector(s);
   const safeLog=(type,data={})=>{try{log(type,{patch:PATCH,...data})}catch{}};
   const CFG={dx:.01125,dy:.0325,green:18,active:72,strongActive:85,strongInactive:75,strongGreen:22,strongNonGreen:17,scanStep:.25,scanWindow:1.8};
@@ -53,9 +53,9 @@
     if(ctx.reviewedSide!=='bottom')return{accepted:false,reason:'top-side-not-supported'};
     const expected=expectedMaxAt(ctx.time,'bottom');if(!expected)return{accepted:false,reason:'before-first-reviewed-turn'};
     let sample=readBottomPips(expected);sample.sampleTime=ctx.time;sample.mode='direct';
-    if(sample.accepted)return sample;
-    const ownStart=ctx.row?.side==='bottom'?Number(ctx.row.time):NaN,delta=Number.isFinite(ownStart)?ctx.time-ownStart:Infinity;
-    if(!(delta>=-.05&&delta<CFG.scanWindow))return sample;
+    const ownStart=ctx.row?.side==='bottom'?Number(ctx.row.time):NaN,delta=Number.isFinite(ownStart)?ctx.time-ownStart:Infinity,nearStart=delta>=-.05&&delta<CFG.scanWindow,refillPending=nearStart&&delta<1.55&&sample.accepted&&sample.current!==expected;
+    if(sample.accepted&&!refillPending)return sample;
+    if(!nearStart)return sample;
     const original=ctx.time,end=ownStart+CFG.scanWindow;
     try{
       for(let t=Math.max(original+CFG.scanStep,ownStart+CFG.scanStep);t<=end+.001;t+=CFG.scanStep){
@@ -95,7 +95,7 @@
     window.__wbUiFinalVersion='4.10.6';document.documentElement.dataset.wbLatestUi='4106';let s=$q('#wbUiFinal4106');if(!s){s=document.createElement('style');s.id='wbUiFinal4106';document.head.appendChild(s)}
     s.textContent="header h1::after{content:'シャドバWB リプレイ診断 v4.10.6' !important}header>p:first-of-type::after{content:'Build 2026.09.16-18 / PPゲージ画像認識' !important}";
     const st=$q('#wbUpdateStatus4104');if(st)st.textContent='v4.10.6 / PPゲージ画像認識';const old=$q('#wbForceLatest4104');
-    if(old&&old.dataset.wb4106!=='1'){const b=old.cloneNode(true);b.dataset.wb4106='1';old.replaceWith(b);b.addEventListener('click',async()=>{const x=$q('#wbUpdateStatus4104');if(b.disabled)return;b.disabled=true;if(x)x.textContent='最新版を確認中…';try{if('serviceWorker'in navigator){const reg=await navigator.serviceWorker.register('./sw.js?v=4.10.6-20260916-18',{updateViaCache:'none'});await reg.update()}if('caches'in window){const ks=await caches.keys();await Promise.all(ks.filter(k=>k.startsWith('wb-review-')&&k!=='wb-review-v4-10-6-20260916-29').map(k=>caches.delete(k)))}if(x)x.textContent='更新完了。v4.10.6で再起動します…';setTimeout(()=>{const u=new URL(location.href);u.searchParams.set('latest','4106-'+Date.now());u.hash='';location.replace(u.href)},180)}catch(err){if(x)x.textContent='更新確認に失敗しました。';b.disabled=false;safeLog('force-latest-error-v4106',{message:err?.message||String(err)})}})}
+    if(old&&old.dataset.wb4106!=='1'){const b=old.cloneNode(true);b.dataset.wb4106='1';old.replaceWith(b);b.addEventListener('click',async()=>{const x=$q('#wbUpdateStatus4104');if(b.disabled)return;b.disabled=true;if(x)x.textContent='最新版を確認中…';try{if('serviceWorker'in navigator){const reg=await navigator.serviceWorker.register('./sw.js?v=4.10.6-20260916-18a',{updateViaCache:'none'});await reg.update()}if('caches'in window){const ks=await caches.keys();await Promise.all(ks.filter(k=>k.startsWith('wb-review-')&&k!=='wb-review-v4-10-6-20260916-30').map(k=>caches.delete(k)))}if(x)x.textContent='更新完了。v4.10.6で再起動します…';setTimeout(()=>{const u=new URL(location.href);u.searchParams.set('latest','4106-'+Date.now());u.hash='';location.replace(u.href)},180)}catch(err){if(x)x.textContent='更新確認に失敗しました。';b.disabled=false;safeLog('force-latest-error-v4106',{message:err?.message||String(err)})}})}
   }
   function verify(){const b=$q('#leFill480');const state={mounted:!!b,handlerOk:!b||b.onclick===fillHandler,targetSide:targetSide(),patch:PATCH,checkedAt:new Date().toISOString()};state.ok=state.handlerOk;window.__wbPpSafety4106=state;safeLog('pp-state-invariant-v4106',state);return state.ok}
   $q('#videoFile')?.addEventListener('change',()=>{const pp=$q('#lePp480');if(pp?.dataset?.wbPpSource==='image-pips-v4106'){pp.value='';pp.dataset.wbPpSource='unknown'}window.__wbPpState4106=null});
