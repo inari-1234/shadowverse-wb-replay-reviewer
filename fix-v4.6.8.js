@@ -1,5 +1,5 @@
 (()=>{
-  const PATCH='4.6.8-20260916-06';
+  const PATCH='4.6.8-20260916-07';
   const $q=s=>document.querySelector(s);
   const safeLog=(type,data={})=>{try{log(type,{patch:PATCH,...data})}catch{}};
   const rgbToHsv=(r,g,b)=>{r/=255;g/=255;b/=255;const max=Math.max(r,g,b),min=Math.min(r,g,b),d=max-min;let h=0;if(d){if(max===r)h=((g-b)/d)%6;else if(max===g)h=(b-r)/d+2;else h=(r-g)/d+4;h*=60;if(h<0)h+=360}return{h,s:max?d/max:0,v:max}};
@@ -60,7 +60,7 @@
       if(sel)sel.value=r.candidate;
       const m=$q('#matchup');if(m&&(!m.value.trim()||m.value===old?.candidate))m.value=r.candidate;
     }else if(old?.accepted&&sel&&sel.value===old.candidate)sel.value='';
-    window.classDetection442={patch:PATCH,accepted,candidate:accepted?r.candidate:'',confidence:+(r?.confidence||0).toFixed(3),cx:r?.cx??.848,cy:r?.cy??.108,magenta:+(r?.magentaRatio||0).toFixed(3),cyan:+(r?.cyanRatio||0).toFixed(3),blue:+(r?.blueRatio||0).toFixed(3),sat:+(r?.satRatio||0).toFixed(3),edge:+(r?.edgeRatio||0).toFixed(3),anchorTime:anchored?+Number(time).toFixed(3):null,anchorSource:source,visualAnchor:anchored,method:'fixed-mulligan-notification-class-icon-v4'};
+    window.classDetection442={patch:PATCH,accepted,candidate:accepted?r.candidate:'',confidence:+(r?.confidence||0).toFixed(3),cx:r?.cx??.848,cy:r?.cy??.108,magenta:+(r?.magentaRatio||0).toFixed(3),cyan:+(r?.cyanRatio||0).toFixed(3),blue:+(r?.blueRatio||0).toFixed(3),sat:+(r?.satRatio||0).toFixed(3),edge:+(r?.edgeRatio||0).toFixed(3),anchorTime:anchored?+Number(time).toFixed(3):null,anchorSource:source,visualAnchor:anchored,method:'fixed-mulligan-notification-class-icon-v5'};
     window.classAnchor468=anchored?{patch:PATCH,time:+Number(time).toFixed(3),candidate:accepted?r.candidate:'',confidence:+(r?.confidence||0).toFixed(3),source,visualOnly:!accepted}:null;
     if(status)status.textContent=accepted?`自動判定：${r.candidate}（通知アイコン ${Number(time).toFixed(1)}秒）。`:anchored?`クラス通知位置を${Number(time).toFixed(1)}秒で検出しました。クラス名は未校正のため手動選択できます。`:'自動判定は保留しました。未校正クラスは手動選択してください。';
     safeLog('class-detect-v468',window.classDetection442);
@@ -69,14 +69,19 @@
 
   async function scanEarlyClassAnchor(){
     const v=typeof video!=='undefined'?video:$q('#video');if(!v?.src||!Number.isFinite(v.duration))return null;
-    const end=Math.min(15,Math.max(1,v.duration-.1)),samples=[];
+    const end=Math.min(15,Math.max(1,v.duration-.1)),samples=[];let pendingVisual=null;
     for(let t=1;t<=end+.001;t+=1){
       await seekSafe(t);
-      const r=fixedClassIcon(frameCanvas(1500));
-      samples.push({time:+t.toFixed(1),candidate:r.candidate,confidence:+r.confidence.toFixed(3),sat:+r.satRatio.toFixed(3),edge:+r.edgeRatio.toFixed(3),visual:iconVisual(r)});
-      if(iconVisual(r))return{time:+t.toFixed(1),r,samples};
+      const r=fixedClassIcon(frameCanvas(1500)),visual=iconVisual(r),classified=iconLike(r);
+      const row={time:+t.toFixed(1),candidate:r.candidate,confidence:+r.confidence.toFixed(3),sat:+r.satRatio.toFixed(3),edge:+r.edgeRatio.toFixed(3),visual,classified};
+      samples.push(row);
+      if(classified)return{time:+t.toFixed(1),r,samples,anchorMode:'classified-icon'};
+      if(visual){
+        if(pendingVisual&&t-pendingVisual.time<=1.01)return{time:+pendingVisual.time.toFixed(1),r:pendingVisual.r,samples,anchorMode:'persistent-visual'};
+        pendingVisual={time:t,r};
+      }else pendingVisual=null;
     }
-    return{time:null,r:null,samples};
+    return{time:null,r:null,samples,anchorMode:'none'};
   }
 
   async function anchoredRecheck(force=false,turnAnchorTime=null){
@@ -88,11 +93,11 @@
     try{
       let found=null;
       if(Number.isFinite(Number(turnAnchorTime))){
-        const t=Math.max(.5,Number(turnAnchorTime)-3.5);await seekSafe(t);const r=fixedClassIcon(frameCanvas(1500));if(iconVisual(r))found={time:t,r,samples:[{time:+t.toFixed(2),source:'turn-minus-3.5',visual:true}]};
+        const t=Math.max(.5,Number(turnAnchorTime)-3.5);await seekSafe(t);const r=fixedClassIcon(frameCanvas(1500));if(iconVisual(r))found={time:t,r,samples:[{time:+t.toFixed(2),source:'turn-minus-3.5',visual:true}],anchorMode:'turn-minus-3.5'};
       }
-      if(!found){const s=await scanEarlyClassAnchor();if(s?.r)found=s;else safeLog('class-anchor-scan-v468',{accepted:false,samples:s?.samples||[]});}
-      if(!found&&prev&&Number.isFinite(Number(prev.time))){await seekSafe(Number(prev.time));const r=fixedClassIcon(frameCanvas(1500));if(iconVisual(r))found={time:Number(prev.time),r,samples:[{time:Number(prev.time),source:'preview-fallback',visual:true}]};}
-      if(found){applyDetection(found.r,found.time,found.samples?.[0]?.source==='turn-minus-3.5'?'turn-minus-3.5':'early-fixed-icon-scan-v2');safeLog('class-anchor-scan-v468',{accepted:window.classDetection442?.accepted,visualAnchor:!!window.classAnchor468,anchorTime:found.time,anchorSource:window.classDetection442?.anchorSource,samples:found.samples||[]});}
+      if(!found){const s=await scanEarlyClassAnchor();if(s?.r)found=s;else safeLog('class-anchor-scan-v468',{accepted:false,anchorMode:s?.anchorMode||'none',samples:s?.samples||[]});}
+      if(!found&&prev&&Number.isFinite(Number(prev.time))){await seekSafe(Number(prev.time));const r=fixedClassIcon(frameCanvas(1500));if(iconVisual(r))found={time:Number(prev.time),r,samples:[{time:Number(prev.time),source:'preview-fallback',visual:true}],anchorMode:'preview-fallback'};}
+      if(found){const source=found.anchorMode==='turn-minus-3.5'?'turn-minus-3.5':found.anchorMode==='classified-icon'?'early-classified-icon-scan-v3':found.anchorMode==='persistent-visual'?'early-persistent-icon-scan-v3':'early-fixed-icon-scan-v3';applyDetection(found.r,found.time,source);safeLog('class-anchor-scan-v468',{accepted:window.classDetection442?.accepted,visualAnchor:!!window.classAnchor468,anchorTime:found.time,anchorMode:found.anchorMode||null,anchorSource:window.classDetection442?.anchorSource,samples:found.samples||[]});}
       else applyDetection(null,null,'none');
       lastAnchorKey=key;
     }catch(e){if(status)status.textContent='クラス再判定失敗：'+(e?.message||String(e));safeLog('class-anchor-error-v468',{message:e?.message||String(e)})}
@@ -108,8 +113,8 @@
   function replaceRecheckButton(){const old=$q('#classRecheck464');if(!old||old.dataset.wb468==='1')return false;const b=old.cloneNode(true);b.dataset.wb468='1';b.textContent='クラスアイコンを再判定';old.replaceWith(b);b.addEventListener('click',()=>anchoredRecheck(true));return true}
 
   function installLatestUpdater(){
-    const old=$q('#wbForceLatest463');if(!old||old.dataset.wb468==='1')return false;const b=old.cloneNode(true);b.dataset.wb468='1';old.replaceWith(b);const st=$q('#wbUpdateStatus463');if(st)st.textContent='v4.6.8 / クラス判定・旧ZIP出力修正';
-    b.addEventListener('click',async()=>{if(b.disabled)return;b.disabled=true;if(st)st.textContent='最新版を確認中…';try{if('serviceWorker'in navigator){const reg=await navigator.serviceWorker.register('./sw.js?v=4.6.8-20260916-06',{updateViaCache:'none'});await reg.update()}if(st)st.textContent='更新完了。クラスアイコン固定版で再起動します…';setTimeout(()=>{const u=new URL(location.href);u.searchParams.set('latest','46806-'+Date.now());u.hash='';location.replace(u.href)},180)}catch(e){if(st)st.textContent='更新確認に失敗しました。通信を確認してください。';b.disabled=false;safeLog('force-latest-error-v468',{message:e?.message||String(e)})}});return true;
+    const old=$q('#wbForceLatest463');if(!old||old.dataset.wb468==='1')return false;const b=old.cloneNode(true);b.dataset.wb468='1';old.replaceWith(b);const st=$q('#wbUpdateStatus463');if(st)st.textContent='v4.6.8 / クラス通知アンカー安定化';
+    b.addEventListener('click',async()=>{if(b.disabled)return;b.disabled=true;if(st)st.textContent='最新版を確認中…';try{if('serviceWorker'in navigator){const reg=await navigator.serviceWorker.register('./sw.js?v=4.6.8-20260916-07',{updateViaCache:'none'});await reg.update()}if(st)st.textContent='更新完了。クラス通知アンカー安定版で再起動します…';setTimeout(()=>{const u=new URL(location.href);u.searchParams.set('latest','46807-'+Date.now());u.hash='';location.replace(u.href)},180)}catch(e){if(st)st.textContent='更新確認に失敗しました。通信を確認してください。';b.disabled=false;safeLog('force-latest-error-v468',{message:e?.message||String(e)})}});return true;
   }
 
   let tries=0;const tm=setInterval(()=>{tries++;disableLegacyExport();replaceRecheckButton();installLatestUpdater();if(tries>100)clearInterval(tm)},150);
@@ -120,6 +125,6 @@
   $q('#videoFile')?.addEventListener('change',()=>{lastAnchorKey='';window.classAnchor468=null;window.classAnchorReady468=null});
   const v=typeof video!=='undefined'?video:$q('#video');v?.addEventListener('loadedmetadata',()=>setTimeout(startInitialAnchor,120));
 
-  const header=$q('header h1'),sub=$q('header p');if(header)header.textContent='シャドバWB リプレイ診断 v4.6.8';if(sub)sub.textContent='Build 2026.09.16-06 / クラス通知を先行検出してターン解析へ共有';
-  safeLog('patch-v468-active',{feature:'fixed-class-icon-visual-anchor-pre-scan-v4'});
+  const header=$q('header h1'),sub=$q('header p');if(header)header.textContent='シャドバWB リプレイ診断 v4.6.8';if(sub)sub.textContent='Build 2026.09.16-07 / 単発の偽visual anchorを除外';
+  safeLog('patch-v468-active',{feature:'classified-or-persistent-class-anchor-pre-scan-v5'});
 })();
