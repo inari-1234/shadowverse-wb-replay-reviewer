@@ -1,7 +1,9 @@
-const CACHE='wb-review-v4-10-8-20260916-32';
-const ASSETS=["./","./index.html","./manifest.webmanifest","./fix-v4.10.2-pre.js","./fix-v3.7.js","./fix-v3.7.1.js","./fix-v3.9.js","./fix-v3.9.1.js","./fix-v3.9.2.js","./fix-v4.0.js","./fix-v4.1.js","./fix-v4.2.js","./fix-v4.3.js","./fix-v4.3.1.js","./fix-v4.4.2.js","./fix-v4.4.3.js","./fix-v4.6.2.js","./fix-v4.6.3.js","./fix-v4.6.4.js","./fix-v4.6.5.js","./fix-v4.6.6.js","./fix-v4.6.7.js","./fix-v4.6.8.js","./fix-v4.6.9.js","./fix-v4.7.0.js","./fix-v4.7.1.js","./fix-v4.7.2.js","./fix-v4.8.0.js","./fix-v4.8.1.js","./fix-v4.9.0.js","./fix-v4.9.1.js","./fix-v4.9.2.js","./fix-v4.9.3.js","./fix-v4.9.4.js","./fix-v4.10.0.js","./fix-v4.10.2.js","./fix-v4.10.3.js","./fix-v4.10.4.js","./fix-v4.10.5.js","./fix-v4.10.6.js","./fix-v4.10.7.js","./fix-v4.10.8.js","./strategy/sea-pirate-royal-coaching-v1.json","./strategy/sea-pirate-royal-coaching-v2.json"];
+const CACHE='wb-review-v4-10-8-20260916-33';
+const BUILD='4.10.8-20260916-20a';
+const ASSETS=["./","./index.html","./manifest.webmanifest","./latest.json","./recovery.html","./fix-v4.10.2-pre.js","./fix-v3.7.js","./fix-v3.7.1.js","./fix-v3.9.js","./fix-v3.9.1.js","./fix-v3.9.2.js","./fix-v4.0.js","./fix-v4.1.js","./fix-v4.2.js","./fix-v4.3.js","./fix-v4.3.1.js","./fix-v4.4.2.js","./fix-v4.4.3.js","./fix-v4.6.2.js","./fix-v4.6.3.js","./fix-v4.6.4.js","./fix-v4.6.5.js","./fix-v4.6.6.js","./fix-v4.6.7.js","./fix-v4.6.8.js","./fix-v4.6.9.js","./fix-v4.7.0.js","./fix-v4.7.1.js","./fix-v4.7.2.js","./fix-v4.8.0.js","./fix-v4.8.1.js","./fix-v4.9.0.js","./fix-v4.9.1.js","./fix-v4.9.2.js","./fix-v4.9.3.js","./fix-v4.9.4.js","./fix-v4.10.0.js","./fix-v4.10.2.js","./fix-v4.10.3.js","./fix-v4.10.4.js","./fix-v4.10.5.js","./fix-v4.10.6.js","./fix-v4.10.7.js","./fix-v4.10.8.js","./strategy/sea-pirate-royal-coaching-v1.json","./strategy/sea-pirate-royal-coaching-v2.json"];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});
 self.addEventListener('activate',e=>{e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))]))});
+self.addEventListener('message',e=>{if(e.data?.type==='wb-version-query'&&e.ports?.[0])e.ports[0].postMessage({build:BUILD,cache:CACHE})});
 function patchHtml(text){
   const clean=text.replace(/<script src="\.\/fix-v[^\"]+\.js[^>]*><\/script>/g,'');
   const scripts='<script src="./fix-v4.10.2-pre.js?v=4.10.4-pre-20260915-16b"></script>'+ 
@@ -26,7 +28,7 @@ function patchHtml(text){
     '<script src="./fix-v4.10.0.js?v=4.10.0-20260915-15b"></script>'+ 
     '<script src="./fix-v4.10.2.js?v=4.10.2-20260915-15e"></script>'+ 
     '<script src="./fix-v4.10.3.js?v=4.10.3-20260915-15f"></script>'+ 
-    '<script src="./fix-v4.10.4.js?v=4.10.4-20260915-16b"></script>'+ 
+    '<script src="./fix-v4.10.4.js?v=4.10.4-20260916-updater-fix-17"></script>'+ 
     '<script src="./fix-v4.10.5.js?v=4.10.5-20260916-17a"></script>'+ 
     '<script src="./fix-v4.10.6.js?v=4.10.6-20260916-18a"></script>'+ 
     '<script src="./fix-v4.10.7.js?v=4.10.7-20260916-19a"></script>'+ 
@@ -36,8 +38,11 @@ function patchHtml(text){
 self.addEventListener('fetch',e=>{
   const req=e.request,url=new URL(req.url);
   if(url.origin!==location.origin){e.respondWith(fetch(req));return;}
+  if(url.pathname.endsWith('/latest.json')||url.pathname.endsWith('/recovery.html')){
+    e.respondWith(fetch(req,{cache:'no-store'}).catch(()=>caches.match(req,{ignoreSearch:true})));return;
+  }
   if(req.mode==='navigate'||url.pathname.endsWith('/index.html')){
     e.respondWith((async()=>{try{const r=await fetch(req,{cache:'no-store'}),text=await r.text();return new Response(patchHtml(text),{status:r.status,statusText:r.statusText,headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}})}catch(err){const cached=await caches.match('./index.html');if(!cached)throw err;return new Response(patchHtml(await cached.text()),{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}})}})());return;
   }
-  e.respondWith((async()=>{try{const r=await fetch(req,{cache:'no-store'});const cache=await caches.open(CACHE);cache.put(req,r.clone());return r}catch(err){return caches.match(req)}})());
+  e.respondWith((async()=>{try{const r=await fetch(req,{cache:'no-store'});const cache=await caches.open(CACHE);cache.put(req,r.clone());return r}catch(err){return caches.match(req,{ignoreSearch:true})}})());
 });
