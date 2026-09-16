@@ -1,8 +1,8 @@
-const CACHE='wb-review-v4-10-8-20260917-36';
-const BUILD='4.10.8-20260917-20d';
-const ASSETS=["./","./index.html","./manifest.webmanifest","./latest.json","./recovery.html","./fix-v4.10.2-pre.js","./fix-v3.7.js","./fix-v3.7.1.js","./fix-v3.9.js","./fix-v3.9.1.js","./fix-v3.9.2.js","./fix-v4.0.js","./fix-v4.1.js","./fix-v4.2.js","./fix-v4.3.js","./fix-v4.3.1.js","./fix-v4.4.2.js","./fix-v4.4.3.js","./fix-v4.6.2.js","./fix-v4.6.3.js","./fix-v4.6.4.js","./fix-v4.6.5.js","./fix-v4.6.6.js","./fix-v4.6.7.js","./fix-v4.6.8.js","./fix-v4.6.9.js","./fix-v4.7.0.js","./fix-v4.7.1.js","./fix-v4.7.2.js","./fix-v4.8.0.js","./fix-v4.8.1.js","./fix-v4.9.0.js","./fix-v4.9.1.js","./fix-v4.9.2.js","./fix-v4.9.3.js","./fix-v4.9.4.js","./fix-v4.10.0.js","./fix-v4.10.2.js","./fix-v4.10.3.js","./fix-v4.10.4.js","./fix-v4.10.5.js","./fix-v4.10.6.js","./fix-v4.10.7.js","./fix-v4.10.8.js","./fix-v4.10.8.1.js","./fix-v4.10.8.2.js","./strategy/sea-pirate-royal-coaching-v1.json","./strategy/sea-pirate-royal-coaching-v2.json"];
+const CACHE='wb-review-v4-10-8-20260917-37';
+const BUILD='4.10.8-20260917-20e';
+const ASSETS=["./","./index.html","./manifest.webmanifest","./latest.json","./recovery.html","./fix-v4.10.2-pre.js","./fix-v3.7.js","./fix-v3.7.1.js","./fix-v3.9.js","./fix-v3.9.1.js","./fix-v3.9.2.js","./fix-v4.0.js","./fix-v4.1.js","./fix-v4.2.js","./fix-v4.3.js","./fix-v4.3.1.js","./fix-v4.4.2.js","./fix-v4.4.3.js","./fix-v4.6.2.js","./fix-v4.6.3.js","./fix-v4.6.4.js","./fix-v4.6.5.js","./fix-v4.6.6.js","./fix-v4.6.7.js","./fix-v4.6.8.js","./fix-v4.6.9.js","./fix-v4.7.0.js","./fix-v4.7.1.js","./fix-v4.7.2.js","./fix-v4.8.0.js","./fix-v4.8.1.js","./fix-v4.9.0.js","./fix-v4.9.1.js","./fix-v4.9.2.js","./fix-v4.9.3.js","./fix-v4.9.4.js","./fix-v4.10.0.js","./fix-v4.10.2.js","./fix-v4.10.3.js","./fix-v4.10.4.js","./fix-v4.10.5.js","./fix-v4.10.6.js","./fix-v4.10.7.js","./fix-v4.10.8.js","./fix-v4.10.8.1.js","./fix-v4.10.8.2.js","./fix-v4.10.8.3.js","./strategy/sea-pirate-royal-coaching-v1.json","./strategy/sea-pirate-royal-coaching-v2.json"];
 const LEGACY_SW_REGISTER="if('serviceWorker'in navigator){navigator.serviceWorker.register('./sw.js?v=3.4-20260914-04').then(r=>{r.update();log('service-worker-register',{scope:r.scope})}).catch(e=>log('service-worker-error',{message:e.message}))}";
-const MANAGED_SW_REGISTER="if('serviceWorker'in navigator){log('service-worker-register-managed',{mode:'canonical-root-sw-v4108-36'})}";
+const MANAGED_SW_REGISTER="if('serviceWorker'in navigator){log('service-worker-register-managed',{mode:'canonical-root-sw-v4108-37'})}";
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});
 self.addEventListener('activate',e=>{e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))]))});
 self.addEventListener('message',e=>{if(e.data?.type==='wb-version-query'&&e.ports?.[0])e.ports[0].postMessage({build:BUILD,cache:CACHE})});
@@ -37,7 +37,8 @@ function patchHtml(text){
     '<script src="./fix-v4.10.7.js?v=4.10.7-20260916-19a"></script>'+ 
     '<script src="./fix-v4.10.8.js?v=4.10.8-20260916-20a"></script>'+ 
     '<script src="./fix-v4.10.8.1.js?v=4.10.8.1-20260917-20b"></script>'+ 
-    '<script src="./fix-v4.10.8.2.js?v=4.10.8.2-20260917-20c"></script>';
+    '<script src="./fix-v4.10.8.2.js?v=4.10.8.2-20260917-20c"></script>'+ 
+    '<script src="./fix-v4.10.8.3.js?v=4.10.8.3-20260917-20e"></script>';
   return clean.replace('</body>',scripts+'</body>');
 }
 self.addEventListener('fetch',e=>{
