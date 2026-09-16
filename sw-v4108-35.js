@@ -1,0 +1,53 @@
+const CACHE='wb-review-v4-10-8-20260917-35';
+const BUILD='4.10.8-20260917-20c';
+const ASSETS=["./","./index.html","./manifest.webmanifest","./latest.json","./recovery.html","./fix-v4.10.2-pre.js","./fix-v3.7.js","./fix-v3.7.1.js","./fix-v3.9.js","./fix-v3.9.1.js","./fix-v3.9.2.js","./fix-v4.0.js","./fix-v4.1.js","./fix-v4.2.js","./fix-v4.3.js","./fix-v4.3.1.js","./fix-v4.4.2.js","./fix-v4.4.3.js","./fix-v4.6.2.js","./fix-v4.6.3.js","./fix-v4.6.4.js","./fix-v4.6.5.js","./fix-v4.6.6.js","./fix-v4.6.7.js","./fix-v4.6.8.js","./fix-v4.6.9.js","./fix-v4.7.0.js","./fix-v4.7.1.js","./fix-v4.7.2.js","./fix-v4.8.0.js","./fix-v4.8.1.js","./fix-v4.9.0.js","./fix-v4.9.1.js","./fix-v4.9.2.js","./fix-v4.9.3.js","./fix-v4.9.4.js","./fix-v4.10.0.js","./fix-v4.10.2.js","./fix-v4.10.3.js","./fix-v4.10.4.js","./fix-v4.10.5.js","./fix-v4.10.6.js","./fix-v4.10.7.js","./fix-v4.10.8.js","./fix-v4.10.8.1.js","./fix-v4.10.8.2.js","./strategy/sea-pirate-royal-coaching-v1.json","./strategy/sea-pirate-royal-coaching-v2.json"];
+const LEGACY_SW_REGISTER="if('serviceWorker'in navigator){navigator.serviceWorker.register('./sw.js?v=3.4-20260914-04').then(r=>{r.update();log('service-worker-register',{scope:r.scope})}).catch(e=>log('service-worker-error',{message:e.message}))}";
+const MANAGED_SW_REGISTER="if('serviceWorker'in navigator){log('service-worker-register-managed',{mode:'canonical-sw-v4108-35'})}";
+self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});
+self.addEventListener('activate',e=>{e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))]))});
+self.addEventListener('message',e=>{if(e.data?.type==='wb-version-query'&&e.ports?.[0])e.ports[0].postMessage({build:BUILD,cache:CACHE})});
+function patchHtml(text){
+  const managed=text.includes(LEGACY_SW_REGISTER)?text.replace(LEGACY_SW_REGISTER,MANAGED_SW_REGISTER):text;
+  const clean=managed.replace(/<script src="\.\/fix-v[^\"]+\.js[^>]*><\/script>/g,'');
+  const scripts='<script src="./fix-v4.10.2-pre.js?v=4.10.4-pre-20260915-16b"></script>'+ 
+    '<script src="./fix-v3.7.js?v=3.7-20260914-07"></script>'+ 
+    '<script src="./fix-v3.7.1.js?v=3.7.1-20260914-08"></script>'+ 
+    '<script src="./fix-v3.9.js?v=3.9-20260914-10"></script>'+ 
+    '<script src="./fix-v3.9.1.js?v=3.9.1-20260914-11"></script>'+ 
+    '<script src="./fix-v3.9.2.js?v=3.9.2-20260916-stable-13"></script>'+ 
+    '<script src="./fix-v4.0.js?v=4.0-20260914-13"></script>'+ 
+    '<script src="./fix-v4.1.js?v=4.1-20260914-14"></script>'+ 
+    '<script src="./fix-v4.2.js?v=4.2-20260916-22"></script>'+ 
+    '<script src="./fix-v4.3.js?v=4.7.0-bootstrap-20260916-08"></script>'+ 
+    '<script src="./fix-v4.7.1.js?v=4.7.1-20260915-06"></script>'+ 
+    '<script src="./fix-v4.7.2.js?v=4.7.2-20260915-07"></script>'+ 
+    '<script src="./fix-v4.8.0.js?v=4.8.0-20260915-08b"></script>'+ 
+    '<script src="./fix-v4.8.1.js?v=4.8.1-20260915-09"></script>'+ 
+    '<script src="./fix-v4.9.0.js?v=4.9.0-20260915-10"></script>'+ 
+    '<script src="./fix-v4.9.1.js?v=4.9.1-20260915-11"></script>'+ 
+    '<script src="./fix-v4.9.2.js?v=4.9.2-20260915-12c"></script>'+ 
+    '<script src="./fix-v4.9.3.js?v=4.9.3-20260915-13d"></script>'+ 
+    '<script src="./fix-v4.9.4.js?v=4.9.4-20260915-14d"></script>'+ 
+    '<script src="./fix-v4.10.0.js?v=4.10.0-20260915-15b"></script>'+ 
+    '<script src="./fix-v4.10.2.js?v=4.10.2-20260915-15e"></script>'+ 
+    '<script src="./fix-v4.10.3.js?v=4.10.3-20260915-15f"></script>'+ 
+    '<script src="./fix-v4.10.4.js?v=4.10.4-20260916-updater-fix-17"></script>'+ 
+    '<script src="./fix-v4.10.5.js?v=4.10.5-20260916-17a"></script>'+ 
+    '<script src="./fix-v4.10.6.js?v=4.10.6-20260916-18a"></script>'+ 
+    '<script src="./fix-v4.10.7.js?v=4.10.7-20260916-19a"></script>'+ 
+    '<script src="./fix-v4.10.8.js?v=4.10.8-20260916-20a"></script>'+ 
+    '<script src="./fix-v4.10.8.1.js?v=4.10.8.1-20260917-20b"></script>'+ 
+    '<script src="./fix-v4.10.8.2.js?v=4.10.8.2-20260917-20c"></script>';
+  return clean.replace('</body>',scripts+'</body>');
+}
+self.addEventListener('fetch',e=>{
+  const req=e.request,url=new URL(req.url);
+  if(url.origin!==location.origin){e.respondWith(fetch(req));return;}
+  if(url.pathname.endsWith('/latest.json')||url.pathname.endsWith('/recovery.html')){
+    e.respondWith(fetch(req,{cache:'no-store'}).catch(()=>caches.match(req,{ignoreSearch:true})));return;
+  }
+  if(req.mode==='navigate'||url.pathname.endsWith('/index.html')){
+    e.respondWith((async()=>{try{const r=await fetch(req,{cache:'no-store'}),text=await r.text();return new Response(patchHtml(text),{status:r.status,statusText:r.statusText,headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-WB-Build':BUILD}})}catch(err){const cached=await caches.match('./index.html');if(!cached)throw err;return new Response(patchHtml(await cached.text()),{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-WB-Build':BUILD}})}})());return;
+  }
+  e.respondWith((async()=>{try{const r=await fetch(req,{cache:'no-store'});const cache=await caches.open(CACHE);cache.put(req,r.clone());return r}catch(err){return caches.match(req,{ignoreSearch:true})}})());
+});
