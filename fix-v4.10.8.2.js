@@ -1,5 +1,5 @@
 (()=>{
-  const PATCH='4.10.8.2-20260917-20c',$q=s=>document.querySelector(s);
+  const PATCH='4.10.8.2-20260917-20d',$q=s=>document.querySelector(s);
   const OLD_STYLES=['wbUiFinal4104','wbUiFinal4105','wbUiFinal4106','wbUiFinal4107','wbUiFinal4108','wbUiFinal41081'];
   const TRANSIENT=/(準備中|更新中|確認中|再起動|復旧|失敗|取得中)/;
   let scheduled=false,repairs=0;
@@ -8,7 +8,7 @@
   function ownStyle(){
     let s=$q('#wbUiFinal41082');
     if(!s){s=document.createElement('style');s.id='wbUiFinal41082';document.head.appendChild(s)}
-    const css=`header h1{font-size:0!important}header h1::after{content:'シャドバWB リプレイ診断 v4.10.8';font-size:18px!important;font-weight:700}header>p:first-of-type{font-size:0!important}header>p:first-of-type::after{content:'Build 2026.09.17-20c / UI所有権恒久固定';font-size:12px!important;color:#9ba8bf}#wbLatestBar462,#wbLatestBar463,#wbLatestBar4102,#wbLatestBar4103{display:none!important}`;
+    const css=`header h1{font-size:0!important}header h1::after{content:'シャドバWB リプレイ診断 v4.10.8';font-size:18px!important;font-weight:700}header>p:first-of-type{font-size:0!important}header>p:first-of-type::after{content:'Build 2026.09.17-20d / UI所有権恒久固定';font-size:12px!important;color:#9ba8bf}#wbLatestBar462,#wbLatestBar463,#wbLatestBar4102,#wbLatestBar4103{display:none!important}`;
     if(s.textContent!==css)s.textContent=css;
     if(s.disabled)s.disabled=false;
     return s;
@@ -27,7 +27,7 @@
     if(document.documentElement.dataset.wbCanonicalUiOwner!=='4108'){document.documentElement.dataset.wbCanonicalUiOwner='4108';changed=true}
     claimButton();
     const st=$q('#wbUpdateStatus4104');
-    if(st&&!TRANSIENT.test(String(st.textContent||''))&&st.textContent!=='v4.10.8 / Build 20c / UI所有権固定'){st.textContent='v4.10.8 / Build 20c / UI所有権固定';changed=true}
+    if(st&&!TRANSIENT.test(String(st.textContent||''))&&st.textContent!=='v4.10.8 / Build 20d / UI所有権固定'){st.textContent='v4.10.8 / Build 20d / UI所有権固定';changed=true}
     if(changed){repairs++;safeLog('ui-owner-repaired-v41082',{reason,repairs})}
     return changed;
   }
