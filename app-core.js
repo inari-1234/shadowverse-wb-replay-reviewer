@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-const APP={version:'4.11.0',build:'4.11.0-20260917-clean-05',revision:'clean-05'};
+const APP={version:'4.11.0',build:'4.11.0-20260918-clean-06',revision:'clean-06'};
 const WB=window.WB={APP,modules:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
 WB.$=s=>document.querySelector(s);
 WB.registerModule=(name,version)=>{const row={name,version};if(!WB.modules.some(x=>x.name===name))WB.modules.push(row);return row};
@@ -22,7 +22,7 @@ WB.downloadJSON=(obj,name)=>{const b=new Blob([JSON.stringify(obj,null,2)],{type
 WB.shareJsonFile=async(obj,name)=>{const file=new File([JSON.stringify(obj,null,2)],name,{type:'application/json',lastModified:Date.now()});if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]}))){try{await navigator.share({files:[file]});return}catch(e){if(e?.name==='AbortError')return}}WB.downloadJSON(obj,name)};
 
 WB.setTaskLock=(on,title='',text='')=>{const box=WB.$('#taskLock');if(!box)return;if(on){WB.$('#taskLockTitle').textContent=title||'処理中';WB.$('#taskLockText').textContent=text||'動画位置を自動操作しています。';box.classList.remove('hidden')}else box.classList.add('hidden')};
-WB.runTask=async(name,fn,{lockText='動画位置を自動操作しています。'}={})=>{if(WB.task)throw new Error(`別処理を実行中です: ${WB.task}`);WB.task=name;WB.cancelRequested=false;WB.setTaskLock(true,name,lockText);WB.log('task-start',{name});try{return await fn()}catch(err){WB.recordError(name,err);throw err}finally{WB.log('task-finish',{name,cancelRequested:WB.cancelRequested});WB.task=null;WB.cancelRequested=false;WB.setTaskLock(false)}};
+WB.runTask=async(name,fn,{lockText='動画位置を自動操作しています。'}={})=>{if(WB.task)throw new Error(`別処理を実行中です: ${WB.task}`);WB.task=name;WB.cancelRequested=false;WB.setTaskLock(true,name,lockText);WB.log('task-start',{name});try{return await fn()}catch(err){WB.recordError(name,err);throw err}finally{WB.log('task-finish',{name,cancelRequested:WB.cancelRequested});WB.task=null;WB.cancelRequested=false;WB.setTaskLock(false);if(typeof WB.updateTurnPick==='function')WB.updateTurnPick();WB.log('task-controls-synced',{name,turn:Number(WB.$('#turnPick')?.value)||1})}};
 WB.requestCancel=()=>{if(WB.task){WB.cancelRequested=true;WB.log('task-cancel-request',{name:WB.task})}};
 WB.setProgress=p=>{const w=WB.$('#progressWrap'),b=WB.$('#progress');if(!w||!b)return;if(p==null){w.classList.add('hidden');b.style.width='0%'}else{w.classList.remove('hidden');b.style.width=Math.max(0,Math.min(100,p))+'%'}};
 WB.setScanStatus=(msg,cls='help')=>{const e=WB.$('#scanStatus');if(e){e.className=cls;e.textContent=msg}};
@@ -43,7 +43,7 @@ WB.updateTurnPick=()=>{const n=Number(WB.$('#turnPick')?.value)||1,row=WB.turnFo
 WB.resetForVideo=()=>{WB.turnTimeline=[];window.turnTimeline39=[];WB.turnValidation=null;WB.mulligan=null;WB.classDetection=null;WB.stateCapture=null;WB.seekCount=0;WB.seekReasons={};WB.cancelRequested=false;WB.setProgress(null);WB.renderTimeline();for(const s of WB.scenes)if(s.url)URL.revokeObjectURL(s.url);WB.scenes=[];WB.renderScenes();for(const id of ['#leTurn','#leOppHp','#lePp','#leFlags','#leBoard','#leOther']){const e=WB.$(id);if(e){e.value='';delete e.dataset.source;delete e.dataset.manualVideo}}for(const id of ['#leExtra','#leEp','#leSep','#leWard','#leBar','#leZeta','#leOthersChecked']){const e=WB.$(id);if(e){e.value='unknown';delete e.dataset.source;delete e.dataset.manualVideo}}for(const id of ['#cfName','#cfNote','#asName','#asOppHp','#asSelfHp','#asFlags','#asBoard','#asOther','#asNote']){const e=WB.$(id);if(e)e.value=''}const mm=WB.$('#mulliganStill');if(mm){mm.removeAttribute('src');mm.style.display='none'}if(WB.$('#mulliganStillTime'))WB.$('#mulliganStillTime').textContent='';if(WB.$('#previewStatus'))WB.$('#previewStatus').textContent='ターン確定後にマリガンを取得し、その後にVS画面のクラスアイコンを判定します。';WB.clearClassUi();WB.updateTurnPick();WB.emit('video-reset',{videoKey:WB.videoKey()})};
 WB.clearClassUi=()=>{const c=WB.$('#classMark'),p=WB.$('#classMarkPlaceholder'),sel=WB.$('#classSelect'),st=WB.$('#classStatus');if(c){c.getContext('2d').clearRect(0,0,c.width,c.height);c.classList.add('hidden')}if(p){p.textContent='クラス画像を確認できません';p.classList.remove('hidden')}if(sel)sel.value='';if(st)st.textContent='未判定'};
 WB.renderScenes=()=>{const out=WB.$('#savedScenes');if(!out)return;out.innerHTML='';WB.scenes.forEach((s,i)=>{const d=document.createElement('div');d.className='savedItem';d.innerHTML=`<img src="${s.url}" alt="局面"><div><span class="badge">${s.turn?`${s.turn}T`:'T不明'}</span><span class="badge">${WB.fmt(s.time)}</span><div class="muted">${WB.escape(s.note||'メモなし')}</div></div>`;out.appendChild(d)})};
-WB.escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+WB.escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
 
 async function queryServiceWorker(reg){const target=navigator.serviceWorker.controller||reg?.active||reg?.waiting;if(!target)return null;return await new Promise(resolve=>{const ch=new MessageChannel(),timer=setTimeout(()=>resolve(null),1200);ch.port1.onmessage=e=>{clearTimeout(timer);resolve(e.data||null)};try{target.postMessage({type:'wb-version-query'},[ch.port2])}catch{clearTimeout(timer);resolve(null)}})}
 WB.registerServiceWorker=async()=>{if(!('serviceWorker'in navigator))return;try{
@@ -55,7 +55,7 @@ WB.registerServiceWorker=async()=>{if(!('serviceWorker'in navigator))return;try{
 }catch(err){WB.recordError('service-worker',err)}};
 
 function init(){
-  const sub=document.querySelector('header p');if(sub)sub.textContent='Build 2026.09.17-clean-05 / 指定ターン停止・回帰保護';
+  const sub=document.querySelector('header p');if(sub)sub.textContent='Build 2026.09.18-clean-06 / 初期1T操作同期・回帰保護';
   WB.video=WB.$('#video');
   const file=WB.$('#videoFile'),scrub=WB.$('#scrub');
   file?.addEventListener('change',e=>{const f=e.target.files?.[0];if(!f)return;if(WB.objectUrl)URL.revokeObjectURL(WB.objectUrl);WB.videoMeta={name:f.name,size:f.size,type:f.type,lastModified:f.lastModified};WB.videoName=WB.safeName(f.name);WB.objectUrl=URL.createObjectURL(f);WB.video.src=WB.objectUrl;WB.resetForVideo();WB.$('#videoStatus').textContent='動画情報を読み込み中…';WB.log('video-selected',WB.videoMeta)});
