@@ -1,5 +1,5 @@
 (()=>{
-const PATCH='4.10.8.5-20260917-20k';
+const PATCH='4.10.8.5-20260917-20m';
 const $q=s=>document.querySelector(s);
 const safeLog=(type,data={})=>{try{log(type,{patch:PATCH,...data})}catch{}};
 let runToken=0,activeKey='',validationDoneKey='';
@@ -15,7 +15,6 @@ try{if(Math.abs(v.currentTime-t)>.025){if(typeof seek==='function')await seek(t,
 function ppPoints(){
 try{
 if(typeof window.ppPoints==='object'&&window.ppPoints?.top&&window.ppPoints?.bottom)return window.ppPoints;
-if(typeof ppPoints!=='undefined'&&ppPoints?.top&&ppPoints?.bottom)return ppPoints;
 }catch{}
 return{top:{x:.8811,y:.2905},bottom:{x:.8822,y:.6065}};
 }
@@ -101,7 +100,7 @@ function scheduleValidation(e){
 if(e?.detail?.patch===PATCH)return;const key=videoKey();window.__wbTurnValidationPending41085=true;
 setTimeout(async()=>{for(let i=0;i<80&&window.turnAnalysisBusy392;i++)await new Promise(r=>setTimeout(r,100));if(key===videoKey())await validateTimeline(e?.detail||{});else window.__wbTurnValidationPending41085=false},80);
 }
-function buildStyle(){let s=$q('#wbUiFeature41085');if(!s){s=document.createElement('style');s.id='wbUiFeature41085';document.head.appendChild(s)}const css="header h1{font-size:0!important}header h1::after{content:'シャドバWB リプレイ診断 v4.10.8';font-size:18px!important;font-weight:700}header>p:first-of-type{font-size:0!important}header>p:first-of-type::after{content:'Build 2026.09.17-20k / ターンHUD検証 + クラス表示固定';font-size:12px!important;color:#9ba8bf}";if(s.textContent!==css)s.textContent=css}
+function buildStyle(){let s=$q('#wbUiFeature41085');if(!s){s=document.createElement('style');s.id='wbUiFeature41085';document.head.appendChild(s)}const css="header h1{font-size:0!important}header h1::after{content:'シャドバWB リプレイ診断 v4.10.8';font-size:18px!important;font-weight:700}header>p:first-of-type{font-size:0!important}header>p:first-of-type::after{content:'Build 2026.09.17-20m / ターンHUD検証 + クラス表示安定化';font-size:12px!important;color:#9ba8bf}";if(s.textContent!==css)s.textContent=css}
 function verify(){const st={patch:PATCH,listener:true,boardGate:true,stableScannerShaExpected:'8543ddc47c0b6648f4151a61d3a5d060eb39ba3f',validationDoneKey,checkedAt:new Date().toISOString()};st.ok=true;window.__wbTurnSafety41085=st;safeLog('turn-safety-invariant-v41085',st);return true}
 buildStyle();setInterval(buildStyle,400);
 window.addEventListener('wb-turn-timeline-ready',scheduleValidation);
