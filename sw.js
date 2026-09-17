@@ -1,14 +1,18 @@
-const CACHE='wb-review-v4-10-8-20260917-49';
-const BUILD='4.10.8-20260917-20r';
-const ASSETS=["./","./index.html","./manifest.webmanifest","./latest.json","./recovery.html","./fix-v4.10.2-pre.js","./fix-v3.7.js","./fix-v3.7.1.js","./fix-v3.9.js","./fix-v3.9.1.js","./fix-v3.9.2.js","./fix-v4.0.js","./fix-v4.1.js","./fix-v4.2.js","./fix-v4.3.js","./fix-v4.3.1.js","./fix-v4.4.2.js","./fix-v4.4.3.js","./fix-v4.6.2.js","./fix-v4.6.3.js","./fix-v4.6.4.js","./fix-v4.6.5.js","./fix-v4.6.6.js","./fix-v4.6.7.js","./fix-v4.6.8.js","./fix-v4.6.9.js","./fix-v4.7.0.js","./fix-v4.7.1.js","./fix-v4.7.2.js","./fix-v4.8.0.js","./fix-v4.8.1.js","./fix-v4.9.0.js","./fix-v4.9.1.js","./fix-v4.9.2.js","./fix-v4.9.3.js","./fix-v4.9.4.js","./fix-v4.10.0.js","./fix-v4.10.2.js","./fix-v4.10.3.js","./fix-v4.10.4.js","./fix-v4.10.5.js","./fix-v4.10.6.js","./fix-v4.10.7.js","./fix-v4.10.8.js","./fix-v4.10.8.1.js","./fix-v4.10.8.2.js","./fix-v4.10.8.3.js","./fix-v4.10.8.4.js","./fix-v4.10.8.5.js","./fix-v4.10.8.6.js","./fix-v4.10.8.7.js","./fix-v4.10.8.8.js","./strategy/sea-pirate-royal-coaching-v1.json","./strategy/sea-pirate-royal-coaching-v2.json"];
+const CACHE='wb-review-v4-10-8-20260917-50';
+const BUILD='4.10.8-20260917-20s';
+const ASSETS=["./","./index.html","./manifest.webmanifest","./latest.json","./recovery.html","./fix-v4.10.2-pre.js","./fix-v3.7.js","./fix-v3.7.1.js","./fix-v3.9.js","./fix-v3.9.1.js","./fix-v3.9.2.js","./fix-v4.0.js","./fix-v4.1.js","./fix-v4.2.js","./fix-v4.3.js","./fix-v4.3.1.js","./fix-v4.4.2.js","./fix-v4.4.3.js","./fix-v4.6.2.js","./fix-v4.6.3.js","./fix-v4.6.4.js","./fix-v4.6.5.js","./fix-v4.6.6.js","./fix-v4.6.7.js","./fix-v4.6.8.js","./fix-v4.6.9.js","./fix-v4.7.0.js","./fix-v4.7.1.js","./fix-v4.7.2.js","./fix-v4.8.0.js","./fix-v4.8.1.js","./fix-v4.9.0.js","./fix-v4.9.1.js","./fix-v4.9.2.js","./fix-v4.9.3.js","./fix-v4.9.4.js","./fix-v4.10.0.js","./fix-v4.10.2.js","./fix-v4.10.3.js","./fix-v4.10.4.js","./fix-v4.10.5.js","./fix-v4.10.6.js","./fix-v4.10.7.js","./fix-v4.10.8.js","./fix-v4.10.8.3.js","./fix-v4.10.8.4.js","./fix-v4.10.8.5.js","./fix-v4.10.8.6.js","./fix-v4.10.8.8.js","./strategy/sea-pirate-royal-coaching-v1.json","./strategy/sea-pirate-royal-coaching-v2.json"];
 const LEGACY_SW_REGISTER="if('serviceWorker'in navigator){navigator.serviceWorker.register('./sw.js?v=3.4-20260914-04').then(r=>{r.update();log('service-worker-register',{scope:r.scope})}).catch(e=>log('service-worker-error',{message:e.message}))}";
-const MANAGED_SW_REGISTER="if('serviceWorker'in navigator){log('service-worker-register-managed',{mode:'canonical-root-sw-v4108-49'})}";
+const MANAGED_SW_REGISTER="if('serviceWorker'in navigator){log('service-worker-register-managed',{mode:'canonical-root-sw-v4108-50'})}";
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});
 self.addEventListener('activate',e=>{e.waitUntil((async()=>{const legacyBoot=new URL(self.location.href).searchParams.has('v');await Promise.all([self.clients.claim(),caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))]);if(legacyBoot){const cs=await self.clients.matchAll({type:'window',includeUncontrolled:true});await Promise.all(cs.map(c=>{try{const u=new URL(c.url);if(u.origin!==self.location.origin||u.pathname.endsWith('/recovery.html'))return null;return c.navigate(c.url)}catch{return null}}))}})())});
 self.addEventListener('message',e=>{if(e.data?.type==='wb-version-query'&&e.ports?.[0])e.ports[0].postMessage({build:BUILD,cache:CACHE})});
 function patchHtml(text){
   const managed=text.includes(LEGACY_SW_REGISTER)?text.replace(LEGACY_SW_REGISTER,MANAGED_SW_REGISTER):text;
-  const clean=managed.replace(/<script src="\.\/fix-v[^\"]+\.js[^>]*><\/script>/g,'');
+  const shell=managed
+    .replace('<title>シャドバWB リプレイ診断 v3.4</title>','<title>シャドバWB リプレイ診断 v4.10.8</title>')
+    .replace('<header><h1>シャドバWB リプレイ診断 v3.4</h1><p>Build 2026.09.14-04 / 最大PPターン認識</p></header>','<header><h1>シャドバWB リプレイ診断 v4.10.8</h1><p>Build 2026.09.17-20s / 起動競合源を停止</p></header>')
+    .replace("const BUILD='3.4-20260914-04';","const BUILD='4.10.8-20260917-20s';");
+  const clean=shell.replace(/<script src="\.\/fix-v[^\"]+\.js[^>]*><\/script>/g,'');
   const scripts='<script src="./fix-v4.10.2-pre.js?v=4.10.4-pre-20260915-16b"></script>'+ 
     '<script src="./fix-v3.7.js?v=3.7-20260914-07"></script>'+ 
     '<script src="./fix-v3.7.1.js?v=3.7.1-20260914-08"></script>'+ 
@@ -26,9 +30,9 @@ function patchHtml(text){
     '<script src="./fix-v4.9.0.js?v=4.9.0-20260915-10"></script>'+ 
     '<script src="./fix-v4.9.1.js?v=4.9.1-20260915-11"></script>'+ 
     '<script src="./fix-v4.9.2.js?v=4.9.2-20260915-12c"></script>'+ 
-    '<script src="./fix-v4.9.3.js?v=4.9.3-20260915-13d"></script>'+ 
+    '<script src="./fix-v4.9.3.js?v=4.9.3-20260917-ui-frozen"></script>'+ 
     '<script src="./fix-v4.9.4.js?v=4.9.4-20260915-14d"></script>'+ 
-    '<script src="./fix-v4.10.0.js?v=4.10.0-20260915-15b"></script>'+ 
+    '<script src="./fix-v4.10.0.js?v=4.10.0-20260917-ui-frozen"></script>'+ 
     '<script src="./fix-v4.10.2.js?v=4.10.2-20260915-15e"></script>'+ 
     '<script src="./fix-v4.10.3.js?v=4.10.3-20260915-15f"></script>'+ 
     '<script src="./fix-v4.10.4.js?v=4.10.4-20260916-updater-fix-17"></script>'+ 
@@ -36,14 +40,11 @@ function patchHtml(text){
     '<script src="./fix-v4.10.6.js?v=4.10.6-20260916-18a"></script>'+ 
     '<script src="./fix-v4.10.7.js?v=4.10.7-20260916-19a"></script>'+ 
     '<script src="./fix-v4.10.8.js?v=4.10.8-20260916-20a"></script>'+ 
-    '<script src="./fix-v4.10.8.1.js?v=4.10.8.1-20260917-20b"></script>'+ 
-    '<script src="./fix-v4.10.8.2.js?v=4.10.8.2-20260917-20c"></script>'+ 
     '<script src="./fix-v4.10.8.3.js?v=4.10.8.3-20260917-20g"></script>'+ 
     '<script src="./fix-v4.10.8.4.js?v=4.10.8.4-20260917-20l"></script>'+ 
     '<script src="./fix-v4.10.8.5.js?v=4.10.8.5-20260917-20n"></script>'+ 
     '<script src="./fix-v4.10.8.6.js?v=4.10.8.6-20260917-20o"></script>'+ 
-    '<script src="./fix-v4.10.8.7.js?v=4.10.8.7-20260917-20p"></script>'+ 
-    '<script src="./fix-v4.10.8.8.js?v=4.10.8.8-20260917-20r"></script>';
+    '<script src="./fix-v4.10.8.8.js?v=4.10.8.8-20260917-20s"></script>';
   return clean.replace('</body>',scripts+'</body>');
 }
 self.addEventListener('fetch',e=>{
