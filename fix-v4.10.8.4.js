@@ -1,5 +1,5 @@
 (()=>{
-const PATCH='4.10.8.4-20260917-20j';
+const PATCH='4.10.8.4-20260917-20l';
 const $q=s=>document.querySelector(s);
 const safeLog=(type,data={})=>{try{log(type,{patch:PATCH,...data})}catch{}};
 const RESOURCE_IDS={extra:'#leExtra480',ep:'#leEp480',sep:'#leSep480'};
@@ -60,20 +60,30 @@ const vs=region({x0:.43,x1:.57,y0:.28,y1:.72},'vs'),ic=region({x0:.84,x1:.885,y0
 if(vs.frac>=.15&&ic.satFrac>=.25&&ic.meanV>=.25){if(ic.mag>=.60){candidate='ナイトメア';confidence=Math.min(.99,.72+ic.mag*.25)}else if(ic.blue>=.60){candidate='ウィッチ';confidence=Math.min(.98,.70+ic.blue*.25)}else if(ic.cyan>=.60){candidate='ネメシス';confidence=Math.min(.98,.70+ic.cyan*.25)}}
 return{candidate,confidence,vsCyan:+vs.frac.toFixed(3),satFrac:+ic.satFrac.toFixed(3),meanV:+ic.meanV.toFixed(3),magenta:+ic.mag.toFixed(3),cyan:+ic.cyan.toFixed(3),blue:+ic.blue.toFixed(3),canvas:ic.canvas};
 }
-function clearClassCanvas(){const cv=$q('#classMark442');if(!cv)return;cv.getContext('2d').clearRect(0,0,cv.width,cv.height)}
-function drawClassPreview(){const cv=$q('#classMark442');if(!cv||!classPreviewCanvas)return;const x=cv.getContext('2d');x.clearRect(0,0,cv.width,cv.height);x.imageSmoothingEnabled=false;x.drawImage(classPreviewCanvas,0,0,cv.width,cv.height)}
+function ensureClassPlaceholder(){
+const cv=$q('#classMark442');if(!cv)return null;let p=$q('#classMarkPlaceholder41084');
+if(!p){p=document.createElement('div');p.id='classMarkPlaceholder41084';p.className='help';p.style.cssText='display:none;width:100%;max-width:180px;min-height:90px;box-sizing:border-box;border:1px dashed #475569;border-radius:10px;padding:12px;align-items:center;justify-content:center;text-align:center;color:#9aa8bf';cv.insertAdjacentElement('afterend',p)}
+return p;
+}
+function hideClassPreview(msg='画像なし'){
+const cv=$q('#classMark442'),p=ensureClassPlaceholder();if(cv){cv.getContext('2d').clearRect(0,0,cv.width,cv.height);cv.style.display='none'}if(p){p.textContent=msg;p.style.display='flex'}
+}
+function drawClassPreview(){const cv=$q('#classMark442'),p=ensureClassPlaceholder();if(!cv||!classPreviewCanvas)return;if(p)p.style.display='none';cv.style.display='block';const x=cv.getContext('2d');x.clearRect(0,0,cv.width,cv.height);x.imageSmoothingEnabled=false;x.drawImage(classPreviewCanvas,0,0,cv.width,cv.height)}
 function enforceClassUi(){
-const key=videoKey();if(classManualVideoKey===key)return;const sel=$q('#classSelect442'),status=$q('#classStatus442'),match=$q('#matchup');
+const key=videoKey();const sel=$q('#classSelect442'),status=$q('#classStatus442'),match=$q('#matchup');
 if(classUiState.key!==key){classUiState={key,state:'pending',candidate:'',confidence:0,time:null};classPreviewCanvas=null}
+if(classManualVideoKey===key){hideClassPreview('手動選択：クラス画像は未確認');return}
 if(classUiState.state==='accepted'){if(sel&&sel.value!==classUiState.candidate)sel.value=classUiState.candidate;if(match&&(!match.value.trim()||match.dataset.wbClassAuto41084==='1')){match.value=classUiState.candidate;match.dataset.wbClassAuto41084='1'}if(status)status.textContent=`自動判定：${classUiState.candidate}（VS画面 ${Number(classUiState.time).toFixed(1)}秒）。`;drawClassPreview()}
-else if(classUiState.state==='unknown'){if(sel)sel.value='';if(match?.dataset?.wbClassAuto41084==='1'){match.value='';delete match.dataset.wbClassAuto41084}if(status)status.textContent='自動判定保留：VS画面のクラスアイコンを確認できません。手動選択してください。';clearClassCanvas()}
-else{if(sel)sel.value='';if(status)status.textContent='ターン解析後にVS画面のクラスアイコンを再確認します。';clearClassCanvas()}
+else if(classUiState.state==='tentative'){if(sel&&sel.value!==classUiState.candidate)sel.value=classUiState.candidate;if(match?.dataset?.wbClassAuto41084==='1'){match.value='';delete match.dataset.wbClassAuto41084}if(status)status.textContent=`暫定候補：${classUiState.candidate}。VS画面のクラスアイコン画像は取得できていないため自動確定しません。`;hideClassPreview(`${classUiState.candidate}（暫定）\nクラス画像なし`)}
+else if(classUiState.state==='unknown'){if(sel)sel.value='';if(match?.dataset?.wbClassAuto41084==='1'){match.value='';delete match.dataset.wbClassAuto41084}if(status)status.textContent='自動判定保留：VS画面のクラスアイコンを確認できません。手動選択してください。';hideClassPreview('クラス画像を確認できません')}
+else{if(sel)sel.value='';if(status)status.textContent='ターン解析後にVS画面のクラスアイコンを再確認します。';hideClassPreview('ターン解析後に表示')}
 }
 async function validateDisplayedClass(reason='validated-turn'){
-if(classBusy)return null;const key=videoKey();if(classManualVideoKey===key)return{skipped:'manual'};const v=videoEl();if(!v?.videoWidth||!Number.isFinite(v.duration))return null;classBusy=true;const original=v.currentTime,wasPaused=v.paused;v.pause();
+if(classBusy)return null;const key=videoKey();if(classManualVideoKey===key)return{skipped:'manual'};const v=videoEl();if(!v?.videoWidth||!Number.isFinite(v.duration))return null;classBusy=true;const original=v.currentTime,wasPaused=v.paused,legacy=window.classDetection442;v.pause();
 try{const samples=[];let prior='',found=null;for(const t of [1,1.5,2,2.5,3]){if(key!==videoKey())return null;if(!await seekClass(t))continue;const r=classFrameStats();samples.push({time:t,candidate:r?.candidate||'',confidence:+(r?.confidence||0).toFixed(3),vsCyan:r?.vsCyan||0,satFrac:r?.satFrac||0,meanV:r?.meanV||0,magenta:r?.magenta||0,cyan:r?.cyan||0,blue:r?.blue||0});if(r?.candidate&&prior===r.candidate){found={time:t,r};break}prior=r?.candidate||''}
 if(key!==videoKey())return null;
 if(found){classPreviewCanvas=found.r.canvas;classUiState={key,state:'accepted',candidate:found.r.candidate,confidence:+found.r.confidence.toFixed(3),time:found.time};window.classDetection442={patch:PATCH,accepted:true,candidate:found.r.candidate,confidence:+found.r.confidence.toFixed(3),anchorTime:found.time,anchorSource:'validated-vs-screen',visualAnchor:true,method:'vs-screen-tight-class-icon-v41084',vsCyan:found.r.vsCyan,satFrac:found.r.satFrac,meanV:found.r.meanV,magenta:found.r.magenta,cyan:found.r.cyan,blue:found.r.blue}}
+else if(legacy?.accepted&&legacy?.candidate&&Number(legacy.confidence)>=.85){classPreviewCanvas=null;classUiState={key,state:'tentative',candidate:legacy.candidate,confidence:Number(legacy.confidence)||0,time:null};window.classDetection442={patch:PATCH,accepted:false,tentative:true,candidate:legacy.candidate,confidence:+Number(legacy.confidence||0).toFixed(3),anchorTime:null,anchorSource:'legacy-label-fallback-no-icon',visualAnchor:false,method:'legacy-label-fallback-no-icon-v41084',legacyPatch:legacy.patch||'',legacyMethod:legacy.method||''}}
 else{classPreviewCanvas=null;classUiState={key,state:'unknown',candidate:'',confidence:0,time:null};window.classDetection442={patch:PATCH,accepted:false,candidate:'',confidence:0,anchorTime:null,anchorSource:'validated-vs-screen-none',visualAnchor:false,method:'vs-screen-tight-class-icon-v41084'}}
 enforceClassUi();safeLog('class-display-validated-v41084',{reason,key,result:window.classDetection442,samples});return window.classDetection442;
 }catch(err){safeLog('class-display-validation-error-v41084',{reason,message:err?.message||String(err)});return null}
@@ -81,11 +91,11 @@ finally{await seekClass(original);if(!wasPaused)try{await v.play()}catch{}classB
 }
 async function scheduleClassValidation(reason){const key=videoKey();for(let i=0;i<50&&(window.turnAnalysisBusy392||window.__wbTurnValidationBusy41085||window.__wbTurnValidationPending41085);i++)await new Promise(r=>setTimeout(r,120));for(let i=0;i<30;i++){const p=window.mulliganPreview442,first=Number(window.turnTimeline39?.[0]?.time);if(p&&Number.isFinite(first)&&Math.abs(Number(p.firstTurn)-first)<1.2)break;await new Promise(r=>setTimeout(r,100))}if(key===videoKey())return validateDisplayedClass(reason);return null}
 function installNote(){const p=$q('#lethalPanel480');if(!p||$q('#leResourceMeaning41084'))return;const n=document.createElement('p');n.id='leResourceMeaning41084';n.className='help';n.textContent='資源表示：☑＝使用可、空欄＝使用不可、−＝未確認。EP/SEPは使用可能ターン以降、残存ポイント色を確認できた場合だけ自動で使用可にします。';p.appendChild(n)}
-function buildStyle(){let s=$q('#wbUiFeature41084');if(!s){s=document.createElement('style');s.id='wbUiFeature41084';document.head.appendChild(s)}const css="header h1{font-size:0!important}header h1::after{content:'シャドバWB リプレイ診断 v4.10.8';font-size:18px!important;font-weight:700}header>p:first-of-type{font-size:0!important}header>p:first-of-type::after{content:'Build 2026.09.17-20j / EP・SEP + クラス表示競合修正';font-size:12px!important;color:#9ba8bf}";if(s.textContent!==css)s.textContent=css}
-function verify(){const st={patch:PATCH,epSepDetector:true,classValidator:true,classUiOwner:true,noAutomaticClassSeekBeforeValidatedTurn:true,canonicalStateApi:!!window.__wbCanonicalStateFill41083,checkedAt:new Date().toISOString()};st.ok=st.canonicalStateApi;window.__wbResourceClassSafety41084=st;safeLog('resource-class-invariant-v41084',st);return st.ok}
+function buildStyle(){let s=$q('#wbUiFeature41084');if(!s){s=document.createElement('style');s.id='wbUiFeature41084';document.head.appendChild(s)}const css="header h1{font-size:0!important}header h1::after{content:'シャドバWB リプレイ診断 v4.10.8';font-size:18px!important;font-weight:700}header>p:first-of-type{font-size:0!important}header>p:first-of-type::after{content:'Build 2026.09.17-20l / ターンHUD補正 + クラス表示安定化';font-size:12px!important;color:#9ba8bf}";if(s.textContent!==css)s.textContent=css}
+function verify(){const st={patch:PATCH,epSepDetector:true,classValidator:true,classUiOwner:true,classUnknownPlaceholder:true,legacyLabelTentativeFallback:true,noAutomaticClassSeekBeforeValidatedTurn:true,canonicalStateApi:!!window.__wbCanonicalStateFill41083,checkedAt:new Date().toISOString()};st.ok=st.canonicalStateApi;window.__wbResourceClassSafety41084=st;safeLog('resource-class-invariant-v41084',st);return st.ok}
 buildStyle();installNote();ensureStateLabels();enforceClassUi();
 setInterval(()=>{watchCanonical();ensureStateLabels();enforceClassUi()},200);
-document.addEventListener('change',e=>{const t=e.target;if(t?.matches?.('#leExtra480,#leEp480,#leSep480'))setTimeout(ensureStateLabels,0);if(t?.matches?.('#classSelect442')&&e.isTrusted){classManualVideoKey=videoKey();classUiState={key:videoKey(),state:'manual',candidate:t.value||'',confidence:1,time:null};clearClassCanvas();safeLog('class-manual-current-video-v41084',{videoKey:videoKey(),value:t.value})}},true);
+document.addEventListener('change',e=>{const t=e.target;if(t?.matches?.('#leExtra480,#leEp480,#leSep480'))setTimeout(ensureStateLabels,0);if(t?.matches?.('#classSelect442')&&e.isTrusted){classManualVideoKey=videoKey();classUiState={key:videoKey(),state:'manual',candidate:t.value||'',confidence:1,time:null};hideClassPreview('手動選択：クラス画像は未確認');safeLog('class-manual-current-video-v41084',{videoKey:videoKey(),value:t.value})}},true);
 document.addEventListener('click',e=>{const b=e.target?.closest?.('#classRecheck464');if(!b)return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation?.();classManualVideoKey='';scheduleClassValidation('manual-recheck')},true);
 $q('#videoFile')?.addEventListener('change',()=>{lastCanonicalAt='';classManualVideoKey='';classPreviewCanvas=null;classUiState={key:videoKey(),state:'pending',candidate:'',confidence:0,time:null};setTimeout(enforceClassUi,0)});
 window.addEventListener('wb-turn-timeline-validated',()=>setTimeout(()=>scheduleClassValidation('validated-turn'),220));
