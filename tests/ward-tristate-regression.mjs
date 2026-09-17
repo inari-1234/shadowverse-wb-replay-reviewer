@@ -20,6 +20,12 @@ const greenStatOnly=S.classifyWardStats({window:{frac:.184,minThird:0},attack:{a
 assert.equal(greenStatOnly.state,'unknown');
 assert.equal(greenStatOnly.known,false);
 
+const goldenCardEffect=S.classifyWardStats({window:{frac:.098,minThird:.039},attack:{attackFrac:0}});
+assert.notEqual(goldenCardEffect.state,'present','golden card effects must not be accepted as ward shields');
+
+const weakestKnownWard=S.classifyWardStats({window:{frac:.151,minThird:.138},attack:{attackFrac:.0072}});
+assert.equal(weakestKnownWard.state,'present','weakest real ward sample must remain above the safe gate');
+
 const followerNoWard=S.classifyWardStats({window:{frac:.128,minThird:.068},attack:{attackFrac:.0262}});
 assert.equal(followerNoWard.state,'unknown');
 
