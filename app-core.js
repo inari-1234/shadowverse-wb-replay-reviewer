@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-const APP={version:'4.11.0',build:'4.11.0-20260917-clean-02',revision:'clean-02'};
+const APP={version:'4.11.0',build:'4.11.0-20260917-clean-03',revision:'clean-03'};
 const WB=window.WB={APP,modules:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
 WB.$=s=>document.querySelector(s);
 WB.registerModule=(name,version)=>{const row={name,version};if(!WB.modules.some(x=>x.name===name))WB.modules.push(row);return row};
