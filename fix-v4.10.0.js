@@ -5,8 +5,9 @@
   const uid=()=>`a${Date.now().toString(36)}${Math.random().toString(36).slice(2,7)}`;
   const safeLog=(type,data={})=>{try{log(type,{patch:PATCH,...data})}catch{}};
   const clone=x=>{try{return structuredClone(x)}catch{return JSON.parse(JSON.stringify(x))}};
+  const shellFrozen=()=>!!window.__wbLegacyUiFrozen;
   window.__wbV410Active=true;
-  document.documentElement.dataset.wbLatestUi='494';
+  if(!shellFrozen())document.documentElement.dataset.wbLatestUi='494';
   try{window.__wbHeaderObserver494?.disconnect?.()}catch{}
 
   function sourceKey(){return window.__wbCounterfactualV1?.sourceKey||window.__wbLethalV2?.sourceKey||window.__wbPublicInfoV2?.sourceKey||null}
@@ -143,15 +144,18 @@
     anchor.parentNode.insertBefore(p,anchor.nextSibling);$q('#asSource410').addEventListener('change',fillFromSource);$q('#asRun410').addEventListener('click',createAndAnalyze);refreshSources(true);renderResults();return true;
   }
   function header(){
+    if(shellFrozen())return true;
     const h=$q('header h1'),s=$q('header p');if(h)h.textContent='シャドバWB リプレイ診断 v4.10.0';if(s)s.textContent='Build 2026.09.15-15b / 分岐アシスト・資源自動引継ぎ';
     const st=$q('#wbUpdateStatus463')||$q('#wbUpdateStatus462');if(st&&!/最新版を確認中|更新完了/.test(st.textContent))st.textContent='v4.10.0 / 分岐アシスト';
+    return true;
   }
   function updater(){
+    if(shellFrozen())return true;
     const old=$q('#wbForceLatest463')||$q('#wbForceLatest462');if(!old||old.dataset.wb410==='1')return false;const b=old.cloneNode(true);b.dataset.wb410='1';old.replaceWith(b);
-    b.addEventListener('click',async()=>{if(b.disabled)return;b.disabled=true;const st=$q('#wbUpdateStatus463')||$q('#wbUpdateStatus462');if(st)st.textContent='最新版を確認中…';try{if('serviceWorker'in navigator){const reg=await navigator.serviceWorker.register('./sw.js?v=4.10.0-20260915-15b',{updateViaCache:'none'});await reg.update()}if('caches'in window){const ks=await caches.keys();await Promise.all(ks.filter(k=>k.startsWith('wb-review-')&&k!=='wb-review-v4-10-0-20260915-15b').map(k=>caches.delete(k)))}if(st)st.textContent='更新完了。v4.10.0で再起動します…';setTimeout(()=>{const u=new URL(location.href);u.searchParams.set('latest','4100b-'+Date.now());u.hash='';location.replace(u.href)},180)}catch(err){if(st)st.textContent='更新確認に失敗しました。';b.disabled=false;safeLog('force-latest-error-v410',{message:err?.message||String(err)})}},true);return true;
+    b.addEventListener('click',async()=>{if(shellFrozen()||b.disabled)return;b.disabled=true;const st=$q('#wbUpdateStatus463')||$q('#wbUpdateStatus462');if(st)st.textContent='最新版を確認中…';try{if('serviceWorker'in navigator){const reg=await navigator.serviceWorker.register('./sw.js?v=4.10.0-20260915-15b',{updateViaCache:'none'});await reg.update()}if('caches'in window){const ks=await caches.keys();await Promise.all(ks.filter(k=>k.startsWith('wb-review-')&&k!=='wb-review-v4-10-0-20260915-15b').map(k=>caches.delete(k)))}if(st)st.textContent='更新完了。v4.10.0で再起動します…';setTimeout(()=>{const u=new URL(location.href);u.searchParams.set('latest','4100b-'+Date.now());u.hash='';location.replace(u.href)},180)}catch(err){if(st)st.textContent='更新確認に失敗しました。';b.disabled=false;safeLog('force-latest-error-v410',{message:err?.message||String(err)})}},true);return true;
   }
   if(!document.documentElement.dataset.wb410Events){document.documentElement.dataset.wb410Events='1';document.addEventListener('click',e=>{if(e.target?.closest?.('#cfSave490,#cfNew490,[data-clone-cf],[data-edit-cf]'))setTimeout(()=>refreshSources(true),120)},true);$q('#videoFile')?.addEventListener('change',()=>setTimeout(()=>refreshSources(true),350));}
   window.__wbBranchAssistV1={version:'branch-assist-v1.0',deriveOwnTurnState,bestTemplate,validateSource,policy:{resourceRule:'PP/ExPP/EP/SEPは同ターンの保存済みリーサル状態からのみ取得。見つからなければnullで停止。',knowledgeRule:'knowledgeCutoffSecondsは親枝を継承。',branchRule:'相手手番起点から相手の返し後＝自分手番の子枝を作成。'}};
   let n=0;const tm=setInterval(()=>{n++;window.__wbV410Active=true;mount();header();updater();if(n>900)clearInterval(tm)},150);
-  safeLog('patch-v4100-active',{feature:'guided-counterfactual-response-to-lethal'});
+  safeLog('patch-v4100-active',{feature:'guided-counterfactual-response-to-lethal',legacyUiSuppressed:shellFrozen()});
 })();
