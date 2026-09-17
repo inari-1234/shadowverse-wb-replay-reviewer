@@ -42,6 +42,8 @@ const normal=[
 const nquick=[{side:'top',start:15.5},{side:'bottom',start:19.5}];
 const na=T.stableAlignment(normal,nquick);
 assert.equal(JSON.stringify(na),JSON.stringify({offset:0,count:2}));
+const twoOnly=T.stableAlignment(stable,[{side:'bottom',start:6.5},{side:'top',start:8.5}]);
+assert.equal(twoOnly,null,'offset prefix trim must require at least three aligned validated segments');
 const nr=T.trimStablePrefix(normal,na);
 assert.equal(nr.timeline,normal);
 console.log('TURN PREFIX REGRESSION PASS');
