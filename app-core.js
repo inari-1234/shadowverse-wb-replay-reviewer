@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-const APP={version:'4.11.0',build:'4.11.0-20260917-clean-04',revision:'clean-04'};
+const APP={version:'4.11.0',build:'4.11.0-20260917-clean-05',revision:'clean-05'};
 const WB=window.WB={APP,modules:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
 WB.$=s=>document.querySelector(s);
 WB.registerModule=(name,version)=>{const row={name,version};if(!WB.modules.some(x=>x.name===name))WB.modules.push(row);return row};
@@ -26,6 +26,7 @@ WB.runTask=async(name,fn,{lockText='動画位置を自動操作しています�
 WB.requestCancel=()=>{if(WB.task){WB.cancelRequested=true;WB.log('task-cancel-request',{name:WB.task})}};
 WB.setProgress=p=>{const w=WB.$('#progressWrap'),b=WB.$('#progress');if(!w||!b)return;if(p==null){w.classList.add('hidden');b.style.width='0%'}else{w.classList.remove('hidden');b.style.width=Math.max(0,Math.min(100,p))+'%'}};
 WB.setScanStatus=(msg,cls='help')=>{const e=WB.$('#scanStatus');if(e){e.className=cls;e.textContent=msg}};
+WB.pauseVideo=(reason='stability-guard')=>{const v=WB.video;if(!v)return false;const wasPaused=!!v.paused;if(!wasPaused)v.pause();WB.log('video-pause-guard',{reason,wasPaused,currentTime:Number.isFinite(v.currentTime)?+v.currentTime.toFixed(3):null});return !wasPaused};
 
 WB.seekTo=async(t,reason='seek')=>{const v=WB.video;if(!v||!Number.isFinite(v.duration))throw new Error('動画未読込');const target=Math.max(0,Math.min(Math.max(0,v.duration-.05),Number(t)||0));if(Math.abs(v.currentTime-target)<=.025){await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));return +v.currentTime.toFixed(3)}WB.seekCount++;WB.seekReasons[reason]=(WB.seekReasons[reason]||0)+1;WB.log('seek-start',{reason,target,from:+v.currentTime.toFixed(3)});return await new Promise((resolve,reject)=>{let done=false;const finish=(ok,err)=>{if(done)return;done=true;v.removeEventListener('seeked',onSeek);clearTimeout(timer);if(ok){WB.log('seek-complete',{reason,target,actual:+v.currentTime.toFixed(3)});requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(+v.currentTime.toFixed(3))))}else reject(err||new Error('シーク失敗'))};const onSeek=()=>finish(true);const timer=setTimeout(()=>finish(false,new Error(`シーク失敗: ${reason}`)),3500);v.addEventListener('seeked',onSeek,{once:true});v.currentTime=target})};
 window.seek=WB.seekTo;
@@ -54,6 +55,7 @@ WB.registerServiceWorker=async()=>{if(!('serviceWorker'in navigator))return;try{
 }catch(err){WB.recordError('service-worker',err)}};
 
 function init(){
+  const sub=document.querySelector('header p');if(sub)sub.textContent='Build 2026.09.17-clean-05 / 指定ターン停止・回帰保護';
   WB.video=WB.$('#video');
   const file=WB.$('#videoFile'),scrub=WB.$('#scrub');
   file?.addEventListener('change',e=>{const f=e.target.files?.[0];if(!f)return;if(WB.objectUrl)URL.revokeObjectURL(WB.objectUrl);WB.videoMeta={name:f.name,size:f.size,type:f.type,lastModified:f.lastModified};WB.videoName=WB.safeName(f.name);WB.objectUrl=URL.createObjectURL(f);WB.video.src=WB.objectUrl;WB.resetForVideo();WB.$('#videoStatus').textContent='動画情報を読み込み中…';WB.log('video-selected',WB.videoMeta)});
@@ -64,7 +66,8 @@ function init(){
   WB.$('#turnPick')?.addEventListener('input',WB.updateTurnPick);
   WB.$('#targetSide')?.addEventListener('change',()=>{WB.updateTurnPick();WB.log('target-side-change',{targetSide:WB.targetSide()})});
   WB.$('#playOrder')?.addEventListener('change',()=>WB.log('play-order-change',{playOrder:WB.playOrder()}));
-  WB.$('#goTurn')?.addEventListener('click',async()=>{const n=Number(WB.$('#turnPick').value)||1,row=WB.turnForTarget(n);if(!row||WB.task)return;try{await WB.runTask('ターン移動',()=>WB.seekTo(row.time,'go-selected-turn'),{lockText:`${n}Tへ移動しています。`})}catch{}});
+  WB.$('#goTurn')?.addEventListener('click',async()=>{const n=Number(WB.$('#turnPick').value)||1,row=WB.turnForTarget(n);if(!row||WB.task)return;WB.pauseVideo('go-selected-turn');try{await WB.runTask('ターン移動',async()=>{await WB.seekTo(row.time,'go-selected-turn');WB.log('turn-move-stable',{turn:n,target:+Number(row.time).toFixed(3),actual:+WB.video.currentTime.toFixed(3),paused:!!WB.video.paused})},{lockText:`${n}Tへ移動しています。`})}catch{}});
+  WB.$('#leFill')?.addEventListener('click',()=>{if(!WB.task)WB.pauseVideo('state-capture-start')},{capture:true});
   WB.$('#classSelect')?.addEventListener('change',e=>{const v=e.target.value,match=WB.$('#matchup');if(v&&match)match.value=v;WB.log('class-manual',{value:v,videoKey:WB.videoKey()})});
   WB.$('#captureScene')?.addEventListener('click',async()=>{if(!WB.videoMeta||WB.task)return;try{await WB.runTask('局面保存',async()=>{const c=WB.frameCanvas(1200);if(!c)throw new Error('画像を取得できません');const blob=await WB.canvasBlob(c,.84),ctx=WB.currentTurnContext(),scene={id:`s${Date.now().toString(36)}`,turn:ctx.turn,time:+WB.video.currentTime.toFixed(3),playOrder:WB.playOrder(),matchup:WB.$('#matchup').value.trim()||null,deck:WB.$('#deck').value.trim()||null,note:WB.$('#note').value.trim()||null,blob,url:URL.createObjectURL(blob)};WB.scenes.push(scene);WB.renderScenes();WB.$('#captureStatus').textContent=`${ctx.turn?ctx.turn+'T / ':''}${WB.fmt(scene.time)} を保存しました。`;WB.log('scene-save',{turn:ctx.turn,time:scene.time})},{lockText:'現在フレームを保存しています。'})}catch(err){WB.$('#captureStatus').textContent='保存エラー: '+err.message}});
   WB.$('#clearScenes')?.addEventListener('click',()=>{for(const s of WB.scenes)if(s.url)URL.revokeObjectURL(s.url);WB.scenes=[];WB.renderScenes();WB.log('scenes-clear')});
