@@ -1,11 +1,11 @@
 (()=>{
-  const PATCH='4.10.8.8-20260917-20q';
-  const BUILD_LABEL='Build 2026.09.17-20q / 起動・更新基盤安定化';
+  const PATCH='4.10.8.8-20260917-20r';
+  const BUILD_LABEL='Build 2026.09.17-20r / 起動・更新基盤安定化';
   const $q=s=>document.querySelector(s);
   const safeLog=(type,data={})=>{try{log(type,{patch:PATCH,...data})}catch{}};
   const LEGACY_STYLE_IDS=['wbUiFinal4104','wbUiFinal4105','wbUiFinal4106','wbUiFinal4107','wbUiFinal4108','wbUiFinal41081','wbUiFinal41082','wbUiFinal41087'];
   const delay=ms=>new Promise(r=>setTimeout(r,ms));
-  let repairs=0,updateBusy=false;
+  let repairs=0,updateBusy=false,legacyObserver=null;
 
   function ownHeader(){
     let s=$q('#wbCanonicalHeader41088');
@@ -20,12 +20,17 @@
     document.documentElement.dataset.wbCanonicalUiOwner='4108';
     return !!h&&!!p;
   }
-  function quietLegacyStyles(){for(const id of LEGACY_STYLE_IDS){const s=$q('#'+id);if(s&&!s.disabled)s.disabled=true}}
+  function quietLegacyStyles(){for(const id of LEGACY_STYLE_IDS){const s=$q('#'+id);if(s&&!s.disabled){s.disabled=true;repairs++}}}
+  function watchLegacyStyles(){
+    if(legacyObserver||!document.head)return;
+    legacyObserver=new MutationObserver(()=>quietLegacyStyles());
+    legacyObserver.observe(document.head,{subtree:true,childList:true,attributes:true,attributeFilter:['disabled']});
+  }
   function stabilize(reason='manual'){
-    try{window.__wbUiOwner41082?.disconnect?.()}catch{}
-    quietLegacyStyles();ownHeader();
+    try{window.__wbUiOwner41082?.disconnect?.();window.__wbUiOwner41087?.disconnect?.()}catch{}
+    quietLegacyStyles();ownHeader();watchLegacyStyles();
     const st=$q('#wbUpdateStatus4104');
-    if(st&&!/(準備中|更新中|確認中|再起動|復旧|失敗|取得中|反映中)/.test(String(st.textContent||''))&&st.textContent!=='v4.10.8 / Build 20q / 更新基盤安定'){st.textContent='v4.10.8 / Build 20q / 更新基盤安定'}
+    if(st&&!/(準備中|更新中|確認中|再起動|復旧|失敗|取得中|反映中)/.test(String(st.textContent||''))&&st.textContent!=='v4.10.8 / Build 20r / 更新基盤安定'){st.textContent='v4.10.8 / Build 20r / 更新基盤安定'}
     safeLog('ui-startup-stabilized-v41088',{reason,repairs});return verify(reason,false);
   }
   async function latestManifest(){
@@ -68,12 +73,12 @@
     finally{updateBusy=false;if(button)button.disabled=false}
   }
   async function migrateCanonicalWorker(){
-    if(!('serviceWorker'in navigator)||sessionStorage.getItem('wbCanonicalSw20q')==='1')return;
+    if(!('serviceWorker'in navigator)||sessionStorage.getItem('wbCanonicalSw20r')==='1')return;
     try{
       const reg=await navigator.serviceWorker.getRegistration();const src=reg?.active?.scriptURL||'';
       if(!src)return;const u=new URL(src);
       if(!u.search)return;
-      sessionStorage.setItem('wbCanonicalSw20q','1');
+      sessionStorage.setItem('wbCanonicalSw20r','1');
       safeLog('canonical-sw-migration-start-v41088',{from:src,to:canonicalSwUrl('./sw.js')});
       await forceLatestStable(null,null,true);
     }catch(err){safeLog('canonical-sw-migration-error-v41088',{message:err?.message||String(err)})}
@@ -85,14 +90,14 @@
   function verify(reason='verify',emit=true){
     const h=$q('header h1'),p=$q('header>p:first-of-type'),s=$q('#wbCanonicalHeader41088');
     const state={patch:PATCH,reason,header:h?.textContent||'',subheader:p?.textContent||'',canonicalStyle:!!s&&!s.disabled,legacyEnabled:LEGACY_STYLE_IDS.filter(id=>{const x=$q('#'+id);return x&&!x.disabled}),controllerScript:navigator.serviceWorker?.controller?.scriptURL||null,repairs,checkedAt:new Date().toISOString()};
-    state.ok=state.header==='シャドバWB リプレイ診断 v4.10.8'&&state.subheader===BUILD_LABEL&&state.canonicalStyle;
+    state.ok=state.header==='シャドバWB リプレイ診断 v4.10.8'&&state.subheader===BUILD_LABEL&&state.canonicalStyle&&state.legacyEnabled.length===0;
     window.__wbStartupSafety41088=state;if(emit)safeLog('startup-invariant-v41088',state);return state.ok;
   }
   function settlePasses(){[0,50,180,500,1200,3000,6500,9500,12000].forEach(ms=>setTimeout(()=>stabilize('settle-'+ms),ms))}
-  quietLegacyStyles();ownHeader();installCanonicalUpdateCapture();settlePasses();
+  quietLegacyStyles();ownHeader();watchLegacyStyles();installCanonicalUpdateCapture();settlePasses();
   window.addEventListener('pageshow',()=>stabilize('pageshow'));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')stabilize('visible')});
   window.__wbStartupGuard41088={stabilize,verify,forceLatestStable,migrateCanonicalWorker};
   setTimeout(migrateCanonicalWorker,1400);setTimeout(()=>verify('settled'),12200);
-  safeLog('patch-v41088-active',{feature:'canonical-header-and-stable-service-worker-registration'});
+  safeLog('patch-v41088-active',{feature:'canonical-header-stable-sw-and-legacy-style-attribute-guard'});
 })();
