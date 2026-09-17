@@ -51,4 +51,10 @@ assert.equal(presentWins.known,true);
 const directEmpty=S.decideWardSamples([{state:'none-candidate',stats:{attack:{attackFrac:0}}}],{nearOwnStart:false});
 assert.equal(directEmpty.state,'unknown','direct single-frame empty must not auto-confirm no ward');
 
+const turn1Rule=await S.recognizeWard({relativeSide:'自分',turn:1,playOrder:'先攻',targetSide:'bottom',time:7.226,row:{side:'bottom',turn:1,time:5.828}});
+assert.equal(turn1Rule.state,'none');
+assert.equal(turn1Rule.known,true);
+assert.equal(turn1Rule.reason,'first-player-own-turn1-rule');
+
+
 console.log('WARD TRISTATE REGRESSION PASS');
