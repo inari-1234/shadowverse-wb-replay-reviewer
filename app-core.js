@@ -1,0 +1,78 @@
+(()=>{
+'use strict';
+const APP={version:'4.11.0',build:'4.11.0-20260917-clean-01',revision:'clean-01'};
+const WB=window.WB={APP,modules:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
+WB.$=s=>document.querySelector(s);
+WB.registerModule=(name,version)=>{const row={name,version};if(!WB.modules.some(x=>x.name===name))WB.modules.push(row);return row};
+WB.log=(type,data={})=>{const now=WB.video&&Number.isFinite(WB.video.currentTime)?+WB.video.currentTime.toFixed(3):null;WB.events.push({at:new Date().toISOString(),type,currentTime:now,...data});if(WB.events.length>2500)WB.events.shift()};
+window.log=WB.log;
+WB.recordError=(scope,err,data={})=>{const row={at:new Date().toISOString(),scope,message:err?.message||String(err),...data};WB.errors.push(row);if(WB.errors.length>120)WB.errors.shift();WB.log('error',{...row});return row};
+WB.onReady=fn=>{if(WB.ready)Promise.resolve().then(fn);else WB.readyQueue.push(fn)};
+WB.emit=(name,detail={})=>window.dispatchEvent(new CustomEvent('wb:'+name,{detail}));
+WB.on=(name,fn)=>window.addEventListener('wb:'+name,e=>fn(e.detail,e));
+WB.fmt=sec=>{if(!Number.isFinite(Number(sec)))return'00:00.0';sec=Number(sec);const m=Math.floor(sec/60),s=(sec-m*60).toFixed(1).padStart(4,'0');return String(m).padStart(2,'0')+':'+s};
+WB.safeName=s=>(s||'replay').replace(/\.[^.]+$/,'').replace(/[^\w\u3040-\u30ff\u3400-\u9fff-]+/g,'_').slice(0,60);
+WB.targetSide=()=>{const s=WB.$('#targetSide')?.value;return s==='top'||s==='bottom'?s:'bottom'};
+WB.playOrder=()=>WB.$('#playOrder')?.value==='先攻'?'先攻':'後攻';
+WB.videoKey=()=>WB.videoMeta?`${WB.videoMeta.name}|${WB.videoMeta.size}|${WB.videoMeta.lastModified}`:String(WB.video?.currentSrc||WB.video?.src||'no-video');
+WB.currentTurnContext=()=>{const t=Number(WB.video?.currentTime),rows=WB.turnTimeline||[];let row=null;if(Number.isFinite(t))for(const r of rows){if(Number(r.time)<=t&&(!row||Number(r.time)>Number(row.time)))row=r}const reviewed=WB.targetSide(),side=row?.side==='top'||row?.side==='bottom'?row.side:null;return{time:Number.isFinite(t)?+t.toFixed(3):null,row,turn:Number(row?.turn)||null,absoluteSide:side,targetSide:reviewed,relativeSide:side?(side===reviewed?'自分':'相手'):null,playOrder:WB.playOrder(),videoKey:WB.videoKey()}};
+WB.frameCanvas=(maxW=1200)=>{const v=WB.video;if(!v?.videoWidth||!v?.videoHeight)return null;const scale=Math.min(1,maxW/v.videoWidth),c=document.createElement('canvas');c.width=Math.max(1,Math.round(v.videoWidth*scale));c.height=Math.max(1,Math.round(v.videoHeight*scale));c.getContext('2d',{willReadFrequently:true}).drawImage(v,0,0,c.width,c.height);return c};
+WB.canvasBlob=(c,q=.82)=>new Promise((res,rej)=>c.toBlob(b=>b?res(b):rej(new Error('画像化失敗')),'image/jpeg',q));
+WB.downloadJSON=(obj,name)=>{const b=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1500)};
+WB.shareJsonFile=async(obj,name)=>{const file=new File([JSON.stringify(obj,null,2)],name,{type:'application/json',lastModified:Date.now()});if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]}))){try{await navigator.share({files:[file]});return}catch(e){if(e?.name==='AbortError')return}}WB.downloadJSON(obj,name)};
+
+WB.setTaskLock=(on,title='',text='')=>{const box=WB.$('#taskLock');if(!box)return;if(on){WB.$('#taskLockTitle').textContent=title||'処理中';WB.$('#taskLockText').textContent=text||'動画位置を自動操作しています。';box.classList.remove('hidden')}else box.classList.add('hidden')};
+WB.runTask=async(name,fn,{lockText='動画位置を自動操作しています。'}={})=>{if(WB.task)throw new Error(`別処理を実行中です: ${WB.task}`);WB.task=name;WB.cancelRequested=false;WB.setTaskLock(true,name,lockText);WB.log('task-start',{name});try{return await fn()}catch(err){WB.recordError(name,err);throw err}finally{WB.log('task-finish',{name,cancelRequested:WB.cancelRequested});WB.task=null;WB.cancelRequested=false;WB.setTaskLock(false)}};
+WB.requestCancel=()=>{if(WB.task){WB.cancelRequested=true;WB.log('task-cancel-request',{name:WB.task})}};
+WB.setProgress=p=>{const w=WB.$('#progressWrap'),b=WB.$('#progress');if(!w||!b)return;if(p==null){w.classList.add('hidden');b.style.width='0%'}else{w.classList.remove('hidden');b.style.width=Math.max(0,Math.min(100,p))+'%'}};
+WB.setScanStatus=(msg,cls='help')=>{const e=WB.$('#scanStatus');if(e){e.className=cls;e.textContent=msg}};
+
+WB.seekTo=async(t,reason='seek')=>{const v=WB.video;if(!v||!Number.isFinite(v.duration))throw new Error('動画未読込');const target=Math.max(0,Math.min(Math.max(0,v.duration-.05),Number(t)||0));if(Math.abs(v.currentTime-target)<=.025){await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));return +v.currentTime.toFixed(3)}WB.seekCount++;WB.seekReasons[reason]=(WB.seekReasons[reason]||0)+1;WB.log('seek-start',{reason,target,from:+v.currentTime.toFixed(3)});return await new Promise((resolve,reject)=>{let done=false;const finish=(ok,err)=>{if(done)return;done=true;v.removeEventListener('seeked',onSeek);clearTimeout(timer);if(ok){WB.log('seek-complete',{reason,target,actual:+v.currentTime.toFixed(3)});requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(+v.currentTime.toFixed(3))))}else reject(err||new Error('シーク失敗'))};const onSeek=()=>finish(true);const timer=setTimeout(()=>finish(false,new Error(`シーク失敗: ${reason}`)),3500);v.addEventListener('seeked',onSeek,{once:true});v.currentTime=target})};
+window.seek=WB.seekTo;
+
+WB.ocrWorker=null;
+WB.initOCR=async()=>{if(WB.ocrWorker)return WB.ocrWorker;if(!window.Tesseract)throw new Error('OCRライブラリを読み込めません');WB.log('ocr-init-start');WB.ocrWorker=await Tesseract.createWorker('eng',1);await WB.restoreOCRDefaults();WB.log('ocr-ready');return WB.ocrWorker};
+WB.restoreOCRDefaults=async()=>{if(!WB.ocrWorker)return false;try{await WB.ocrWorker.setParameters({tessedit_char_whitelist:'0123456789',tessedit_pageseg_mode:'10'});WB.log('ocr-defaults-restored',{pageseg:'10'});return true}catch(err){WB.recordError('ocr-default-restore',err);return false}};
+
+WB.setTimeline=rows=>{WB.turnTimeline=Array.isArray(rows)?rows.slice().sort((a,b)=>a.time-b.time):[];window.turnTimeline39=WB.turnTimeline;WB.renderTimeline();WB.updateTurnPick();WB.emit('timeline',{timeline:WB.turnTimeline});};
+WB.renderTimeline=()=>{const out=WB.$('#turnTimeline');if(!out)return;if(!WB.turnTimeline.length){out.textContent='';return}out.textContent=WB.turnTimeline.map(r=>`${r.side==='top'?'上':'下'}${r.turn}T  ${WB.fmt(r.time)}  ${r.source||'turn-indicator'}${r.boardValidated?' / HUD確認':''}`).join('\n')};
+WB.turnForTarget=n=>WB.turnTimeline.find(r=>r.side===WB.targetSide()&&Number(r.turn)===Number(n))||null;
+WB.updateTurnPick=()=>{const n=Number(WB.$('#turnPick')?.value)||1,row=WB.turnForTarget(n),go=WB.$('#goTurn'),cap=WB.$('#captureScene');if(go)go.disabled=!row||!!WB.task;if(cap)cap.disabled=!WB.videoMeta||!!WB.task;const time=WB.$('#turnTime'),st=WB.$('#turnStatus');if(time)time.value=row?WB.fmt(row.time):'未認識';if(st)st.textContent=row?`${n}Tを ${WB.fmt(row.time)} と認識しています。`:`${n}Tはまだ認識されていません。`};
+
+WB.resetForVideo=()=>{WB.turnTimeline=[];window.turnTimeline39=[];WB.turnValidation=null;WB.mulligan=null;WB.classDetection=null;WB.stateCapture=null;WB.seekCount=0;WB.seekReasons={};WB.cancelRequested=false;WB.setProgress(null);WB.renderTimeline();for(const s of WB.scenes)if(s.url)URL.revokeObjectURL(s.url);WB.scenes=[];WB.renderScenes();const ids=['#leTurn','#leOppHp','#lePp'];ids.forEach(id=>{const e=WB.$(id);if(e){e.value='';delete e.dataset.source}});for(const id of ['#leExtra','#leEp','#leSep','#leWard']){const e=WB.$(id);if(e)e.value='unknown'}const mm=WB.$('#mulliganStill');if(mm){mm.removeAttribute('src');mm.style.display='none'}if(WB.$('#mulliganStillTime'))WB.$('#mulliganStillTime').textContent='';if(WB.$('#previewStatus'))WB.$('#previewStatus').textContent='ターン確定後にマリガンを取得し、その後にVS画面のクラスアイコンを判定します。';WB.clearClassUi();WB.updateTurnPick();WB.emit('video-reset',{videoKey:WB.videoKey()})};
+WB.clearClassUi=()=>{const c=WB.$('#classMark'),p=WB.$('#classMarkPlaceholder'),sel=WB.$('#classSelect'),st=WB.$('#classStatus');if(c){c.getContext('2d').clearRect(0,0,c.width,c.height);c.classList.add('hidden')}if(p){p.textContent='クラス画像を確認できません';p.classList.remove('hidden')}if(sel)sel.value='';if(st)st.textContent='未判定'};
+WB.renderScenes=()=>{const out=WB.$('#savedScenes');if(!out)return;out.innerHTML='';WB.scenes.forEach((s,i)=>{const d=document.createElement('div');d.className='savedItem';d.innerHTML=`<img src="${s.url}" alt="局面"><div><span class="badge">${s.turn?`${s.turn}T`:'T不明'}</span><span class="badge">${WB.fmt(s.time)}</span><div class="muted">${WB.escape(s.note||'メモなし')}</div></div>`;out.appendChild(d)})};
+WB.escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+async function queryServiceWorker(reg){const target=navigator.serviceWorker.controller||reg?.active||reg?.waiting;if(!target)return null;return await new Promise(resolve=>{const ch=new MessageChannel(),timer=setTimeout(()=>resolve(null),1200);ch.port1.onmessage=e=>{clearTimeout(timer);resolve(e.data||null)};try{target.postMessage({type:'wb-version-query'},[ch.port2])}catch{clearTimeout(timer);resolve(null)}})}
+WB.registerServiceWorker=async()=>{if(!('serviceWorker'in navigator))return;try{
+  const reloadKey='wb-clean-controller-'+APP.build;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{try{if(sessionStorage.getItem(reloadKey)!=='1'){sessionStorage.setItem(reloadKey,'1');WB.log('service-worker-controllerchange-reload',{build:APP.build});location.reload()}}catch{}},{once:true});
+  const reg=await navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'});await reg.update();
+  const installing=reg.installing;if(installing&&installing.state!=='activated'){await Promise.race([new Promise(resolve=>installing.addEventListener('statechange',()=>{if(installing.state==='activated'||installing.state==='redundant')resolve() })),new Promise(resolve=>setTimeout(resolve,4000))])}
+  WB.swInfo=await queryServiceWorker(reg);WB.log('service-worker-register-managed',{scope:reg.scope,mode:'clean-single-sw',info:WB.swInfo})
+}catch(err){WB.recordError('service-worker',err)}};
+
+function init(){
+  WB.video=WB.$('#video');
+  const file=WB.$('#videoFile'),scrub=WB.$('#scrub');
+  file?.addEventListener('change',e=>{const f=e.target.files?.[0];if(!f)return;if(WB.objectUrl)URL.revokeObjectURL(WB.objectUrl);WB.videoMeta={name:f.name,size:f.size,type:f.type,lastModified:f.lastModified};WB.videoName=WB.safeName(f.name);WB.objectUrl=URL.createObjectURL(f);WB.video.src=WB.objectUrl;WB.resetForVideo();WB.$('#videoStatus').textContent='動画情報を読み込み中…';WB.log('video-selected',WB.videoMeta)});
+  WB.video?.addEventListener('loadedmetadata',()=>{if(scrub)scrub.max=WB.video.duration;if(WB.$('#dur'))WB.$('#dur').textContent=WB.fmt(WB.video.duration);WB.$('#scanTurns').disabled=false;WB.$('#leFill').disabled=false;WB.$('#previewMulligan').disabled=!WB.turnTimeline.length;WB.$('#videoStatus').textContent=`${WB.videoMeta?.name||'動画'} / ${WB.fmt(WB.video.duration)} / ${WB.video.videoWidth}×${WB.video.videoHeight}`;WB.log('metadata',{duration:+WB.video.duration.toFixed(3),videoWidth:WB.video.videoWidth,videoHeight:WB.video.videoHeight});WB.emit('metadata',{videoKey:WB.videoKey()})});
+  WB.video?.addEventListener('timeupdate',()=>{if(WB.$('#now'))WB.$('#now').textContent=WB.fmt(WB.video.currentTime);if(scrub&&!WB.task)scrub.value=WB.video.currentTime});
+  scrub?.addEventListener('change',()=>{if(WB.task){scrub.value=WB.video.currentTime;return}WB.video.currentTime=Number(scrub.value);WB.log('scrub',{to:Number(scrub.value)})});
+  document.querySelectorAll('[data-jump]').forEach(b=>b.addEventListener('click',()=>{if(WB.task||!Number.isFinite(WB.video?.duration))return;const d=Number(b.dataset.jump);WB.video.currentTime=Math.max(0,Math.min(WB.video.duration,WB.video.currentTime+d));WB.log('jump',{delta:d})}));
+  WB.$('#turnPick')?.addEventListener('input',WB.updateTurnPick);
+  WB.$('#targetSide')?.addEventListener('change',()=>{WB.updateTurnPick();WB.log('target-side-change',{targetSide:WB.targetSide()})});
+  WB.$('#playOrder')?.addEventListener('change',()=>WB.log('play-order-change',{playOrder:WB.playOrder()}));
+  WB.$('#goTurn')?.addEventListener('click',async()=>{const n=Number(WB.$('#turnPick').value)||1,row=WB.turnForTarget(n);if(!row||WB.task)return;try{await WB.runTask('ターン移動',()=>WB.seekTo(row.time,'go-selected-turn'),{lockText:`${n}Tへ移動しています。`})}catch{}});
+  WB.$('#classSelect')?.addEventListener('change',e=>{const v=e.target.value,match=WB.$('#matchup');if(v&&match)match.value=v;WB.log('class-manual',{value:v,videoKey:WB.videoKey()})});
+  WB.$('#captureScene')?.addEventListener('click',async()=>{if(!WB.videoMeta||WB.task)return;try{await WB.runTask('局面保存',async()=>{const c=WB.frameCanvas(1200);if(!c)throw new Error('画像を取得できません');const blob=await WB.canvasBlob(c,.84),ctx=WB.currentTurnContext(),scene={id:`s${Date.now().toString(36)}`,turn:ctx.turn,time:+WB.video.currentTime.toFixed(3),playOrder:WB.playOrder(),matchup:WB.$('#matchup').value.trim()||null,deck:WB.$('#deck').value.trim()||null,note:WB.$('#note').value.trim()||null,blob,url:URL.createObjectURL(blob)};WB.scenes.push(scene);WB.renderScenes();WB.$('#captureStatus').textContent=`${ctx.turn?ctx.turn+'T / ':''}${WB.fmt(scene.time)} を保存しました。`;WB.log('scene-save',{turn:ctx.turn,time:scene.time})},{lockText:'現在フレームを保存しています。'})}catch(err){WB.$('#captureStatus').textContent='保存エラー: '+err.message}});
+  WB.$('#clearScenes')?.addEventListener('click',()=>{for(const s of WB.scenes)if(s.url)URL.revokeObjectURL(s.url);WB.scenes=[];WB.renderScenes();WB.log('scenes-clear')});
+  WB.$('#cancelScan')?.addEventListener('click',WB.requestCancel);
+  WB.log('app-start',{build:APP.build,href:location.href,standalone:matchMedia('(display-mode: standalone)').matches});
+  WB.registerServiceWorker();
+  WB.ready=true;for(const fn of WB.readyQueue.splice(0)){try{fn()}catch(err){WB.recordError('module-init',err)}}
+}
+
+document.addEventListener('DOMContentLoaded',init,{once:true});
+})();
