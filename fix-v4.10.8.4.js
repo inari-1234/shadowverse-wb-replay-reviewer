@@ -1,5 +1,5 @@
 (()=>{
-  const PATCH='4.10.8.4-20260917-20h';
+  const PATCH='4.10.8.4-20260917-20i';
   const $q=s=>document.querySelector(s);
   const safeLog=(type,data={})=>{try{log(type,{patch:PATCH,...data})}catch{}};
   const RESOURCE_IDS={extra:'#leExtra480',ep:'#leEp480',sep:'#leSep480'};
@@ -43,7 +43,12 @@
     const state=window.__wbCanonicalState41083;if(!state?.context)return null;const ctx=state.context,evo=detectEvolutionResources(ctx),ep=$q(RESOURCE_IDS.ep),sep=$q(RESOURCE_IDS.sep);
     if(ep&&!isManualCurrent(ep)){if(evo.ep?.known)setKnown(ep,!!evo.ep.available,'canonical-'+evo.ep.reason+'-v41084');else setUnknown(ep,'canonical-'+(evo.ep?.reason||'unknown')+'-v41084')}
     if(sep&&!isManualCurrent(sep)){if(evo.sep?.known)setKnown(sep,!!evo.sep.available,'canonical-'+evo.sep.reason+'-v41084');else setUnknown(sep,'canonical-'+(evo.sep?.reason||'unknown')+'-v41084')}
-    state.resources=state.resources||{};state.resources.evolution=evo;state.resources.epSepPatch=PATCH;ensureStateLabels();safeLog('ep-sep-state-read-v41084',{reason,context:ctx,evolution:evo,ui:{ep:ep?.indeterminate?null:!!ep?.checked,sep:sep?.indeterminate?null:!!sep?.checked}});return evo;
+    state.resources=state.resources||{};state.resources.evolution=evo;state.resources.epSepPatch=PATCH;ensureStateLabels();refreshCanonicalStatus(state);safeLog('ep-sep-state-read-v41084',{reason,context:ctx,evolution:evo,ui:{ep:ep?.indeterminate?null:!!ep?.checked,sep:sep?.indeterminate?null:!!sep?.checked}});return evo;
+  }
+  function refreshCanonicalStatus(state=window.__wbCanonicalState41083){
+    const st=$q('#leStatus480');if(!st||!state)return;const api=window.__wbResourceRecognizer4108,u=api?.unknownResources?.()||[],parts=[];
+    if(!state.pp?.result?.accepted)parts.push('PP未確定');if(!state.hp?.result?.accepted)parts.push('相手HP未確定');if(u.length)parts.push(u.join('/')+'未確認');if(window.__wbCanonicalStateFill41083?.wardUnknown?.())parts.push('相手守護未確認');
+    st.textContent=parts.length?`取得完了：${parts.join(' / ')}。未確認項目は推定しません。`:'取得完了：ターン・PP・相手HP・資源を確認しました。';st.style.color=parts.length?'#facc15':'#86efac';
   }
   function watchCanonical(){const s=window.__wbCanonicalState41083,at=s?.at||'';if(!at||at===lastCanonicalAt)return;lastCanonicalAt=at;setTimeout(()=>applyEvolutionResources('canonical-state-updated'),0)}
 
@@ -64,11 +69,12 @@
   async function scheduleClassValidation(reason){const key=videoKey();try{const ready=window.classAnchorReady468;if(ready&&typeof ready.then==='function')await ready}catch{}for(let i=0;i<40&&window.turnAnalysisBusy392;i++)await new Promise(r=>setTimeout(r,150));if(key===videoKey())return validateDisplayedClass(reason);return null}
 
   function installNote(){const p=$q('#lethalPanel480');if(!p||$q('#leResourceMeaning41084'))return;const n=document.createElement('p');n.id='leResourceMeaning41084';n.className='help';n.textContent='資源表示：☑＝使用可、空欄＝使用不可、−＝未確認。EP/SEPは使用可能ターン以降、残存ポイント色を確認できた場合だけ自動で使用可にします。';p.appendChild(n)}
-  function buildStyle(){let s=$q('#wbUiFeature41084');if(!s){s=document.createElement('style');s.id='wbUiFeature41084';document.head.appendChild(s)}const css="header h1{font-size:0!important}header h1::after{content:'シャドバWB リプレイ診断 v4.10.8';font-size:18px!important;font-weight:700}header>p:first-of-type{font-size:0!important}header>p:first-of-type::after{content:'Build 2026.09.17-20h / EP・SEP実画像認識 + クラスROI修正';font-size:12px!important;color:#9ba8bf}";if(s.textContent!==css)s.textContent=css}
+  function buildStyle(){let s=$q('#wbUiFeature41084');if(!s){s=document.createElement('style');s.id='wbUiFeature41084';document.head.appendChild(s)}const css="header h1{font-size:0!important}header h1::after{content:'シャドバWB リプレイ診断 v4.10.8';font-size:18px!important;font-weight:700}header>p:first-of-type{font-size:0!important}header>p:first-of-type::after{content:'Build 2026.09.17-20i / EP・SEP実画像認識 + クラスROI修正';font-size:12px!important;color:#9ba8bf}";if(s.textContent!==css)s.textContent=css}
   function verify(){const st={patch:PATCH,epSepDetector:true,classValidator:true,stableTurnScannerUntouched:!!window.turnTimeline39||true,canonicalStateApi:!!window.__wbCanonicalStateFill41083,checkedAt:new Date().toISOString()};st.ok=st.canonicalStateApi;window.__wbResourceClassSafety41084=st;safeLog('resource-class-invariant-v41084',st);return st.ok}
 
   buildStyle();installNote();ensureStateLabels();
-  const tm=setInterval(()=>{buildStyle();installNote();ensureStateLabels();watchCanonical()},120);setTimeout(()=>clearInterval(tm),120000);
+  const uiTm=setInterval(()=>{buildStyle();installNote();ensureStateLabels()},250);setTimeout(()=>clearInterval(uiTm),15000);
+  setInterval(watchCanonical,180);
   document.addEventListener('change',e=>{const t=e.target;if(t?.matches?.('#leExtra480,#leEp480,#leSep480'))setTimeout(ensureStateLabels,0);if(t?.matches?.('#classSelect442')&&e.isTrusted){classManualVideoKey=videoKey();safeLog('class-manual-current-video-v41084',{videoKey:videoKey(),value:t.value})}},true);
   $q('#videoFile')?.addEventListener('change',()=>{lastCanonicalAt='';classManualVideoKey='';setTimeout(()=>{ensureStateLabels();scheduleClassValidation('video-change')},220)});
   videoEl()?.addEventListener('loadedmetadata',()=>setTimeout(()=>scheduleClassValidation('loadedmetadata'),180));
