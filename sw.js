@@ -1,5 +1,5 @@
-const CACHE='wb-review-v4-11-0-20260918-clean-08';
-const BUILD='4.11.0-20260918-clean-08';
+const CACHE='wb-review-v4-11-0-20260918-clean-09';
+const BUILD='4.11.0-20260918-clean-09';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./latest.json','./app-core.js','./turn-recognition.js','./mulligan-class.js','./state-recognition.js','./review-engine.js','./diagnostics.js'];
 self.addEventListener('install',event=>{self.skipWaiting();event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)))});
 self.addEventListener('activate',event=>{event.waitUntil((async()=>{const keys=await caches.keys();await Promise.all(keys.filter(k=>k.startsWith('wb-review-')&&k!==CACHE).map(k=>caches.delete(k)));await self.clients.claim()})())});
