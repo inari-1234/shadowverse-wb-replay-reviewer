@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-const APP={version:'4.11.0',build:'4.11.0-20260918-clean-08',revision:'clean-08'};
+const APP={version:'4.11.0',build:'4.11.0-20260918-clean-09',revision:'clean-09'};
 const WB=window.WB={APP,modules:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
 WB.$=s=>document.querySelector(s);
 WB.registerModule=(name,version)=>{const row={name,version};if(!WB.modules.some(x=>x.name===name))WB.modules.push(row);return row};
@@ -55,7 +55,7 @@ WB.registerServiceWorker=async()=>{if(!('serviceWorker'in navigator))return;try{
 }catch(err){WB.recordError('service-worker',err)}};
 
 function init(){
-  const sub=document.querySelector('header p');if(sub)sub.textContent='Build 2026.09.18-clean-08 / 守護三値判定・リーサル安全強化';
+  const sub=document.querySelector('header p');if(sub)sub.textContent='Build 2026.09.18-clean-09 / 1T守護ルール確定・安全回帰';
   WB.video=WB.$('#video');
   const file=WB.$('#videoFile'),scrub=WB.$('#scrub');
   file?.addEventListener('change',e=>{const f=e.target.files?.[0];if(!f)return;if(WB.objectUrl)URL.revokeObjectURL(WB.objectUrl);WB.videoMeta={name:f.name,size:f.size,type:f.type,lastModified:f.lastModified};WB.videoName=WB.safeName(f.name);WB.objectUrl=URL.createObjectURL(f);WB.video.src=WB.objectUrl;WB.resetForVideo();WB.$('#videoStatus').textContent='動画情報を読み込み中…';WB.log('video-selected',WB.videoMeta)});
