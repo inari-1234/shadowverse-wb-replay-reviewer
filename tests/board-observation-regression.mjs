@@ -16,13 +16,23 @@ assert.equal(S.classifyFaceAttackGlowScore(.08).state,'face');
 assert.equal(S.classifyFaceAttackGlowScore(.02).state,'no-face');
 assert.equal(S.classifyFaceAttackGlowScore(.042).state,'unknown');
 
-const directFace=[{badgeCount:2,readable:true,values:[1,1],candidateTotal:2,faceDamageConfirmed:true,value:1,offset:0}];
+const directFace=[
+ {badgeCount:2,readable:true,values:[1,1],candidateTotal:2,faceDamageConfirmed:true,value:1,offset:0},
+ {badgeCount:2,readable:true,values:[1,1],candidateTotal:2,faceDamageConfirmed:true,value:1,offset:.15}
+];
 let fd=S.decideBoardSamples(directFace,{nearOwnStart:false});
 assert.equal(fd.accepted,true);
 assert.equal(fd.value,1);
-assert.equal(fd.reason,'direct-face-attack-glow-confirmed');
+assert.equal(fd.reason,'direct-face-attack-glow-consensus');
 
-const directNoFace=[{badgeCount:2,readable:true,values:[1,1],candidateTotal:2,faceDamageConfirmed:true,value:0,offset:0}];
+const oneDirectFace=[directFace[0]];
+fd=S.decideBoardSamples(oneDirectFace,{nearOwnStart:false});
+assert.equal(fd.accepted,false,'one direct glow frame must not be enough');
+
+const directNoFace=[
+ {badgeCount:2,readable:true,values:[1,1],candidateTotal:2,faceDamageConfirmed:true,value:0,offset:0},
+ {badgeCount:2,readable:true,values:[1,1],candidateTotal:2,faceDamageConfirmed:true,value:0,offset:.15}
+];
 fd=S.decideBoardSamples(directNoFace,{nearOwnStart:false});
 assert.equal(fd.accepted,true);
 assert.equal(fd.value,0);
@@ -47,7 +57,7 @@ assert.equal(d.faceDamageConfirmed,true);
 d=S.decideBoardSamples([zero[0]],{nearOwnStart:false});
 assert.equal(d.accepted,false);
 assert.equal(d.known,false);
-assert.equal(d.reason,'direct-zero-not-safe');
+assert.equal(d.reason,'direct-empty-board-insufficient-consensus');
 
 const oneFrame=[{badgeCount:1,readable:true,values:[1],candidateTotal:1,offset:0}];
 d=S.decideBoardSamples(oneFrame,{nearOwnStart:true});
