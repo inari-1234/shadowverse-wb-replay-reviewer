@@ -63,10 +63,12 @@ const legacy={
   pirateFlagCountdowns:[],pirateFlagsKnown:true,
   knownBoardLeaderDamage:0,boardDamageKnown:true,
   otherConfirmedLeaderDamage:0,otherDamageKnown:true,
-  hand:{barbaros:'have',zetaBeatrix:'none',quickBlader:'none',otherDamageRoutesChecked:true}
+  hand:{barbaros:'have',zetaBeatrix:'none',otherDamageRoutesChecked:true}
 };
 x=R.calculate(legacy);
-assert.ok(x.lethalRoutes.includes('バルバロス'));
+assert.ok(x.routes.some(r=>r.name==='バルバロス'));
+assert.equal(x.status,'incomplete-do-not-declare-no-lethal');
+assert.ok(x.unknown.some(v=>v.includes('クイックブレイダー')));
 
 assert.equal(R.catalog.cards.some(c=>c.id==='quickBlader'&&c.cost===1&&c.baseDamage===1),true);
 console.log('TACTICAL SUMMARY REGRESSION PASS');
