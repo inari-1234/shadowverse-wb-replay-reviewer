@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.3',build:'4.13.3-20260918-clean-13-3',revision:'clean-13-3'};
+const APP={version:'4.13.4',build:'4.13.4-20260918-clean-13-4',revision:'clean-13-4',subtitle:'Build 2026.09.18-clean-13-4 / 現在位置直前の手札を照合'};
 const WB=window.WB={APP,modules:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
 WB.$=s=>document.querySelector(s);
 WB.registerModule=(name,version)=>{const row={name,version};if(!WB.modules.some(x=>x.name===name))WB.modules.push(row);return row};
@@ -55,7 +55,9 @@ WB.registerServiceWorker=async()=>{if(!('serviceWorker'in navigator))return;try{
 }catch(err){WB.recordError('service-worker',err)}};
 
 function init(){
-  const sub=document.querySelector('header p');if(sub)sub.textContent='Build 2026.09.18-clean-13-2 / 手札画像＋コスト照合';
+  const head=document.querySelector('header h1'),sub=document.querySelector('header p'),shellHeader=head?.textContent||'',shellSub=sub?.textContent||'',shellOk=shellHeader.includes(`v${APP.version}`)&&shellSub.includes(APP.revision);
+  if(!shellOk){const key='wb-shell-reload-'+APP.build;let shouldReload=false;try{if(sessionStorage.getItem(key)!=='1'){sessionStorage.setItem(key,'1');shouldReload=true}}catch{}WB.log('shell-version-mismatch',{build:APP.build,shellHeader,shellSub,shouldReload});if(shouldReload){location.reload();return}}
+  if(head)head.textContent=`シャドバWB リプレイ診断 v${APP.version}`;if(sub)sub.textContent=APP.subtitle;document.title=`シャドバWB リプレイ診断 v${APP.version}`;
   WB.video=WB.$('#video');
   const file=WB.$('#videoFile'),scrub=WB.$('#scrub');
   file?.addEventListener('change',e=>{const f=e.target.files?.[0];if(!f)return;if(WB.objectUrl)URL.revokeObjectURL(WB.objectUrl);WB.videoMeta={name:f.name,size:f.size,type:f.type,lastModified:f.lastModified};WB.videoName=WB.safeName(f.name);WB.objectUrl=URL.createObjectURL(f);WB.video.src=WB.objectUrl;WB.resetForVideo();WB.$('#videoStatus').textContent='動画情報を読み込み中…';WB.log('video-selected',WB.videoMeta)});
