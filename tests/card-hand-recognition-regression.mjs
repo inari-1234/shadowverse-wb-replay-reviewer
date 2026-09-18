@@ -12,10 +12,10 @@ vm.createContext(sandbox);
 new vm.Script(fs.readFileSync(new URL('../card-db.js',import.meta.url),'utf8')).runInContext(sandbox);
 new vm.Script(fs.readFileSync(new URL('../hand-recognition.js',import.meta.url),'utf8')).runInContext(sandbox);
 
-const DB=WB.CardDB,H=WB.HandRecognition,qb=DB.get('quickBlader');
+const DB=WB.CardDB,H=WB.HandRecognition,qb=DB.get('quickBlader'),zeta=DB.get('zetaBeatrix'),barbaros=DB.get('barbaros');
 assert.equal(DB.meta.complete,false);
 assert.equal(DB.meta.verifiedCards,3);
-assert.equal(DB.meta.recognitionEnabledCards,1);
+assert.equal(DB.meta.recognitionEnabledCards,3);
 assert.equal(qb.officialId,10021110);
 assert.equal(qb.cost,1);
 assert.equal(qb.atk,1);
@@ -39,7 +39,7 @@ const profiles=DB.recognitionProfiles('quickBlader');
 assert.equal(profiles.length,4);
 for(const p of profiles)assert.equal(p.length,432);
 for(let i=0;i<profiles.length;i++){const loo=Math.max(...profiles.map((p,j)=>j===i?-1:H.shiftedCosine(profiles[i],p)));assert.ok(loo>.945,`positive profile ${i} must match another real frame`)}
-const self=H.matchFeature(profiles[0])[0];
+const self=H.matchFeature(profiles[0]).find(x=>x.cardId==='quickBlader');
 assert.equal(self.cardId,'quickBlader');
 assert.ok(self.best>.999);
 
@@ -70,7 +70,7 @@ assert.equal(d.recognized.quickBlader.count,1,'count is conservative when frames
 
 const decodeFixture=p=>{const raw=Buffer.from(p.data,'base64'),v=new Float32Array(raw.length);let norm=0;for(let i=0;i<raw.length;i++){let q=raw[i];if(q>127)q-=256;const x=q/p.scale;v[i]=x;norm+=x*x}norm=Math.sqrt(norm)||1;for(let i=0;i<v.length;i++)v[i]/=norm;return v};
 const negativeFixtures=[{"label":"v2_7","scale":528.2591607272693,"data":"9vTx///7/Pr6//cPCRIN//Dl+wLrB/z7/v8FNjIUCvfp6ujfAgnv6uDtBw8cOCchBu3l597fDAzl3ufpEA8tMBsQB+zd49vlChDi7xz4ExglLRwfCezR2+ftGBDyAh0KHRoNBBYuE+zV3NvdAvjo+QMDE/nxDTgwFevV5dna//H/CSYaJBYdGiovEOvU3+jhBgL9AggEDw4REwbYm4ig2gj8JBsPFBkSJiggFAgEzr/oBxETIh8B/QAHHiMWCQcJ5dMECAUMJh4C+/j+Gh0TChEZ8c8GCQcKIxsE+vP7FhgP+/0O784F/fPtHx0D9vL9FhIV+/YH7c4C/wr+Bv309e35EAn69AAH588B/wgGAv39+On0Afv29QAE6M/+BQwE/gMSAAALAgEA/fP819XhAQwT1d//6eL31tPS6u7kEhMDDAUO2OATICAS1M7c8PLnCiMBBQgO1dsPHikY1sfg7u3iCCMBBw8TztYKIC4a4c/j/P/oBigJEBUazNYNICgN5dvmBxD7ESkOEg8R+AkcICQS9PEIDgDzEy8NCAoKBg0RHywgDAcMDf70DywQBfkA"},{"label":"v3_60","scale":751.6343395521646,"data":"JjY2KCg5MiApFikSAhkP+ufn5uAGMjE5LykrGiEqFArmv9LkwdTpLy4mISAxNiMrGPa4vcroyergFCsgB+MPPwQgC+bWwtDU2PwL9en/MTVCQQ0A5fHe6dzP3uXd7xYIIjM3Hvfp8gP+4tLT1driJyYOBR4S7vkD++7v0fMAx9DuAwjSzOTU3x75DQ7Lvv/k/f3//Pn28O3s7ujBr4mIATohCxUZEAcFA/rz+PTnAP4JJUJSCR4rEf/8+/Ds6d3fKDsaHj1oBf4KBvn07vXs3OTfKDcgJS9kA+33+/Xv3dnX1OjtOEA5FzJNAe338+/s1s3DxuLxHSUkAyUr/Pb13djm5d7Y3+zpHy8aGScl/vz05N3w9+3y6ODnJTUdHfQN+PkACxEXGigqIxUDt42Y9/Ds3+Ha2N7n6/4B/gAb+cnt79bK+/Xk5PL/AQwQFRgi5dv379+7CyANCBIeHBweHxwe5sjr9OPFCT0jExEdJSQkIxYRxKfB+OvWCDAaCg8YIyxBPSMM073MAOviEh0VFyggICozKh0S0LbU7Nq4CQkjOjwbEx0lJiEY3Nnr9hr3"},{"label":"hard27","scale":553.0857642220831,"data":"6efi9fTw8e/s9esN/hIICer28frcAPLw9/X9PTcPICEA4vD4+ATg2szgAAobPigiHC/q4OnpBwTRy9jaDgktNRgLEOny29/dBArQ4RvsEBcnLhge5grp9/X4GQzm+B0DHRoI+xUuAAX19/nm+evX6/n6Ee/jB0E0Bvj49QHT+eL4BCgXJxIgFy40GBPq+PLrBQUB/QIEBwUICgvPloiSygMRGxEJExMPJC4k/AEIyLTW+g0HJBkB9vgCHCUYAgYR69P0/wb+KRz/8u/5Fh8MAxEgExwH+fD0Ihn/7un1FBoLAPYYMxci/Ov3HRH46+j3FhcP+e4CKB8h+PUKBfjy6+b1Cwf37/QBEA8N+PoS+vz89OTp9vTy9PwCEw7l4PP8BwgKBwkMAPv5/QIO5eHoBxsM1+cE6Oz/2NDc9PXsDhQSD/7+0OEWHSAa1M7g9vDoBywUA/wFyt4WJi4i28zm++vd/P0BCAsUxdYLIysc3tDoAADs2PHqBxwqyd0SJicP4NjiBQ/+3eHkDgTzAREeHyUT/AMWGAz77+/0Fxf0HBsSGC8rFxUZEP31CBcdMzAb"}];
-for(const f of negativeFixtures){const m=H.matchFeature(decodeFixture(f))[0];assert.equal(m.cardId,'quickBlader');assert.ok(m.best<.938,`negative fixture ${f.label} must stay below threshold: ${m.best}`)}
+for(const f of negativeFixtures){const matches=H.matchFeature(decodeFixture(f)),m=matches.find(x=>x.cardId==='quickBlader');assert.equal(m.cardId,'quickBlader');assert.ok(m.best<.938,`negative fixture ${f.label} must stay below QB threshold: ${m.best}`);for(const id of ['zetaBeatrix','barbaros']){const x=matches.find(v=>v.cardId===id);assert.ok(x.best<.90,`negative fixture ${f.label} must stay below ${id} candidate gate: ${x.best}`)}}
 let transient=H.decideHandSamples([{counts:{quickBlader:1},scores:{quickBlader:[.97]}},{counts:{quickBlader:1},scores:{quickBlader:[.96]}},{counts:{},scores:{}}]);
 assert.equal(transient.recognized.quickBlader,undefined,'two-frame transient similarity must not confirm a card');
 
@@ -258,5 +258,28 @@ windowRun=await H.recognizeHand({targetSide:'bottom',relativeSide:'自分',time:
 assert.deepEqual(windowRun.samples.map(s=>s.sampleTime),[19.908,19.948,19.988,20.028]);
 assert.ok(windowRun.samples.every(s=>s.sampleTime<=20.028),'after-play capture must also remain past-only');
 assert.equal(WB.video.currentTime,20.028,'after-play run must restore current position');
+
+assert.equal(zeta.recognition.enabled,true);
+assert.equal(barbaros.recognition.enabled,true);
+assert.equal(zeta.recognition.threshold,.93);
+assert.equal(barbaros.recognition.threshold,.93);
+assert.equal(zeta.recognition.rescueThreshold,.945);
+assert.equal(barbaros.recognition.rescueThreshold,.945);
+const zetaProfiles=DB.recognitionProfiles('zetaBeatrix'),barbarosProfiles=DB.recognitionProfiles('barbaros');
+assert.equal(zetaProfiles.length,4);
+assert.equal(barbarosProfiles.length,6);
+for(const [id,rows] of [['zetaBeatrix',zetaProfiles],['barbaros',barbarosProfiles]])for(const p of rows){assert.equal(p.length,432);const m=H.matchFeature(p).find(x=>x.cardId===id);assert.ok(m.best>.999,`${id} profile must self-match`)}
+const costScopeFixture=[{cardId:'quickBlader',expectedCost:1,best:.97,imageCandidate:true},{cardId:'zetaBeatrix',expectedCost:4,best:.95,imageCandidate:true},{cardId:'barbaros',expectedCost:7,best:.94,imageCandidate:true}];
+assert.equal(H.selectCostScopedMatch(costScopeFixture,{accepted:true,value:4}).cardId,'zetaBeatrix');
+assert.equal(H.selectCostScopedMatch(costScopeFixture,{accepted:true,value:7}).cardId,'barbaros');
+assert.equal(H.selectCostScopedMatch(costScopeFixture,{accepted:false,value:null}).cardId,'quickBlader');
+let multiCardDecision=H.decideHandSamples([{counts:{zetaBeatrix:1,barbaros:1},scores:{zetaBeatrix:[.97],barbaros:[.96]}},{counts:{zetaBeatrix:1,barbaros:1},scores:{zetaBeatrix:[.96],barbaros:[.95]}},{counts:{zetaBeatrix:1,barbaros:1},scores:{zetaBeatrix:[.95],barbaros:[.94]}}]);
+assert.equal(multiCardDecision.recognized.zetaBeatrix.count,1);
+assert.equal(multiCardDecision.recognized.barbaros.count,1);
+let historyDelta=H.traceRecognitionDelta({zetaBeatrix:{count:1,label:'ゼタ＆ベアトリクス'},barbaros:{count:1,label:'バルバロス'}},{barbaros:{count:1,label:'バルバロス'}});
+assert.equal(historyDelta.zetaBeatrix.count,1);
+assert.equal(historyDelta.barbaros,undefined);
+historyDelta=H.traceRecognitionDelta({quickBlader:{count:2,label:'刹那のクイックブレイダー'}},{quickBlader:{count:1,label:'刹那のクイックブレイダー'}});
+assert.equal(historyDelta.quickBlader.count,1);
 
 console.log('CARD DB + HAND RECOGNITION REGRESSION PASS');
