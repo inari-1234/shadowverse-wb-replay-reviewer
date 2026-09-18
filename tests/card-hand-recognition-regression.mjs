@@ -266,8 +266,8 @@ assert.equal(barbaros.recognition.threshold,.93);
 assert.equal(zeta.recognition.rescueThreshold,.945);
 assert.equal(barbaros.recognition.rescueThreshold,.945);
 const zetaProfiles=DB.recognitionProfiles('zetaBeatrix'),barbarosProfiles=DB.recognitionProfiles('barbaros');
-assert.equal(zetaProfiles.length,4);
-assert.equal(barbarosProfiles.length,6);
+assert.equal(zetaProfiles.length,7);
+assert.equal(barbarosProfiles.length,10);
 for(const [id,rows] of [['zetaBeatrix',zetaProfiles],['barbaros',barbarosProfiles]])for(const p of rows){assert.equal(p.length,432);const m=H.matchFeature(p).find(x=>x.cardId===id);assert.ok(m.best>.999,`${id} profile must self-match`)}
 const costScopeFixture=[{cardId:'quickBlader',expectedCost:1,best:.97,imageCandidate:true},{cardId:'zetaBeatrix',expectedCost:4,best:.95,imageCandidate:true},{cardId:'barbaros',expectedCost:7,best:.94,imageCandidate:true}];
 assert.equal(H.selectCostScopedMatch(costScopeFixture,{accepted:true,value:4}).cardId,'zetaBeatrix');
@@ -281,5 +281,13 @@ assert.equal(historyDelta.zetaBeatrix.count,1);
 assert.equal(historyDelta.barbaros,undefined);
 historyDelta=H.traceRecognitionDelta({quickBlader:{count:2,label:'刹那のクイックブレイダー'}},{quickBlader:{count:1,label:'刹那のクイックブレイダー'}});
 assert.equal(historyDelta.quickBlader.count,1);
+
+const realVideoFixtureDecode=p=>decodeFixture(p);
+const zetaFanFixture=H.matchFeature(realVideoFixtureDecode({"scale":531.8471923036026,"data":"4uTo//X0CSUE8e8GEx80Jvv36fcaFA0CAhL88/DY3zIb7s/4CS02HOkfCvgI5NvW3DjPzNPy+CY3DOwFCgEG8OHw9iz3y9Xk6AssCQPsBR/58PH4CfEE8uvqAwLn8uD1BR4uKRsWE/8h+unt+QsXCvEAAAD9EistIP0O/N0W+/Hs7v8p7v4d9PoGBzT8z94NEiEpIhb37PX2DyH/vKeBpfkcAPbx9PL09e/r+/788eLV8iVI8Ofi5/Dy8e/t/gUIAgEIESFI7+fl7PX18vL1BQwOCQQYDBw6+PLx+QH8+Pj9Cw4MBC8yJR0z/Pv8/AEDAPn4AwwKASYdGQ0m+fr6+v8DAv34/wYGABoeBw0d9PT19Pf7/Pn29/z/AvkGAg0J9vHr5/cCDRgaB/zw0Lamv+/6+f8GCwQBBAgKBwMKCO3k6+jZExMVFRQTFRYO/v73+QoA9uXTExIREBISEQ8PEQ0A/vfp5eLYCwwPEREQDwsMDgQA89jM0+LgDw0VJR4UHR4M//0A5sjN0+bhGhcaJRkFDiAgHxYQ+dna2+PgFhkeIxUBCyUpLiQYC/vz8Obm"})).find(x=>x.cardId==='zetaBeatrix');
+assert.ok(zetaFanFixture.best>=.93,`real-video Zeta fan-position fixture must stay >= .93: ${zetaFanFixture.best}`);
+const barbarosFanFixture=H.matchFeature(realVideoFixtureDecode({"scale":672.3294849446944,"data":"3unx/gkE/PPs2OMKFSQfHA0N1eUM9f36283Iys/m+QYXJTY+3uHkBige9dnQ6vkR9vcdIjTw2uXqJFRWJuPTAS4Q3PUXMkLm1uf7EzI0CePXHi7u7PIBKSro1PgXEzgoIgLo6+TV6/EGHNz+Hgnh/A8bNxTu6OTwAfoIJ+bVBCj/Azgp8tLV9Ab44fcRR9rNNiYaD/37+fX0+wbRkoiGn9PfLTgbEx0dFw4HCBIT5qiw1+73Qz8nFwgKCgsMDwoK9sjM3fH1RTwpF/73+AkSDwgOAOfn2enyLzMiGBQRERIVCQoW/hkO6OLrHBsTCAD/ERgWFQkGByQbA+jsDgoC+/Xz9/n+EBoXBgsF9OrrCP/59/T06uXx+f4M/uPg3eXs8AglN0I8ORYYEAzkqIGM6j017fX+BQH//fb1+evuDSYZDd3v1+Dp7+z+CP/v7OLjEnQfAu/v2OHo8fT7/wDz7OLkCiMBEvr77vX9CRP16fcA+unvCNbc6Pr98fYPMTsU9/0C9O75BczN5ggL8PQRNE03IR0ZCgD59dvX7gYL8uXuBzE5MBwTGxcF/C8RDg0L"})).find(x=>x.cardId==='barbaros');
+assert.ok(barbarosFanFixture.best>=.93,`real-video Barbaros fan-position fixture must stay >= .93: ${barbarosFanFixture.best}`);
+const barbarosHardNegative=H.matchFeature(realVideoFixtureDecode({"scale":800.8372672539656,"data":"+f/+Bwj99vTy+QIVLS76wcDF6QceBxL65NvX4Of/BCcAzMfC7/sCFSYX9+XoAhcr6RQQ2tTI7PgFRmRaHOvqLUEY5AIKzczE7PoILkA/AvDuWzD85QMHwsDA6hUUNEUyLgr0Dvnu5w0Hwb++IA7qFh9HRyT///YF8wsOwL++GTwDJlktCN30Dh4LABQSv76++QIHBgADDAoB6fLg3+LTy8fBNUb7EhcQCgsDCgsB9PPdu77FVFYXIhYREBYMCg4QCQHetbm/a1AzKP/6AhUTERcTBwXovr3DQ0cwIBYMDRQL+gwQChT4y8rKJS0JAv0GGRshFg8IAjcSysnL8fbl59nk4eENOiggFlAYysrR+vPq8NXmx8f2/ggeN2Mn19HPMikgFQ8LCwsRLzx5f2IwERgS3evy6Nvj8vXy+/UAQV04JBsbyNje2NPd7vLq7d7F4ic6JhwdwdLY0crW5+ri3d7U7ik6Ix4c0Nrh28vR5Ofc3+rj8iQyJRoa59TzFATbyuDV2ePo7/IRFwcJ+PwaQ08zCggF7Obh3N8CEgkK3+z0DjJISigRFwbs2dHyBQcN"})).find(x=>x.cardId==='barbaros');
+assert.ok(barbarosHardNegative.best<.90,`real-video cost-7 hard negative must stay below .90 candidate gate: ${barbarosHardNegative.best}`);
 
 console.log('CARD DB + HAND RECOGNITION REGRESSION PASS');
