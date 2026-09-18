@@ -191,9 +191,8 @@ const historyWithTransition=[
   mkLayout(19.500,[708,770,828,896,959])
 ];
 const previousWindows=H.collectPreviousStableHandWindows(historyWithTransition,latestCurrent,1200,4);
-assert.equal(previousWindows.length,2,'history scan must retain both transition and older stable hand windows');
-assert.equal(previousWindows[0].candidateCount,1,'newer animation-like stable window is kept as first attempt');
-assert.equal(previousWindows[1].candidateCount,5,'older pre-play hand remains available as a later recognition attempt');
+assert.equal(previousWindows.length,1,'single-card animation must not qualify as a stable hand window');
+assert.equal(previousWindows[0].candidateCount,5,'history scan must skip the animation and retain the older pre-play hand');
 
 
 const actualDiagLayout=[
