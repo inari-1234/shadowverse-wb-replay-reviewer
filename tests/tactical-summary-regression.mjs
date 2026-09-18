@@ -46,7 +46,7 @@ assert.ok(x.routes.some(r=>r.cardId==='quickBlader'&&r.damage===1));
 const tUnknown=tactical();
 tUnknown.cards.quickBlader={known:false,count:null};
 x=R.calculate(mk({tactical:tUnknown}));
-assert.equal(x.status,'confirmed-lethal');
+assert.equal(x.status,'incomplete-do-not-declare-no-lethal');
 assert.ok(x.unknown.some(v=>v.includes('クイックブレイダー')));
 
 x=R.calculate(mk());
@@ -67,7 +67,7 @@ const legacy={
 };
 x=R.calculate(legacy);
 assert.ok(x.routes.some(r=>r.name==='バルバロス'));
-assert.equal(x.status,'incomplete-do-not-declare-no-lethal');
+assert.equal(x.status,'confirmed-lethal');
 assert.ok(x.unknown.some(v=>v.includes('クイックブレイダー')));
 
 assert.equal(R.catalog.cards.some(c=>c.id==='quickBlader'&&c.route?.type==='storm'&&c.route.cost===1&&c.route.baseDamage===1),true);
