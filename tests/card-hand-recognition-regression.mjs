@@ -265,14 +265,53 @@ assert.equal(zeta.recognition.threshold,.93);
 assert.equal(barbaros.recognition.threshold,.93);
 assert.equal(zeta.recognition.rescueThreshold,.945);
 assert.equal(barbaros.recognition.rescueThreshold,.945);
+assert.deepEqual(zeta.recognition.acceptedCosts,[4,6]);
+assert.deepEqual(barbaros.recognition.acceptedCosts,[7]);
+assert.equal(barbaros.recognition.costTemplateThreshold,.935);
+assert.equal(barbaros.recognition.costFeatureLength,160);
 const zetaProfiles=DB.recognitionProfiles('zetaBeatrix'),barbarosProfiles=DB.recognitionProfiles('barbaros');
 assert.equal(zetaProfiles.length,7);
-assert.equal(barbarosProfiles.length,10);
+assert.equal(barbarosProfiles.length,11);
 for(const [id,rows] of [['zetaBeatrix',zetaProfiles],['barbaros',barbarosProfiles]])for(const p of rows){assert.equal(p.length,432);const m=H.matchFeature(p).find(x=>x.cardId===id);assert.ok(m.best>.999,`${id} profile must self-match`)}
-const costScopeFixture=[{cardId:'quickBlader',expectedCost:1,best:.97,imageCandidate:true},{cardId:'zetaBeatrix',expectedCost:4,best:.95,imageCandidate:true},{cardId:'barbaros',expectedCost:7,best:.94,imageCandidate:true}];
+const costScopeFixture=[{cardId:'quickBlader',expectedCost:1,acceptedCosts:[1],best:.97,imageCandidate:true},{cardId:'zetaBeatrix',expectedCost:4,acceptedCosts:[4,6],best:.95,imageCandidate:true},{cardId:'barbaros',expectedCost:7,acceptedCosts:[7],best:.94,imageCandidate:true,costTemplateThreshold:.935}];
 assert.equal(H.selectCostScopedMatch(costScopeFixture,{accepted:true,value:4}).cardId,'zetaBeatrix');
+assert.equal(H.selectCostScopedMatch(costScopeFixture,{accepted:true,value:6}).cardId,'zetaBeatrix','Enhance 6 display must still select Zeta');
 assert.equal(H.selectCostScopedMatch(costScopeFixture,{accepted:true,value:7}).cardId,'barbaros');
 assert.equal(H.selectCostScopedMatch(costScopeFixture,{accepted:false,value:null}).cardId,'quickBlader');
+const cost7Profiles=DB.costRecognitionProfiles('barbaros');
+assert.equal(cost7Profiles.length,3);
+for(const p of cost7Profiles){assert.equal(p.length,160);const m=H.matchCostFeature('barbaros',p);assert.ok(m.score>.999,'cost-7 template must self-match');assert.equal(m.accepted,true)}
+const decodeCostFixture=p=>decodeFixture(p);
+const cost6Negative=decodeCostFixture({"scale":643.3189086914062,"data":"X1VDRUAzLg/n3EsjFgr17P0VGSgRHhAJD/Te4QImEyX7JR/5DvTR6yEULD0PBQsM9eQSDE08IUEPBOToDAxUJQdMNf326AwISysFRjAY/ur/AxIfGCgbGusX8fkBBBEZE/MM7fz47PH+9vAYDZoK/TY1R0ET04+B6e04RRG1mZC8nPvzOh7MkJOJlM4NDy4X9puOkpCNIQk1IO3RopiTlA=="});
+const cost6Match=H.matchCostFeature('barbaros',cost6Negative);
+assert.ok(cost6Match.score<.935,`visible cost 6 must not pass Barbaros cost-7 template: ${cost6Match.score}`);
+const zeta6=costScopeFixture.find(x=>x.cardId==='zetaBeatrix');
+const zeta6Gate=H.resolveCostGate(zeta6,{accepted:true,value:6},{accepted:false});
+assert.equal(zeta6Gate.matched,true);
+assert.equal(zeta6Gate.source,'ocr');
+assert.equal(zeta6Gate.validatedCost,6);
+const bar7=costScopeFixture.find(x=>x.cardId==='barbaros');
+const barTemplateGate=H.resolveCostGate(bar7,{accepted:true,value:2},{accepted:true,score:.98,threshold:.935});
+assert.equal(barTemplateGate.matched,true,'Barbaros OCR 2 must be recoverable only with a passing cost-7 template');
+assert.equal(barTemplateGate.source,'template');
+assert.equal(barTemplateGate.validatedCost,7);
+const qbGate=H.resolveCostGate(costScopeFixture.find(x=>x.cardId==='quickBlader'),{accepted:true,value:3},{accepted:false});
+assert.equal(qbGate.matched,false,'QB wrong OCR cost must remain blocked');
+
+let enhanceDisplayDecision=H.decideHandSamples([
+ {counts:{zetaBeatrix:1},scores:{zetaBeatrix:[.9447]},candidates:[{best:{cardId:'zetaBeatrix',imageScore:.9447,expectedCost:4,acceptedCosts:[4,6],detectedCost:6,validatedCost:6,ocrCostAccepted:true,costAccepted:true,costMatched:true,costSource:'ocr',matched:true,decision:'matched'}}]},
+ {counts:{zetaBeatrix:1},scores:{zetaBeatrix:[.9426]},candidates:[{best:{cardId:'zetaBeatrix',imageScore:.9426,expectedCost:4,acceptedCosts:[4,6],detectedCost:6,validatedCost:6,ocrCostAccepted:true,costAccepted:true,costMatched:true,costSource:'ocr',matched:true,decision:'matched'}}]},
+ {counts:{zetaBeatrix:1},scores:{zetaBeatrix:[.9437]},candidates:[{best:{cardId:'zetaBeatrix',imageScore:.9437,expectedCost:4,acceptedCosts:[4,6],detectedCost:6,validatedCost:6,ocrCostAccepted:true,costAccepted:true,costMatched:true,costSource:'ocr',matched:true,decision:'matched'}}]}
+]);
+assert.equal(enhanceDisplayDecision.recognized.zetaBeatrix.count,1,'actual iPhone Enhance-6 Zeta evidence must confirm');
+
+let barbarosTemplateDecision=H.decideHandSamples([
+ {counts:{barbaros:1},scores:{barbaros:[.958]},candidates:[{best:{cardId:'barbaros',imageScore:.958,expectedCost:7,acceptedCosts:[7],detectedCost:2,validatedCost:7,ocrCostAccepted:true,costAccepted:true,costMatched:true,costSource:'template',costTemplateScore:.98,matched:true,decision:'matched'}}]},
+ {counts:{barbaros:1},scores:{barbaros:[.949]},candidates:[{best:{cardId:'barbaros',imageScore:.949,expectedCost:7,acceptedCosts:[7],detectedCost:null,validatedCost:7,ocrCostAccepted:false,costAccepted:true,costMatched:true,costSource:'template',costTemplateScore:.97,matched:true,decision:'matched'}}]},
+ {counts:{barbaros:1},scores:{barbaros:[.946]},candidates:[{best:{cardId:'barbaros',imageScore:.946,expectedCost:7,acceptedCosts:[7],detectedCost:2,validatedCost:7,ocrCostAccepted:true,costAccepted:true,costMatched:true,costSource:'template',costTemplateScore:.96,matched:true,decision:'matched'}}]}
+]);
+assert.equal(barbarosTemplateDecision.recognized.barbaros.count,1,'actual iPhone cost-7 template rescue must confirm Barbaros');
+
 let multiCardDecision=H.decideHandSamples([{counts:{zetaBeatrix:1,barbaros:1},scores:{zetaBeatrix:[.97],barbaros:[.96]}},{counts:{zetaBeatrix:1,barbaros:1},scores:{zetaBeatrix:[.96],barbaros:[.95]}},{counts:{zetaBeatrix:1,barbaros:1},scores:{zetaBeatrix:[.95],barbaros:[.94]}}]);
 assert.equal(multiCardDecision.recognized.zetaBeatrix.count,1);
 assert.equal(multiCardDecision.recognized.barbaros.count,1);

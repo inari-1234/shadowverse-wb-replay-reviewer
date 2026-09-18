@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.9',build:'4.13.9-20260918-clean-13-9',revision:'clean-13-9',subtitle:'Build 2026.09.18-clean-13-9 / 実動画の手札位置差を補強'};
+const APP={version:'4.13.10',build:'4.13.10-20260918-clean-13-10',revision:'clean-13-10',subtitle:'Build 2026.09.18-clean-13-10 / 実機表示コスト・7コスト補助認識'};
 const WB=window.WB={APP,modules:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
 WB.$=s=>document.querySelector(s);
 WB.registerModule=(name,version)=>{const row={name,version};if(!WB.modules.some(x=>x.name===name))WB.modules.push(row);return row};
