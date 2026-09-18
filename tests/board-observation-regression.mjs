@@ -12,77 +12,98 @@ vm.createContext(sandbox);
 new vm.Script(fs.readFileSync(new URL('../state-recognition.js',import.meta.url),'utf8')).runInContext(sandbox);
 const S=WB.StateRecognition;
 
-assert.equal(S.classifyFaceAttackGlowScore(.08).state,'face');
-assert.equal(S.classifyFaceAttackGlowScore(.02).state,'no-face');
-assert.equal(S.classifyFaceAttackGlowScore(.042).state,'unknown');
+assert.equal(S.classifyAttackableRingStats({frac:.18,sectors:[.25,.22,.10,.08]}).state,'attackable');
+assert.equal(S.classifyAttackableRingStats({frac:.11,sectors:[.20,.15,.02,.01]}).state,'unknown');
+assert.equal(S.classifyAttackableRingStats({frac:.01,sectors:[0,0,0,0]}).state,'not-attackable');
 
-const directFace=[
- {badgeCount:2,readable:true,values:[1,1],candidateTotal:2,faceDamageConfirmed:true,value:1,offset:0},
- {badgeCount:2,readable:true,values:[1,1],candidateTotal:2,faceDamageConfirmed:true,value:1,offset:.15}
-];
-let fd=S.decideBoardSamples(directFace,{nearOwnStart:false});
-assert.equal(fd.accepted,true);
-assert.equal(fd.value,1);
-assert.equal(fd.reason,'direct-face-attack-glow-consensus');
+const follower=(attackValue,state,position=0)=>({
+  attackValue,
+  attackReadable:true,
+  attackable:state==='attackable'?true:state==='not-attackable'?false:null,
+  attackableEvidence:{state,ringFraction:state==='attackable'?.18:state==='not-attackable'?.01:.07,ringSectors:state==='attackable'?[.2,.18,.12,.1]:state==='not-attackable'?[0,0,0,0]:[.08,.06,.04,.03]},
+  position:{attackBadgeCx:.40+position*.10,attackBadgeCy:.624,followerCx:.4325+position*.10,followerCy:.524}
+});
+const sample=(values,states,offset,{layoutKey='35:52|43:52',ocrIndependent=true}={})=>({
+  badgeCount:values.length,readable:true,values:[...values],candidateTotal:values.reduce((a,b)=>a+b,0),
+  layoutKey,ocrIndependent,offset,sampleTime:28.221+offset,
+  followers:values.map((v,i)=>follower(v,states[i],i))
+});
 
-const oneDirectFace=[directFace[0]];
-fd=S.decideBoardSamples(oneDirectFace,{nearOwnStart:false});
-assert.equal(fd.accepted,false,'one direct glow frame must not be enough');
+let d=S.decideBoardSamples([
+  sample([1,1],['attackable','not-attackable'],0),
+  sample([1,1],['attackable','not-attackable'],.25),
+  sample([1,1],['attackable','not-attackable'],.50,{ocrIndependent:false})
+],{nearOwnStart:false});
+assert.equal(d.accepted,true);
+assert.equal(d.known,true);
+assert.equal(d.value,1);
+assert.equal(d.attackableTotal,1);
+assert.equal(d.followers.length,2);
+assert.equal(d.followers[0].attackValue,1);
+assert.equal(d.followers[0].attackReadable,true);
+assert.equal(d.followers[0].attackable,true);
+assert.equal(d.followers[1].attackable,false);
+assert.ok(d.followers[0].attackableEvidence);
+assert.ok(d.followers[0].position);
+assert.equal(d.boardAttackTotalConfirmed,true);
 
-const directNoFace=[
- {badgeCount:2,readable:true,values:[1,1],candidateTotal:2,faceDamageConfirmed:true,value:0,offset:0},
- {badgeCount:2,readable:true,values:[1,1],candidateTotal:2,faceDamageConfirmed:true,value:0,offset:.15}
-];
-fd=S.decideBoardSamples(directNoFace,{nearOwnStart:false});
-assert.equal(fd.accepted,true);
-assert.equal(fd.value,0);
+d=S.decideBoardSamples([
+  sample([1,1],['attackable','attackable'],0),
+  sample([1,1],['attackable','attackable'],.25)
+],{nearOwnStart:false});
+assert.equal(d.accepted,true);
+assert.equal(d.value,2);
 
-const startFace=[
- {badgeCount:2,readable:true,values:[1,1],candidateTotal:2,faceDamageConfirmed:true,value:2,offset:.25},
- {badgeCount:2,readable:true,values:[1,1],candidateTotal:2,faceDamageConfirmed:true,value:2,offset:.50}
-];
-fd=S.decideBoardSamples(startFace,{nearOwnStart:true});
-assert.equal(fd.accepted,true);
-assert.equal(fd.value,2);
-assert.equal(fd.reason,'turn-start-face-attack-glow-consensus');
+d=S.decideBoardSamples([
+  sample([1,1],['not-attackable','attackable'],0),
+  sample([1,1],['not-attackable','attackable'],.25),
+  sample([1,1],['not-attackable','attackable'],.50,{ocrIndependent:false})
+],{nearOwnStart:false});
+assert.equal(d.accepted,true);
+assert.equal(d.value,1);
 
+d=S.decideBoardSamples([
+  sample([1],['not-attackable'],0,{layoutKey:'35:52'}),
+  sample([1],['not-attackable'],.25,{layoutKey:'35:52'}),
+  sample([1],['not-attackable'],.50,{layoutKey:'35:52',ocrIndependent:false})
+],{nearOwnStart:false});
+assert.equal(d.accepted,true);
+assert.equal(d.value,0);
+assert.equal(d.reason,'board-no-attackable-followers-confirmed');
 
-const zero=[0,.25,.5].map(offset=>({badgeCount:0,readable:true,values:[],candidateTotal:0,offset}));
-let d=S.decideBoardSamples(zero,{nearOwnStart:true});
+d=S.decideBoardSamples([
+  sample([1,1],['attackable','unknown'],0),
+  sample([1,1],['attackable','unknown'],.25),
+  sample([1,1],['attackable','unknown'],.50,{ocrIndependent:false}),
+  sample([1,1],['attackable','unknown'],.75,{ocrIndependent:false})
+],{nearOwnStart:false});
+assert.equal(d.accepted,false);
+assert.equal(d.known,false);
+assert.equal(d.candidateStable,true);
+assert.equal(d.reason,'board-attackability-unresolved');
+
+const zero=[0,.25,.5].map(offset=>({
+  badgeCount:0,readable:true,values:[],candidateTotal:0,offset,sampleTime:87.5+offset,
+  layoutKey:'',ocrIndependent:false,followers:[]
+}));
+d=S.decideBoardSamples(zero,{nearOwnStart:false});
 assert.equal(d.accepted,true);
 assert.equal(d.known,true);
 assert.equal(d.value,0);
 assert.equal(d.faceDamageConfirmed,true);
 
-d=S.decideBoardSamples([zero[0]],{nearOwnStart:false});
+const oneFrame=[sample([1],['attackable'],0,{layoutKey:'35:52'})];
+d=S.decideBoardSamples(oneFrame,{nearOwnStart:false});
+assert.equal(d.candidateStable,false);
 assert.equal(d.accepted,false);
-assert.equal(d.known,false);
-assert.equal(d.reason,'direct-empty-board-insufficient-consensus');
-
-const oneFrame=[{badgeCount:1,readable:true,values:[1],candidateTotal:1,offset:0}];
-d=S.decideBoardSamples(oneFrame,{nearOwnStart:true});
-assert.equal(d.candidateStable,false,'one-frame candidate must not be surfaced as stable');
-assert.equal(d.accepted,false);
-
-const positive=[
- {badgeCount:2,readable:true,values:[1,1],candidateTotal:2,offset:0},
- {badgeCount:0,readable:true,values:[],candidateTotal:0,offset:.25},
- {badgeCount:2,readable:true,values:[1,1],candidateTotal:2,offset:.5}
-];
-d=S.decideBoardSamples(positive,{nearOwnStart:true});
-assert.equal(d.accepted,false);
-assert.equal(d.known,false);
-assert.equal(d.candidateStable,true);
-assert.equal(d.candidateTotal,2);
-assert.equal(d.faceDamageConfirmed,false);
 
 const conflict=[
- {badgeCount:1,readable:true,values:[1],candidateTotal:1,offset:0},
- {badgeCount:1,readable:true,values:[1],candidateTotal:1,offset:.25},
- {badgeCount:1,readable:true,values:[2],candidateTotal:2,offset:.5},
- {badgeCount:1,readable:true,values:[2],candidateTotal:2,offset:.75}
+ sample([1],['attackable'],0,{layoutKey:'35:52'}),
+ sample([1],['attackable'],.25,{layoutKey:'35:52'}),
+ sample([2],['attackable'],.5,{layoutKey:'36:52'}),
+ sample([2],['attackable'],.75,{layoutKey:'36:52'})
 ];
-d=S.decideBoardSamples(conflict,{nearOwnStart:true});
+d=S.decideBoardSamples(conflict,{nearOwnStart:false});
 assert.equal(d.accepted,false);
 assert.equal(d.known,false);
 assert.equal(d.reason,'board-attack-pattern-conflict');
@@ -93,4 +114,4 @@ assert.equal(S.parseAttack('30'),30);
 assert.equal(S.parseAttack('31'),null);
 assert.equal(S.parseAttack('x'),null);
 
-console.log('BOARD OBSERVATION REGRESSION PASS');
+console.log('BOARD ATTACKABILITY REGRESSION PASS');
