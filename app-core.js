@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.5',build:'4.13.5-20260918-clean-13-5',revision:'clean-13-5',subtitle:'Build 2026.09.18-clean-13-5 / 直前の安定手札を自動探索'};
+const APP={version:'4.13.6',build:'4.13.6-20260918-clean-13-6',revision:'clean-13-6',subtitle:'Build 2026.09.18-clean-13-6 / 手札位置の重複を補正して認識'};
 const WB=window.WB={APP,modules:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
 WB.$=s=>document.querySelector(s);
 WB.registerModule=(name,version)=>{const row={name,version};if(!WB.modules.some(x=>x.name===name))WB.modules.push(row);return row};
