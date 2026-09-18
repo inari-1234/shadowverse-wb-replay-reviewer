@@ -21,17 +21,16 @@ assert.equal(qb.cost,1);
 assert.equal(qb.atk,1);
 assert.equal(qb.life,1);
 assert.equal(qb.route.type,'storm');
-assert.equal(qb.recognition.method,'hand-title-cost-gate-v3');
-assert.equal(qb.recognition.threshold,.936);
+assert.equal(qb.recognition.method,'hand-title-cost-gate-v4');
+assert.equal(qb.recognition.threshold,.94);
 assert.equal(qb.recognition.candidateThreshold,.90);
 assert.equal(qb.recognition.stableFrames,3);
 assert.equal(qb.recognition.rescueFrames,2);
 assert.equal(qb.recognition.rescueThreshold,.965);
 assert.equal(qb.recognition.costRequired,true);
-assert.ok(.9394>=qb.recognition.threshold,'iPhone runtime Quick Blader frame 18.799 must pass');
-assert.ok(.9418>=qb.recognition.threshold,'iPhone runtime Quick Blader frame 19.439 must pass');
-assert.ok(.9396>=qb.recognition.threshold,'iPhone runtime Quick Blader frame 19.539 must pass');
-assert.ok(.9316<qb.recognition.threshold,'hard negative must remain below calibrated threshold');
+assert.ok(.9623>=qb.recognition.threshold,'stable trailing-window Quick Blader frame must pass');
+assert.ok(.9613>=qb.recognition.threshold,'stable trailing-window Quick Blader frame must pass');
+assert.ok(.9316<qb.recognition.threshold,'hard negative must remain below strict threshold');
 
 assert.equal(qb.recognition.featureLength,432);
 
@@ -83,12 +82,12 @@ assert.equal(H.parseCostText('x'),null);
 
 
 let iphoneRuntimePositive=H.decideHandSamples([
-  {counts:{quickBlader:1},scores:{quickBlader:[.9394]},candidates:[{best:{cardId:'quickBlader',imageScore:.9394,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]},
-  {counts:{},scores:{},candidates:[{best:{cardId:'quickBlader',imageScore:.9164,expectedCost:1,detectedCost:0,costAccepted:true,costMatched:false,matched:false,decision:'image-below-confirm'}}]},
-  {counts:{quickBlader:1},scores:{quickBlader:[.9418]},candidates:[{best:{cardId:'quickBlader',imageScore:.9418,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]},
-  {counts:{quickBlader:1},scores:{quickBlader:[.9396]},candidates:[{best:{cardId:'quickBlader',imageScore:.9396,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]}
+  {counts:{quickBlader:1},scores:{quickBlader:[.9623]},candidates:[{best:{cardId:'quickBlader',imageScore:.9623,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]},
+  {counts:{quickBlader:1},scores:{quickBlader:[.9623]},candidates:[{best:{cardId:'quickBlader',imageScore:.9623,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]},
+  {counts:{quickBlader:1},scores:{quickBlader:[.9613]},candidates:[{best:{cardId:'quickBlader',imageScore:.9613,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]},
+  {counts:{quickBlader:1},scores:{quickBlader:[.9409]},candidates:[{best:{cardId:'quickBlader',imageScore:.9409,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]}
 ]);
-assert.equal(iphoneRuntimePositive.recognized.quickBlader.count,1,'actual iPhone own-1T evidence must confirm Quick Blader');
+assert.equal(iphoneRuntimePositive.recognized.quickBlader.count,1,'real-video trailing window before play must confirm Quick Blader');
 
 let runtimePositive=H.decideHandSamples([
   {counts:{quickBlader:1},scores:{quickBlader:[.9966]},candidates:[{best:{cardId:'quickBlader',imageScore:.9966,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]},
@@ -117,7 +116,7 @@ let rescued=H.decideHandSamples([
   {counts:{quickBlader:1},scores:{quickBlader:[.972]},candidates:[{best:{cardId:'quickBlader',imageScore:.972,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]}
 ],{samplingLimited:true});
 assert.equal(rescued.recognized.quickBlader.count,1);
-assert.equal(rescued.recognized.quickBlader.decision,'clipped-window-high-confidence-rescue');
+assert.equal(rescued.recognized.quickBlader.decision,'boundary-limited-high-confidence-rescue');
 
 let unsafeRescue=H.decideHandSamples([
   {counts:{quickBlader:1},scores:{quickBlader:[.961]}},
@@ -130,5 +129,30 @@ let notClipped=H.decideHandSamples([
   {counts:{quickBlader:1},scores:{quickBlader:[.98]}}
 ],{samplingLimited:false});
 assert.equal(notClipped.recognized.quickBlader,undefined,'two frames must not rescue unless the sampling window was clipped');
+
+
+const sampleCanvas={width:120,height:55,getContext(){return{getImageData(){return{data:new Uint8ClampedArray(120*55*4),width:120,height:55}},drawImage(){},putImageData(){},imageSmoothingEnabled:true}}};
+const seekLog=[];
+WB.video={duration:40,currentTime:19.603};
+WB.turnTimeline=[{side:'bottom',turn:1,time:18.719},{side:'top',turn:2,time:21.242}];
+WB.cancelRequested=false;
+WB.frameCanvas=()=>sampleCanvas;
+WB.initOCR=async()=>({async setParameters(){},async recognize(){return{data:{text:'',confidence:0}}}});
+WB.restoreOCRDefaults=async()=>true;
+WB.seekTo=async(t)=>{seekLog.push(+Number(t).toFixed(3));WB.video.currentTime=Number(t);return Number(t)};
+
+let windowRun=await H.recognizeHand({targetSide:'bottom',relativeSide:'自分',time:19.603,row:{side:'bottom',turn:1,time:18.719}});
+assert.deepEqual(windowRun.samples.map(s=>s.sampleTime),[19.483,19.523,19.563,19.603]);
+assert.equal(windowRun.windowMode,'current-trailing');
+assert.equal(windowRun.plannedFrames,4);
+assert.equal(windowRun.capturedFrames,4);
+assert.ok(windowRun.samples.every(s=>s.sampleTime<=19.603),'hand recognition must never sample future frames');
+assert.equal(WB.video.currentTime,19.603,'video position must restore to requested state');
+
+WB.video.currentTime=20.028;seekLog.length=0;
+windowRun=await H.recognizeHand({targetSide:'bottom',relativeSide:'自分',time:20.028,row:{side:'bottom',turn:1,time:18.719}});
+assert.deepEqual(windowRun.samples.map(s=>s.sampleTime),[19.908,19.948,19.988,20.028]);
+assert.ok(windowRun.samples.every(s=>s.sampleTime<=20.028),'after-play capture must also remain past-only');
+assert.equal(WB.video.currentTime,20.028,'after-play run must restore current position');
 
 console.log('CARD DB + HAND RECOGNITION REGRESSION PASS');
