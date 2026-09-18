@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
 
-const WB={registerModule(){},log(){},turnTimeline:[]};
+const WB={registerModule(){},log(){},turnTimeline:[],video:{duration:93.627,currentTime:21.107}};
 const sandbox={
   window:{WB},console,Float32Array,Uint8ClampedArray,Map,
   atob:s=>Buffer.from(s,'base64').toString('binary'),
@@ -64,5 +64,30 @@ const negativeFixtures=[{"label":"v2_7","scale":528.2591607272693,"data":"9vTx//
 for(const f of negativeFixtures){const m=H.matchFeature(decodeFixture(f))[0];assert.equal(m.cardId,'quickBlader');assert.ok(m.best<.94,`negative fixture ${f.label} must stay below threshold: ${m.best}`)}
 let transient=H.decideHandSamples([{counts:{quickBlader:1},scores:{quickBlader:[.97]}},{counts:{quickBlader:1},scores:{quickBlader:[.96]}},{counts:{},scores:{}}]);
 assert.equal(transient.recognized.quickBlader,undefined,'two-frame transient similarity must not confirm a card');
+
+
+WB.turnTimeline=[
+  {side:'bottom',turn:1,time:18.719},
+  {side:'top',turn:2,time:21.242},
+  {side:'bottom',turn:2,time:25.148}
+];
+const lateCtx={targetSide:'bottom',relativeSide:'自分',time:21.107,row:{side:'bottom',turn:1,time:18.719}};
+const latePlan=H.planSampleTimes(lateCtx,'current');
+assert.equal(latePlan.nearStart,false);
+assert.ok(latePlan.times.length>=3,'late-turn current hand must still have at least 3 samples');
+assert.ok(latePlan.times.every(x=>x.time>=18.759&&x.time<21.192),'current samples must stay inside the own-turn window');
+assert.ok(latePlan.times.some(x=>Math.abs(x.time-21.107)<.001),'current frame must be included');
+
+const startPlan=H.planSampleTimes(lateCtx,'turn-start');
+assert.deepEqual(startPlan.times.map(x=>x.time),[18.799,18.899,19.439,19.539]);
+assert.ok(startPlan.times.every(x=>x.time<21.192),'turn-start evidence must never cross into the opponent turn');
+
+const startEvidence=H.decideHandSamples([
+  {counts:{quickBlader:1},scores:{quickBlader:[.9908]}},
+  {counts:{quickBlader:1},scores:{quickBlader:[.9871]}},
+  {counts:{quickBlader:1},scores:{quickBlader:[.9664]}},
+  {counts:{quickBlader:1},scores:{quickBlader:[.9658]}}
+]);
+assert.equal(startEvidence.recognized.quickBlader.count,1,'real 1T start samples must confirm Quick Blader');
 
 console.log('CARD DB + HAND RECOGNITION REGRESSION PASS');
