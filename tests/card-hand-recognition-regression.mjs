@@ -22,12 +22,17 @@ assert.equal(qb.atk,1);
 assert.equal(qb.life,1);
 assert.equal(qb.route.type,'storm');
 assert.equal(qb.recognition.method,'hand-title-cost-gate-v3');
-assert.equal(qb.recognition.threshold,.94);
+assert.equal(qb.recognition.threshold,.936);
 assert.equal(qb.recognition.candidateThreshold,.90);
 assert.equal(qb.recognition.stableFrames,3);
 assert.equal(qb.recognition.rescueFrames,2);
 assert.equal(qb.recognition.rescueThreshold,.965);
 assert.equal(qb.recognition.costRequired,true);
+assert.ok(.9394>=qb.recognition.threshold,'iPhone runtime Quick Blader frame 18.799 must pass');
+assert.ok(.9418>=qb.recognition.threshold,'iPhone runtime Quick Blader frame 19.439 must pass');
+assert.ok(.9396>=qb.recognition.threshold,'iPhone runtime Quick Blader frame 19.539 must pass');
+assert.ok(.9316<qb.recognition.threshold,'hard negative must remain below calibrated threshold');
+
 assert.equal(qb.recognition.featureLength,432);
 
 const profiles=DB.recognitionProfiles('quickBlader');
@@ -76,6 +81,14 @@ assert.equal(H.parseCostText('10'),10);
 assert.equal(H.parseCostText('11'),null);
 assert.equal(H.parseCostText('x'),null);
 
+
+let iphoneRuntimePositive=H.decideHandSamples([
+  {counts:{quickBlader:1},scores:{quickBlader:[.9394]},candidates:[{best:{cardId:'quickBlader',imageScore:.9394,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]},
+  {counts:{},scores:{},candidates:[{best:{cardId:'quickBlader',imageScore:.9164,expectedCost:1,detectedCost:0,costAccepted:true,costMatched:false,matched:false,decision:'image-below-confirm'}}]},
+  {counts:{quickBlader:1},scores:{quickBlader:[.9418]},candidates:[{best:{cardId:'quickBlader',imageScore:.9418,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]},
+  {counts:{quickBlader:1},scores:{quickBlader:[.9396]},candidates:[{best:{cardId:'quickBlader',imageScore:.9396,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]}
+]);
+assert.equal(iphoneRuntimePositive.recognized.quickBlader.count,1,'actual iPhone own-1T evidence must confirm Quick Blader');
 
 let runtimePositive=H.decideHandSamples([
   {counts:{quickBlader:1},scores:{quickBlader:[.9966]},candidates:[{best:{cardId:'quickBlader',imageScore:.9966,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]},
