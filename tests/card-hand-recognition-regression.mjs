@@ -21,9 +21,13 @@ assert.equal(qb.cost,1);
 assert.equal(qb.atk,1);
 assert.equal(qb.life,1);
 assert.equal(qb.route.type,'storm');
-assert.equal(qb.recognition.method,'hand-title-signature-v2');
+assert.equal(qb.recognition.method,'hand-title-cost-gate-v3');
 assert.equal(qb.recognition.threshold,.94);
+assert.equal(qb.recognition.candidateThreshold,.90);
 assert.equal(qb.recognition.stableFrames,3);
+assert.equal(qb.recognition.rescueFrames,2);
+assert.equal(qb.recognition.rescueThreshold,.965);
+assert.equal(qb.recognition.costRequired,true);
 assert.equal(qb.recognition.featureLength,432);
 
 const profiles=DB.recognitionProfiles('quickBlader');
@@ -49,7 +53,7 @@ assert.equal(d.unresolved.quickBlader.known,false);
 
 d=H.decideHandSamples([{counts:{},scores:{}},{counts:{},scores:{}}]);
 assert.equal(d.recognized.quickBlader,undefined);
-assert.equal(d.unresolved.quickBlader.reason,'no-positive-match');
+assert.equal(d.unresolved.quickBlader.reason,'no-image-candidate');
 
 d=H.decideHandSamples([
   {counts:{quickBlader:2},scores:{quickBlader:[.99,.98]}},
@@ -64,5 +68,54 @@ const negativeFixtures=[{"label":"v2_7","scale":528.2591607272693,"data":"9vTx//
 for(const f of negativeFixtures){const m=H.matchFeature(decodeFixture(f))[0];assert.equal(m.cardId,'quickBlader');assert.ok(m.best<.94,`negative fixture ${f.label} must stay below threshold: ${m.best}`)}
 let transient=H.decideHandSamples([{counts:{quickBlader:1},scores:{quickBlader:[.97]}},{counts:{quickBlader:1},scores:{quickBlader:[.96]}},{counts:{},scores:{}}]);
 assert.equal(transient.recognized.quickBlader,undefined,'two-frame transient similarity must not confirm a card');
+
+
+assert.equal(H.parseCostText('1'),1);
+assert.equal(H.parseCostText(' 03 '),3);
+assert.equal(H.parseCostText('10'),10);
+assert.equal(H.parseCostText('11'),null);
+assert.equal(H.parseCostText('x'),null);
+
+
+let runtimePositive=H.decideHandSamples([
+  {counts:{quickBlader:1},scores:{quickBlader:[.9966]},candidates:[{best:{cardId:'quickBlader',imageScore:.9966,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]},
+  {counts:{quickBlader:1},scores:{quickBlader:[.9915]},candidates:[{best:{cardId:'quickBlader',imageScore:.9915,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]},
+  {counts:{},scores:{},candidates:[{best:{cardId:'quickBlader',imageScore:.9421,expectedCost:1,detectedCost:null,costAccepted:false,costMatched:false,matched:false,decision:'cost-unreadable'}}]},
+  {counts:{quickBlader:1},scores:{quickBlader:[.9621]},candidates:[{best:{cardId:'quickBlader',imageScore:.9621,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]}
+]);
+assert.equal(runtimePositive.recognized.quickBlader.count,1,'real runtime turn-start evidence must confirm Quick Blader with 3 cost-matched frames');
+
+let runtimeAfterPlay=H.decideHandSamples([
+  {counts:{},scores:{},candidates:[{best:{cardId:'quickBlader',imageScore:.9318,expectedCost:1,detectedCost:3,costAccepted:true,costMatched:false,matched:false,decision:'image-below-confirm'}}]},
+  {counts:{},scores:{},candidates:[{best:{cardId:'quickBlader',imageScore:.9739,expectedCost:1,detectedCost:null,costAccepted:false,costMatched:false,matched:false,decision:'cost-unreadable'}}]}
+],{samplingLimited:true});
+assert.equal(runtimeAfterPlay.recognized.quickBlader,undefined,'played Quick Blader must not be recreated in the current hand');
+let costMismatch=H.decideHandSamples([
+  {counts:{},scores:{},candidates:[{best:{cardId:'quickBlader',imageScore:.9315,expectedCost:1,detectedCost:3,costAccepted:true,costMatched:false,matched:false,decision:'cost-mismatch'}}]},
+  {counts:{},scores:{},candidates:[{best:{cardId:'quickBlader',imageScore:.9312,expectedCost:1,detectedCost:3,costAccepted:true,costMatched:false,matched:false,decision:'cost-mismatch'}}]}
+]);
+assert.equal(costMismatch.recognized.quickBlader,undefined);
+assert.equal(costMismatch.unresolved.quickBlader.reason,'cost-mismatch');
+assert.equal(costMismatch.unresolved.quickBlader.costMismatchFrames,2);
+assert.equal(costMismatch.unresolved.quickBlader.maxImageScore,.9315);
+
+let rescued=H.decideHandSamples([
+  {counts:{quickBlader:1},scores:{quickBlader:[.981]},candidates:[{best:{cardId:'quickBlader',imageScore:.981,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]},
+  {counts:{quickBlader:1},scores:{quickBlader:[.972]},candidates:[{best:{cardId:'quickBlader',imageScore:.972,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]}
+],{samplingLimited:true});
+assert.equal(rescued.recognized.quickBlader.count,1);
+assert.equal(rescued.recognized.quickBlader.decision,'clipped-window-high-confidence-rescue');
+
+let unsafeRescue=H.decideHandSamples([
+  {counts:{quickBlader:1},scores:{quickBlader:[.961]}},
+  {counts:{quickBlader:1},scores:{quickBlader:[.955]}}
+],{samplingLimited:true});
+assert.equal(unsafeRescue.recognized.quickBlader,undefined,'low-confidence two-frame sample must not rescue');
+
+let notClipped=H.decideHandSamples([
+  {counts:{quickBlader:1},scores:{quickBlader:[.99]}},
+  {counts:{quickBlader:1},scores:{quickBlader:[.98]}}
+],{samplingLimited:false});
+assert.equal(notClipped.recognized.quickBlader,undefined,'two frames must not rescue unless the sampling window was clipped');
 
 console.log('CARD DB + HAND RECOGNITION REGRESSION PASS');
