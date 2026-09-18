@@ -76,6 +76,20 @@ assert.equal(H.parseCostText('10'),10);
 assert.equal(H.parseCostText('11'),null);
 assert.equal(H.parseCostText('x'),null);
 
+
+let runtimePositive=H.decideHandSamples([
+  {counts:{quickBlader:1},scores:{quickBlader:[.9966]},candidates:[{best:{cardId:'quickBlader',imageScore:.9966,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]},
+  {counts:{quickBlader:1},scores:{quickBlader:[.9915]},candidates:[{best:{cardId:'quickBlader',imageScore:.9915,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]},
+  {counts:{},scores:{},candidates:[{best:{cardId:'quickBlader',imageScore:.9421,expectedCost:1,detectedCost:null,costAccepted:false,costMatched:false,matched:false,decision:'cost-unreadable'}}]},
+  {counts:{quickBlader:1},scores:{quickBlader:[.9621]},candidates:[{best:{cardId:'quickBlader',imageScore:.9621,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]}
+]);
+assert.equal(runtimePositive.recognized.quickBlader.count,1,'real runtime turn-start evidence must confirm Quick Blader with 3 cost-matched frames');
+
+let runtimeAfterPlay=H.decideHandSamples([
+  {counts:{},scores:{},candidates:[{best:{cardId:'quickBlader',imageScore:.9318,expectedCost:1,detectedCost:3,costAccepted:true,costMatched:false,matched:false,decision:'image-below-confirm'}}]},
+  {counts:{},scores:{},candidates:[{best:{cardId:'quickBlader',imageScore:.9739,expectedCost:1,detectedCost:null,costAccepted:false,costMatched:false,matched:false,decision:'cost-unreadable'}}]}
+],{samplingLimited:true});
+assert.equal(runtimeAfterPlay.recognized.quickBlader,undefined,'played Quick Blader must not be recreated in the current hand');
 let costMismatch=H.decideHandSamples([
   {counts:{},scores:{},candidates:[{best:{cardId:'quickBlader',imageScore:.9315,expectedCost:1,detectedCost:3,costAccepted:true,costMatched:false,matched:false,decision:'cost-mismatch'}}]},
   {counts:{},scores:{},candidates:[{best:{cardId:'quickBlader',imageScore:.9312,expectedCost:1,detectedCost:3,costAccepted:true,costMatched:false,matched:false,decision:'cost-mismatch'}}]}
