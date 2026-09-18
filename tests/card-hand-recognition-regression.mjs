@@ -21,7 +21,7 @@ assert.equal(qb.cost,1);
 assert.equal(qb.atk,1);
 assert.equal(qb.life,1);
 assert.equal(qb.route.type,'storm');
-assert.equal(qb.recognition.method,'hand-title-cost-gate-v7');
+assert.equal(qb.recognition.method,'hand-title-anchor-cost-gate-v11');
 assert.equal(qb.recognition.threshold,.938);
 assert.equal(qb.recognition.candidateThreshold,.90);
 assert.equal(qb.recognition.stableFrames,3);
@@ -34,6 +34,23 @@ assert.ok(.9396>=qb.recognition.threshold,'actual iPhone borderline positive mus
 assert.ok(.9316<qb.recognition.threshold,'hard negative must remain below calibrated threshold');
 
 assert.equal(qb.recognition.featureLength,432);
+assert.equal(qb.recognition.anchorThreshold,.92);
+assert.equal(qb.recognition.anchorCandidateThreshold,.90);
+assert.equal(qb.recognition.anchorFeatureLength,420);
+assert.equal(zeta.recognition.anchorThreshold,.92);
+assert.equal(barbaros.recognition.anchorThreshold,.92);
+assert.deepEqual([...H.anchorAngles],[-10,-5,0,5,10]);
+assert.deepEqual([...H.anchorCenterShifts],[-4,-2,0,2,4]);
+
+const anchorProfiles={
+  quickBlader:DB.anchorRecognitionProfiles('quickBlader'),
+  zetaBeatrix:DB.anchorRecognitionProfiles('zetaBeatrix'),
+  barbaros:DB.anchorRecognitionProfiles('barbaros')
+};
+assert.equal(anchorProfiles.quickBlader.length,7);
+assert.equal(anchorProfiles.zetaBeatrix.length,5);
+assert.equal(anchorProfiles.barbaros.length,4);
+for(const [id,rows] of Object.entries(anchorProfiles))for(const p of rows)assert.equal(p.length,420,`${id} anchor profile length`);
 
 const profiles=DB.recognitionProfiles('quickBlader');
 assert.equal(profiles.length,4);
@@ -69,6 +86,21 @@ assert.equal(d.recognized.quickBlader.count,1,'count is conservative when frames
 
 
 const decodeFixture=p=>{const raw=Buffer.from(p.data,'base64'),v=new Float32Array(raw.length);let norm=0;for(let i=0;i<raw.length;i++){let q=raw[i];if(q>127)q-=256;const x=q/p.scale;v[i]=x;norm+=x*x}norm=Math.sqrt(norm)||1;for(let i=0;i<v.length;i++)v[i]/=norm;return v};
+
+const anchorFixtures=[{"label":"qb_old_19_483","cardId":"quickBlader","time":19.483,"cx":828,"dx":2,"angle":0,"expectedMin":0.92,"profile":{"scale":673.408186544914,"data":"MRDq8vv06u7q4xYIICcpMCMrQCoGGCEs2OsvMDopFxog1dXnJC0bJOApMuPt3QMfJf0y7vzp7wb5/SAvNxva6+XSABATIgIs283b9xsm//0SF9TnzOj8+s7XJObWBOPYAyr08Szq2t3jxesOAS8SAzbcw9Lv8AcMABgf0M7R5xXY3Orv7tbR3DQh7gDcgdn2+Pv89fb+iZwACv33BAQE98/6FxkoNisUEAbP+AgTIzc1CgQCbO0BEg8REQD5+CZiBhT/9QoC7tEhNA0UCwMC8unSRhIPDg0E6+Ht4tffEw0NCOjr/vXy3w4i/gjj4t/m9OMBHPEJABYM9PDbyfcNBSUqOvjX7uYCBAg1NCca0N/WEAgWHfTt7uKdHDs6P0BGSUi10AP4BQkKBPoNK/fk4eTb2N3o6yf45+3w5+Pv8vC3AfD2CPv4/gIE2r3z9AkN/gMFEdjM9fAABfj+CA7B7PL2/QAJGAoLOwXu9P37GxsLCi1T/eX++QcPDRAtdQj0E/cB9/sMQ08QAff75Nni/E//Cfr+AuDZ3+tACQ73++zp9/r5"},"score":0.9995890259742737},{"label":"zeta_75_833","cardId":"zetaBeatrix","time":75.833,"cx":772,"dx":0,"angle":0,"expectedMin":0.92,"profile":{"scale":551.8693834502883,"data":"J+v17/b38vT37hfN0M7P7tHMGO3e2tf4MBscBBUD3e8CKD4e5QoEFdrj7AJEAfQMAgUD9/f/+wP6+DEWB/Xw/w4K4gUPHOD+CwL2CQ3/7gMDDSTi+98rAxYz9Qw56C87Nw8VO/IjA93oBRIG7OgU8RD97xni1/QM9OYB8PjsEtscMOwdDynu8Rvc89iB0PLx8Pr15uf1jQQYMzssJSMhKCEUC/Tq7vT07fEeE/vX1+nx9vj1MQ723d3s+P7//Dr2//z0+AgHBwoz9v0B+fgKCvrx/AX/9evoARIC9AYJAfXr4voO+Ozd9AUB8eXnAeze2PQJB/ns+CstGfwIDhUQCgQqSfoFEA0VGRD+Hj3uBwb4DRQFBQcRE4r3ERIeLTAyJSCk0tfU0d/+8unjzdLo+PwQDvH4ANzq/wwNCgwFBP/Y9AgPDxMLDAP4twIDAAQoDxf/68AKBfwILg8REQ71CQoHHTEN+AMP6u/4Bx4rDvIIFxb67QISGwz8Dx87G/8DDBIH9/T3JyoOCv0A9eXZ/RodBQn3+e7e1gEDCxT18fPx7OLs"},"score":0.984366238117218},{"label":"barbaros_75_833","cardId":"barbaros","time":75.833,"cx":834,"dx":-2,"angle":0,"expectedMin":0.92,"profile":{"scale":529.6984117858846,"data":"Jw70Bv/+Agbx/SMf+ev15+/x49vx3ebx/Cn7DOzi1dzn+O7pIjgH7gDh7+36/TA4G/ADFfjm8fwWGhjuEPfyDP35GhowHw/bOf8d9CE6MQr93vj9JwIARe/fGgLtFhgEFxj31jH5/g3b7egE5tkE9hXz6gLY9eTh5BTrBhU01ezr5O0t/wLtJfnw7iyUpuPl4ujp19jkgc4OFyofExsbGAMLGygoAhYMDgv8CRJDPhcUCRISCQUVOTUcEwgHERXsHRswHgkFCg4A+QwOEwH5AgMFB/v2B/z09vzw5+f67f4BBgD6+Pje5QD3+vz/AfP22OIG8/f4+P/z8uD+Be/3/fP3+/nxC/z+AgIJChgA+/38AgH8/AYE8LflTEhAMkRTSTy/9P769fH6Bf7x+/jx6+ro8Pr39Pz++OHk6u3w9fzw//Xi5ezt7vP55v7w7Ozx9/r07ez/8fDw+/3//PflBfbv8v8HCRccHQ/69u7l9A0YDxM17f8A9e4FGRMqOe0E9/YIBx8XQwbzAf7/DAkgEyPyCvXp7Pb1+A4VAf/v6OkFDRcl"},"score":0.9551635980606079},{"label":"qb_75_833","cardId":"quickBlader","time":75.833,"cx":893,"dx":0,"angle":0,"expectedMin":0.92,"profile":{"scale":604.3846994718422,"data":"Kw3g/Af47+Xv6xMDGyIlKiImLx7+FCEe4fQwKDIkEhkn1tntKSAgJuchL97w3hQeIvUuA//p9gf48h0rNA7b9eXaAw4SIO8t2dbh9h4jBw8MG9ri0uwB+9ncEeTbCePe/DXr8R3s3eDh0OcMAiEZASXkydb07gcXARQW19PV8Bnf4O/48NjZ5CwV5O3IoOj2+ff19PHygbYCCAT8/wH89cH/ERIlMCkcEgj//Q0SJUIwDgT9PRcOERAeIQr68C46CQwCAw0F6dYoOAgKBP8D/+jZPQoNDAgA8+7u7OTkCBIIAO/m7/Ln5RgfAADu6Ojo5uASHQEB9fPz5eTW4QQDBBYiJe/W3OT+CA80MjEZ3NXiCQkWIu/3/MK1Ijc+PT5AQUKw0P0B/wEHDRARIOzs3t/j3d/g4fb29vPr4unz9fLR8Pfy+P31+wAA4uPy7wQD9wQLDOff8fAEAvsHDhDD6e/2AgQDDQ0JFgbv+AIEBQ8NCBdB7fMEBAYODw04YfnyBQUC+wMJPWcI9AMG9Obt+k0IC/f/Au7i6fA5FAb39/Ht+P34"},"score":0.992716372013092},{"label":"barbaros_77_964","cardId":"barbaros","time":77.964,"cx":802,"dx":-2,"angle":0,"expectedMin":0.92,"profile":{"scale":488.1587286604463,"data":"Iwj0Bf78BgT0+h4Z9/Lx5/P05dr13ej2+x0ACu/l2tzq/e/qGzQJ7QHj7+35+yozHvP8A/fo9P4VFBj5D/X0C/v7Hh8oGwbdJfsf8yA3LxIA4f38Jf4EQu7eG/7zExMIFBv72DQIAQve7egD6NcJ+BL07ALY9uzp6BfpAw4z2u315u0rAQHzIvjw8SensObn4+Hj5ObngeYmDg0MCQsMAesFHCooERYXGQz2BhtBNBkOCQsQ/wQYOjEhEAwEDBLzFR8vHwsLDgoF+wsMEAP8/gMMCAP4CPf18/jz2PsC7wL8/P/48vnm8QP59QAE+/Dy5OwG7PL++/zz9+L9COvy/fz8AfzyDAEC+voAARABCvoBBP/0/QAB88zsPzU3QkVKREPPAvP0Agb++fbzCPfu5+/28enz+f0H8OHp8Ozr7/LzCPPm6vDp6/Ly4gH47evy9fPv8On48ury/w0J9fLo8vrl+AghGxkhDvcE9vXu9goXDCAe/P3+8ugMGAkmMPgWAPEEDRcHORz3Avr1AQcKByADAfXw7v0GARH/Bf3m6eIGCAsj"},"score":0.9995776414871216},{"label":"qb_77_964","cardId":"quickBlader","time":77.964,"cx":867,"dx":0,"angle":0,"expectedMin":0.92,"profile":{"scale":590.993931492258,"data":"D+39APfx7e7s6QcYHCIqIiIuHyYWISvi8isqMyUrFyLg3e0cIB8nMRsp5e7iBCMk/P/yBenxA/v0GSo/C+Pz5dv5DhEhMCHj1+P1GSQEBgIS3ePV7P791N7j6d4E6t8GKvPv7vDg5+nO7BABIRP3Kd/N2fLtChMxFhnY1NbrG+Hi7fX23tjhJxXo892F4AH5+/36+vn5iu/0/v7/AP358+4ZHyYyJxYTCwQDDxojOykKBwL59QsUDxYVAvv891YFEAIBCP3q1O5aBg4EAgL55My7CAwRDATv5uji2uUZCxED7/P8+vfiFRgBCuTp7/bs5AMc+AT8Cgb12OPT8QYEHyYu6tTj3gEIEjQ4LBf72OELCSUg+wAFAKseNzM4PkNIR0fA/fr5Aw8OCxMY/+Hm5djP4ujw+Pfm7u/k2u7v8/b97PP//+33Af79xADvCBPzAAIO/L8B9wAG8/4CCxfr9/r//P0DAwoREvX2+QMWDAAGDFn+8f76BAgICw5/DvsI+gXu8gMNYBIB/QLu3uX5Cx0I+fn34OLi7vgaCPj57ef3Afn3"},"score":0.9995375275611877}];
+for(const f of anchorFixtures){
+  const feature=decodeFixture(f.profile),matches=H.matchAnchorFeature(feature),own=matches.find(x=>x.cardId===f.cardId);
+  assert.ok(own.best>=f.expectedMin,`anchor fixture ${f.label} must confirm ${f.cardId}: ${own.best}`);
+  for(const x of matches.filter(x=>x.cardId!==f.cardId))assert.ok(x.best<.90,`anchor fixture ${f.label} must not cross wrong-card candidate gate for ${x.cardId}: ${x.best}`);
+}
+const zeroTitle=new Float32Array(432);
+const qbAnchorFixture=decodeFixture(anchorFixtures.find(x=>x.label==='qb_old_19_483').profile);
+const dualQb=H.matchCardFeatures(zeroTitle,[qbAnchorFixture]).find(x=>x.cardId==='quickBlader');
+assert.equal(dualQb.imageConfirmed,true,'anchor evidence must recover Quick Blader when fixed title strip fails');
+assert.equal(dualQb.imageSource,'anchor');
+assert.ok(dualQb.anchorScore>=.92);
+assert.equal(H.resolveCostGate(dualQb,{accepted:true,value:7,source:'ocr'}).matched,false,'strong anchor evidence must still be rejected by wrong displayed cost');
+
 const negativeFixtures=[{"label":"v2_7","scale":528.2591607272693,"data":"9vTx///7/Pr6//cPCRIN//Dl+wLrB/z7/v8FNjIUCvfp6ujfAgnv6uDtBw8cOCchBu3l597fDAzl3ufpEA8tMBsQB+zd49vlChDi7xz4ExglLRwfCezR2+ftGBDyAh0KHRoNBBYuE+zV3NvdAvjo+QMDE/nxDTgwFevV5dna//H/CSYaJBYdGiovEOvU3+jhBgL9AggEDw4REwbYm4ig2gj8JBsPFBkSJiggFAgEzr/oBxETIh8B/QAHHiMWCQcJ5dMECAUMJh4C+/j+Gh0TChEZ8c8GCQcKIxsE+vP7FhgP+/0O784F/fPtHx0D9vL9FhIV+/YH7c4C/wr+Bv309e35EAn69AAH588B/wgGAv39+On0Afv29QAE6M/+BQwE/gMSAAALAgEA/fP819XhAQwT1d//6eL31tPS6u7kEhMDDAUO2OATICAS1M7c8PLnCiMBBQgO1dsPHikY1sfg7u3iCCMBBw8TztYKIC4a4c/j/P/oBigJEBUazNYNICgN5dvmBxD7ESkOEg8R+AkcICQS9PEIDgDzEy8NCAoKBg0RHywgDAcMDf70DywQBfkA"},{"label":"v3_60","scale":751.6343395521646,"data":"JjY2KCg5MiApFikSAhkP+ufn5uAGMjE5LykrGiEqFArmv9LkwdTpLy4mISAxNiMrGPa4vcroyergFCsgB+MPPwQgC+bWwtDU2PwL9en/MTVCQQ0A5fHe6dzP3uXd7xYIIjM3Hvfp8gP+4tLT1driJyYOBR4S7vkD++7v0fMAx9DuAwjSzOTU3x75DQ7Lvv/k/f3//Pn28O3s7ujBr4mIATohCxUZEAcFA/rz+PTnAP4JJUJSCR4rEf/8+/Ds6d3fKDsaHj1oBf4KBvn07vXs3OTfKDcgJS9kA+33+/Xv3dnX1OjtOEA5FzJNAe338+/s1s3DxuLxHSUkAyUr/Pb13djm5d7Y3+zpHy8aGScl/vz05N3w9+3y6ODnJTUdHfQN+PkACxEXGigqIxUDt42Y9/Ds3+Ha2N7n6/4B/gAb+cnt79bK+/Xk5PL/AQwQFRgi5dv379+7CyANCBIeHBweHxwe5sjr9OPFCT0jExEdJSQkIxYRxKfB+OvWCDAaCg8YIyxBPSMM073MAOviEh0VFyggICozKh0S0LbU7Nq4CQkjOjwbEx0lJiEY3Nnr9hr3"},{"label":"hard27","scale":553.0857642220831,"data":"6efi9fTw8e/s9esN/hIICer28frcAPLw9/X9PTcPICEA4vD4+ATg2szgAAobPigiHC/q4OnpBwTRy9jaDgktNRgLEOny29/dBArQ4RvsEBcnLhge5grp9/X4GQzm+B0DHRoI+xUuAAX19/nm+evX6/n6Ee/jB0E0Bvj49QHT+eL4BCgXJxIgFy40GBPq+PLrBQUB/QIEBwUICgvPloiSygMRGxEJExMPJC4k/AEIyLTW+g0HJBkB9vgCHCUYAgYR69P0/wb+KRz/8u/5Fh8MAxEgExwH+fD0Ihn/7un1FBoLAPYYMxci/Ov3HRH46+j3FhcP+e4CKB8h+PUKBfjy6+b1Cwf37/QBEA8N+PoS+vz89OTp9vTy9PwCEw7l4PP8BwgKBwkMAPv5/QIO5eHoBxsM1+cE6Oz/2NDc9PXsDhQSD/7+0OEWHSAa1M7g9vDoBywUA/wFyt4WJi4i28zm++vd/P0BCAsUxdYLIysc3tDoAADs2PHqBxwqyd0SJicP4NjiBQ/+3eHkDgTzAREeHyUT/AMWGAz77+/0Fxf0HBsSGC8rFxUZEP31CBcdMzAb"}];
 for(const f of negativeFixtures){const matches=H.matchFeature(decodeFixture(f)),m=matches.find(x=>x.cardId==='quickBlader');assert.equal(m.cardId,'quickBlader');assert.ok(m.best<.938,`negative fixture ${f.label} must stay below QB threshold: ${m.best}`);for(const id of ['zetaBeatrix','barbaros']){const x=matches.find(v=>v.cardId===id);assert.ok(x.best<.90,`negative fixture ${f.label} must stay below ${id} candidate gate: ${x.best}`)}}
 let transient=H.decideHandSamples([{counts:{quickBlader:1},scores:{quickBlader:[.97]}},{counts:{quickBlader:1},scores:{quickBlader:[.96]}},{counts:{},scores:{}}]);
@@ -280,12 +312,21 @@ assert.equal(DB.costRecognitionProfiles,undefined,'card DB must not own displaye
 assert.equal(WB.DisplayedCostRecognition.meta.cardIndependent,true);
 assert.deepEqual(WB.DisplayedCostRecognition.meta.templateValues,[7]);
 const cost7Profiles=H.displayedCostProfiles(7);
-assert.equal(cost7Profiles.length,3);
+assert.equal(cost7Profiles.length,5);
+assert.equal(WB.DisplayedCostRecognition.meta.templates[0].threshold,.98);
 for(const p of cost7Profiles){assert.equal(p.length,160);const m=H.matchDisplayedCostFeature(p).find(x=>x.value===7);assert.ok(m.score>.999,'generic displayed-cost 7 template must self-match');assert.equal(m.accepted,true)}
 const decodeCostFixture=p=>decodeFixture(p);
 const cost6Negative=decodeCostFixture({"scale":643.3189086914062,"data":"X1VDRUAzLg/n3EsjFgr17P0VGSgRHhAJD/Te4QImEyX7JR/5DvTR6yEULD0PBQsM9eQSDE08IUEPBOToDAxUJQdMNf326AwISysFRjAY/ur/AxIfGCgbGusX8fkBBBEZE/MM7fz47PH+9vAYDZoK/TY1R0ET04+B6e04RRG1mZC8nPvzOh7MkJOJlM4NDy4X9puOkpCNIQk1IO3RopiTlA=="});
 const cost6Match=H.matchDisplayedCostFeature(cost6Negative).find(x=>x.value===7);
-assert.ok(cost6Match.score<.935,`visible cost 6 must not pass generic displayed-cost 7 template: ${cost6Match.score}`);
+assert.ok(cost6Match.score<.98,`visible cost 6 must not pass generic displayed-cost 7 template: ${cost6Match.score}`);
+
+const qbCost1Exact=decodeCostFixture({"scale":658.1745301713127,"data":"KQ/c1/gqLAndtB4jL1xjThMELw4PWX9D8AT90MLKMngh/Rbv0urM01tQ4Awk/BF2+vRjHOEYKRrxdwQRYBXmDiEa8ngCD2IR3ggiF+52BhNDMc3zFg/5exkdAzrW3vr3JUo9FvUD+t/X4/wQEPHp6eTg+Ork4e/x0tXm1Im1wO3Ow6/V++ykpqDSDx+zyvbyp6KQ0vUOtcjm9c6PnwgSGg=="});
+const zetaCost6Exact=decodeCostFixture({"scale":594.1963149593497,"data":"FycuMDAi/dnX1lxCKywiGSYY8eggExYE8eba7yBGFSIOCh/53+TwChkdBywU/w764ugYDDw9HxcAC+njDQlMMRBEGP3l6AgJTiMERjEC9ucIBDMqCTkiIPj39/8BFBsdFhLiIfXz+gIQEQLyGNb9/gcHDxEWIbqFDvc0LUUy4KWigfHqNTXzrZqPr7r/AzMO1ZCVkJCrFgYnHgWxlJSTjQ=="});
+for(const [label,feature] of [['QB cost 1',qbCost1Exact],['Zeta visible cost 6',zetaCost6Exact]]){
+  const m=H.matchDisplayedCostFeature(feature).find(x=>x.value===7);
+  assert.ok(m.score<.98,`${label} must stay below strict generic cost-7 template threshold: ${m.score}`);
+}
+
 const zeta6=costScopeFixture.find(x=>x.cardId==='zetaBeatrix');
 const zetaDisplayed=H.resolveDisplayedCost({accepted:true,value:6,reads:[]},{accepted:false,value:7,score:.5,threshold:.935});
 const zeta6Gate=H.resolveCostGate(zeta6,zetaDisplayed);
