@@ -21,7 +21,7 @@ assert.equal(qb.cost,1);
 assert.equal(qb.atk,1);
 assert.equal(qb.life,1);
 assert.equal(qb.route.type,'storm');
-assert.equal(qb.recognition.method,'hand-title-cost-gate-v6');
+assert.equal(qb.recognition.method,'hand-title-cost-gate-v7');
 assert.equal(qb.recognition.threshold,.938);
 assert.equal(qb.recognition.candidateThreshold,.90);
 assert.equal(qb.recognition.stableFrames,3);
@@ -165,6 +165,36 @@ assert.equal(H.layoutsCompatible(mkLayout(1,[700,760,820]),mkLayout(2,[700,760])
 assert.equal(H.layoutsCompatible(mkLayout(1,[708,770,828,896,959]),mkLayout(2,[708,770,828,896]),1200),false,'missing-card layout must stay distinct to avoid swallowing play animation');
 assert.equal(H.layoutsCompatible(mkLayout(1,[708,770,828,896,959]),mkLayout(2,[737,801,865,930]),1200),false,'post-play reflow must not be treated as the same hand');
 
+const latestCurrentLayout=[
+  mkLayout(19.816,[737,801,865,930]),
+  mkLayout(19.856,[737,801,865,930]),
+  mkLayout(19.896,[737,801,865,930]),
+  mkLayout(19.936,[737,801,865,930])
+];
+const latestPreviousLayout=[
+  mkLayout(19.467,[708,770,828,896]),
+  mkLayout(19.507,[708,770,828,896,959]),
+  mkLayout(19.547,[708,770,828,896,959]),
+  mkLayout(19.587,[708,770,828,830,895,959])
+];
+let latestCurrent=H.chooseStableHandWindow(latestCurrentLayout,4,2,1200);
+let latestPrevious=H.choosePreviousStableHandWindow(latestPreviousLayout,latestCurrent,1200);
+assert.deepEqual(latestCurrent.frames.map(x=>x.sampleTime),[19.816,19.856,19.896,19.936],'latest diagnostic current hand must remain the post-play 4-card hand');
+assert.deepEqual(latestPrevious.frames.map(x=>x.sampleTime),[19.507,19.547,19.587],'latest diagnostic previous hand must recover the pre-play 5-card hand');
+assert.equal(latestPrevious.candidateCount,5);
+const historyWithTransition=[
+  mkLayout(19.700,[943]),
+  mkLayout(19.660,[943]),
+  mkLayout(19.620,[943]),
+  mkLayout(19.580,[708,770,828,896,959]),
+  mkLayout(19.540,[708,770,828,896,959]),
+  mkLayout(19.500,[708,770,828,896,959])
+];
+const previousWindows=H.collectPreviousStableHandWindows(historyWithTransition,latestCurrent,1200,4);
+assert.equal(previousWindows.length,1,'single-card animation must not qualify as a stable hand window');
+assert.equal(previousWindows[0].candidateCount,5,'history scan must skip the animation and retain the older pre-play hand');
+
+
 const actualDiagLayout=[
   mkLayout(19.467,[708,770,828,896]),
   mkLayout(19.507,[708,770,828,896,959]),
@@ -175,6 +205,13 @@ chosen=H.chooseStableHandWindow(actualDiagLayout,4,2,1200);
 assert.deepEqual(chosen.frames.map(x=>x.sampleTime),[19.507,19.547,19.587],'actual iPhone duplicate must collapse so the latest three 5-card frames form a stable hand');
 assert.equal(chosen.candidateCount,5);
 assert.equal(chosen.layoutMode,'robust-overlap');
+
+let previousHandDecision=H.decideHandSamples([
+  {counts:{quickBlader:1},scores:{quickBlader:[.9405]},candidates:[{best:{cardId:'quickBlader',imageScore:.9405,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]},
+  {counts:{quickBlader:1},scores:{quickBlader:[.9396]},candidates:[{best:{cardId:'quickBlader',imageScore:.9396,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]},
+  {counts:{quickBlader:1},scores:{quickBlader:[.9408]},candidates:[{best:{cardId:'quickBlader',imageScore:.9408,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]}
+]);
+assert.equal(previousHandDecision.recognized.quickBlader.count,1,'previous stable hand must recognize Quick Blader from three cost-matched frames');
 
 let actualIphoneTwoFrame=H.decideHandSamples([
   {counts:{quickBlader:1},scores:{quickBlader:[.9405]},candidates:[{best:{cardId:'quickBlader',imageScore:.9405,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]},
