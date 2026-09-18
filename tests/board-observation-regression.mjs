@@ -24,6 +24,11 @@ assert.equal(d.accepted,false);
 assert.equal(d.known,false);
 assert.equal(d.reason,'direct-zero-not-safe');
 
+const oneFrame=[{badgeCount:1,readable:true,values:[1],candidateTotal:1,offset:0}];
+d=S.decideBoardSamples(oneFrame,{nearOwnStart:true});
+assert.equal(d.candidateStable,false,'one-frame candidate must not be surfaced as stable');
+assert.equal(d.accepted,false);
+
 const positive=[
  {badgeCount:2,readable:true,values:[1,1],candidateTotal:2,offset:0},
  {badgeCount:0,readable:true,values:[],candidateTotal:0,offset:.25},
