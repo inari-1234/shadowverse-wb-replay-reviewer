@@ -5,7 +5,7 @@ const rules={protocol:{beforeGrade:['主要リーサル候補を全列挙する'
 const TACTICAL_CARDS=Object.freeze([
   {id:'barbaros',label:'バルバロス',category:'フィニッシャー',maxCount:3},
   {id:'zetaBeatrix',label:'ゼタ＆ベアトリクス',category:'疾走・フィニッシャー',maxCount:3},
-  {id:'quickBlader',label:'刹那のクイックブレイダー',category:'疾走',maxCount:3,cost:1,baseDamage:1,evolveBonus:2,superBonus:3}
+  {id:'quickBlader',label:'刹那のクイックブレイダー',category:'疾走',maxCount:3,route:{type:'storm',cost:1,baseDamage:1,evolveBonus:2,superBonus:3}}
 ]);
 const TACTICAL_RESOURCES=Object.freeze([
   {id:'pirateFlags',label:'海賊旗カウント',kind:'text',placeholder:'例 5,2'},
@@ -44,7 +44,7 @@ const add=(name,cost,damage,category='other',meta={})=>routes.push({name,cost,da
 if(hp!=null&&boardKnown&&fixed>=hp)add('場＋その他確定打点',0,fixed,'board');
 if(bar.known&&bar.count>0&&eff!=null&&eff>=7&&flagsKnown&&boardKnown){const d=4+fs.filter(x=>x<=5).length*2+fixed;add('バルバロス',7,d,'hand',{cardId:'barbaros'});if(bool(ep))add('バルバロス＋進化',7,d+2,'hand',{cardId:'barbaros'});if(bool(sep))add('バルバロス＋超進化',7,d+3,'hand',{cardId:'barbaros'})}
 if(z.known&&z.count>0&&eff!=null&&eff>=6&&boardKnown){const d=3+fixed;add('ゼタ＆ベアトリクス（エンハンス6）',6,d,'hand',{cardId:'zetaBeatrix'});if(bool(ep))add('ゼタ＆ベアトリクス＋進化',6,d+2,'hand',{cardId:'zetaBeatrix'});if(bool(sep))add('ゼタ＆ベアトリクス＋超進化',6,d+3,'hand',{cardId:'zetaBeatrix'})}
-if(qb.known&&qb.count>0&&eff!=null&&eff>=1&&boardKnown){const playable=Math.min(qb.count,Math.floor(eff)),base=playable+fixed;add(`刹那のクイックブレイダー×${playable}`,playable,base,'hand',{cardId:'quickBlader',copies:playable});if(bool(ep))add(`刹那のクイックブレイダー×${playable}＋進化`,playable,base+2,'hand',{cardId:'quickBlader',copies:playable});if(bool(sep))add(`刹那のクイックブレイダー×${playable}＋超進化`,playable,base+3,'hand',{cardId:'quickBlader',copies:playable})}
+for(const def of TACTICAL_CARDS.filter(x=>x.route?.type==='storm')){const card=tactical.cards[def.id],route=def.route,cost=Math.max(1,Number(route.cost)||1),baseDamage=Math.max(0,Number(route.baseDamage)||0);if(card?.known&&card.count>0&&eff!=null&&eff>=cost&&boardKnown){const playable=Math.min(card.count,Math.floor(eff/cost)),base=playable*baseDamage+fixed,spent=playable*cost,meta={cardId:def.id,copies:playable,routeType:'storm'};add(`${def.label}×${playable}`,spent,base,'hand',meta);if(bool(ep)&&Number.isFinite(Number(route.evolveBonus)))add(`${def.label}×${playable}＋進化`,spent,base+Number(route.evolveBonus),'hand',meta);if(bool(sep)&&Number.isFinite(Number(route.superBonus)))add(`${def.label}×${playable}＋超進化`,spent,base+Number(route.superBonus),'hand',meta)}}
 const lethalRoutes=routes.filter(x=>x.lethal).map(x=>x.name),status=lethalRoutes.length?'confirmed-lethal':unknown.length?'incomplete-do-not-declare-no-lethal':'checked-no-lethal-in-covered-routes';return{...clone(s),tactical,effectivePP:eff,routes,lethalRoutes,unknown,status}}
 function tacticalSummary(x){const t=x.tactical||normalizeTactical(x),owned=TACTICAL_CARDS.map(def=>({def,state:t.cards[def.id]})).filter(x=>x.state?.known&&x.state.count>0).map(x=>`${x.def.label}×${x.state.count}`),unknownCards=TACTICAL_CARDS.filter(def=>!t.cards[def.id]?.known).map(def=>def.label),flags=t.resources.pirateFlags.known?(t.resources.pirateFlags.values.length?t.resources.pirateFlags.values.join(','):'0'):'未確認',other=t.resources.otherConfirmedDamage.known?`${t.resources.otherConfirmedDamage.value}点`:'未確認',handRoutes=(x.routes||[]).filter(r=>r.category==='hand').map(r=>`${r.name} ${r.damage}点`);return`戦術情報：${owned.length?owned.join(' / '):'所持確認なし'}
 海賊旗：${flags}　その他確定打点：${other}　候補確認：${t.resources.damageRoutesChecked?'済':'未確認'}
