@@ -21,7 +21,7 @@ assert.equal(qb.cost,1);
 assert.equal(qb.atk,1);
 assert.equal(qb.life,1);
 assert.equal(qb.route.type,'storm');
-assert.equal(qb.recognition.method,'hand-title-cost-gate-v4');
+assert.equal(qb.recognition.method,'hand-title-cost-gate-v5');
 assert.equal(qb.recognition.threshold,.94);
 assert.equal(qb.recognition.candidateThreshold,.90);
 assert.equal(qb.recognition.stableFrames,3);
@@ -131,6 +131,32 @@ let notClipped=H.decideHandSamples([
 assert.equal(notClipped.recognized.quickBlader,undefined,'two frames must not rescue unless the sampling window was clipped');
 
 
+
+const mkLayout=(t,xs)=>({sampleTime:t,centers:xs.map(cx=>({cx,cy:487})),candidateCount:xs.length});
+const transitionScan=[
+  mkLayout(19.498,[708,770,828,895,959]),
+  mkLayout(19.538,[708,770,828,895,959]),
+  mkLayout(19.578,[708,770,828,895,959]),
+  mkLayout(19.618,[708,770,828,895,959]),
+  mkLayout(19.658,[708,770,833,959]),
+  mkLayout(19.698,[943]),
+  mkLayout(19.738,[736,800,866,931])
+];
+let chosen=H.chooseStableHandWindow(transitionScan,4,3,1200);
+assert.deepEqual(chosen.frames.map(x=>x.sampleTime),[19.498,19.538,19.578,19.618],'transition must fall back to the latest stable pre-action hand');
+assert.equal(chosen.candidateCount,5);
+
+const afterPlayScan=[
+  mkLayout(19.916,[738,801,867,930]),
+  mkLayout(19.956,[738,801,867,930]),
+  mkLayout(19.996,[738,801,867,930]),
+  mkLayout(20.036,[738,801,867,930])
+];
+chosen=H.chooseStableHandWindow(afterPlayScan,4,3,1200);
+assert.deepEqual(chosen.frames.map(x=>x.sampleTime),[19.916,19.956,19.996,20.036],'stable post-play hand must not resurrect an older hand');
+assert.equal(H.layoutsCompatible(mkLayout(1,[700,760,820]),mkLayout(2,[701,761,821]),1200),true);
+assert.equal(H.layoutsCompatible(mkLayout(1,[700,760,820]),mkLayout(2,[700,760]),1200),false);
+
 const sampleCanvas={width:120,height:55,getContext(){return{getImageData(){return{data:new Uint8ClampedArray(120*55*4),width:120,height:55}},drawImage(){},putImageData(){},imageSmoothingEnabled:true}}};
 const seekLog=[];
 WB.video={duration:40,currentTime:19.603};
@@ -143,10 +169,10 @@ WB.seekTo=async(t)=>{seekLog.push(+Number(t).toFixed(3));WB.video.currentTime=Nu
 
 let windowRun=await H.recognizeHand({targetSide:'bottom',relativeSide:'自分',time:19.603,row:{side:'bottom',turn:1,time:18.719}});
 assert.deepEqual(windowRun.samples.map(s=>s.sampleTime),[19.483,19.523,19.563,19.603]);
-assert.equal(windowRun.windowMode,'current-trailing');
+assert.equal(windowRun.windowMode,'stable-backscan');
 assert.equal(windowRun.plannedFrames,4);
 assert.equal(windowRun.capturedFrames,4);
-assert.ok(windowRun.samples.every(s=>s.sampleTime<=19.603),'hand recognition must never sample future frames');
+assert.ok(windowRun.samples.every(s=>s.sampleTime<=19.603),'stable backscan must never sample future frames');
 assert.equal(WB.video.currentTime,19.603,'video position must restore to requested state');
 
 WB.video.currentTime=20.028;seekLog.length=0;
