@@ -267,35 +267,47 @@ assert.equal(zeta.recognition.rescueThreshold,.945);
 assert.equal(barbaros.recognition.rescueThreshold,.945);
 assert.deepEqual(zeta.recognition.acceptedCosts,[4,6]);
 assert.deepEqual(barbaros.recognition.acceptedCosts,[7]);
-assert.equal(barbaros.recognition.costTemplateThreshold,.935);
-assert.equal(barbaros.recognition.costFeatureLength,160);
 const zetaProfiles=DB.recognitionProfiles('zetaBeatrix'),barbarosProfiles=DB.recognitionProfiles('barbaros');
 assert.equal(zetaProfiles.length,7);
 assert.equal(barbarosProfiles.length,11);
 for(const [id,rows] of [['zetaBeatrix',zetaProfiles],['barbaros',barbarosProfiles]])for(const p of rows){assert.equal(p.length,432);const m=H.matchFeature(p).find(x=>x.cardId===id);assert.ok(m.best>.999,`${id} profile must self-match`)}
-const costScopeFixture=[{cardId:'quickBlader',expectedCost:1,acceptedCosts:[1],best:.97,imageCandidate:true},{cardId:'zetaBeatrix',expectedCost:4,acceptedCosts:[4,6],best:.95,imageCandidate:true},{cardId:'barbaros',expectedCost:7,acceptedCosts:[7],best:.94,imageCandidate:true,costTemplateThreshold:.935}];
+const costScopeFixture=[{cardId:'quickBlader',expectedCost:1,acceptedCosts:[1],best:.97,imageCandidate:true,costRequired:true},{cardId:'zetaBeatrix',expectedCost:4,acceptedCosts:[4,6],best:.95,imageCandidate:true,costRequired:true},{cardId:'barbaros',expectedCost:7,acceptedCosts:[7],best:.94,imageCandidate:true,costRequired:true}];
 assert.equal(H.selectCostScopedMatch(costScopeFixture,{accepted:true,value:4}).cardId,'zetaBeatrix');
 assert.equal(H.selectCostScopedMatch(costScopeFixture,{accepted:true,value:6}).cardId,'zetaBeatrix','Enhance 6 display must still select Zeta');
 assert.equal(H.selectCostScopedMatch(costScopeFixture,{accepted:true,value:7}).cardId,'barbaros');
 assert.equal(H.selectCostScopedMatch(costScopeFixture,{accepted:false,value:null}).cardId,'quickBlader');
-const cost7Profiles=DB.costRecognitionProfiles('barbaros');
+assert.equal(DB.costRecognitionProfiles,undefined,'card DB must not own displayed-cost digit templates');
+assert.equal(WB.DisplayedCostRecognition.meta.cardIndependent,true);
+assert.deepEqual(WB.DisplayedCostRecognition.meta.templateValues,[7]);
+const cost7Profiles=H.displayedCostProfiles(7);
 assert.equal(cost7Profiles.length,3);
-for(const p of cost7Profiles){assert.equal(p.length,160);const m=H.matchCostFeature('barbaros',p);assert.ok(m.score>.999,'cost-7 template must self-match');assert.equal(m.accepted,true)}
+for(const p of cost7Profiles){assert.equal(p.length,160);const m=H.matchDisplayedCostFeature(p).find(x=>x.value===7);assert.ok(m.score>.999,'generic displayed-cost 7 template must self-match');assert.equal(m.accepted,true)}
 const decodeCostFixture=p=>decodeFixture(p);
 const cost6Negative=decodeCostFixture({"scale":643.3189086914062,"data":"X1VDRUAzLg/n3EsjFgr17P0VGSgRHhAJD/Te4QImEyX7JR/5DvTR6yEULD0PBQsM9eQSDE08IUEPBOToDAxUJQdMNf326AwISysFRjAY/ur/AxIfGCgbGusX8fkBBBEZE/MM7fz47PH+9vAYDZoK/TY1R0ET04+B6e04RRG1mZC8nPvzOh7MkJOJlM4NDy4X9puOkpCNIQk1IO3RopiTlA=="});
-const cost6Match=H.matchCostFeature('barbaros',cost6Negative);
-assert.ok(cost6Match.score<.935,`visible cost 6 must not pass Barbaros cost-7 template: ${cost6Match.score}`);
+const cost6Match=H.matchDisplayedCostFeature(cost6Negative).find(x=>x.value===7);
+assert.ok(cost6Match.score<.935,`visible cost 6 must not pass generic displayed-cost 7 template: ${cost6Match.score}`);
 const zeta6=costScopeFixture.find(x=>x.cardId==='zetaBeatrix');
-const zeta6Gate=H.resolveCostGate(zeta6,{accepted:true,value:6},{accepted:false});
+const zetaDisplayed=H.resolveDisplayedCost({accepted:true,value:6,reads:[]},{accepted:false,value:7,score:.5,threshold:.935});
+const zeta6Gate=H.resolveCostGate(zeta6,zetaDisplayed);
 assert.equal(zeta6Gate.matched,true);
 assert.equal(zeta6Gate.source,'ocr');
 assert.equal(zeta6Gate.validatedCost,6);
+const genericSeven=H.resolveDisplayedCost({accepted:true,value:2,reads:[]},{accepted:true,value:7,score:.98,threshold:.935});
+assert.equal(genericSeven.accepted,true);
+assert.equal(genericSeven.value,7);
+assert.equal(genericSeven.source,'template');
 const bar7=costScopeFixture.find(x=>x.cardId==='barbaros');
-const barTemplateGate=H.resolveCostGate(bar7,{accepted:true,value:2},{accepted:true,score:.98,threshold:.935});
-assert.equal(barTemplateGate.matched,true,'Barbaros OCR 2 must be recoverable only with a passing cost-7 template');
-assert.equal(barTemplateGate.source,'template');
+const barTemplateGate=H.resolveCostGate(bar7,genericSeven);
+assert.equal(barTemplateGate.matched,true,'Barbaros must accept the generic displayed-cost 7 result');
 assert.equal(barTemplateGate.validatedCost,7);
-const qbGate=H.resolveCostGate(costScopeFixture.find(x=>x.cardId==='quickBlader'),{accepted:true,value:3},{accepted:false});
+const futureSeven={cardId:'futureSeven',label:'将来の7コスト',expectedCost:7,acceptedCosts:[7],best:.97,imageCandidate:true,costRequired:true};
+const futureSix={cardId:'futureSix',label:'将来の6コスト',expectedCost:6,acceptedCosts:[6],best:.96,imageCandidate:true,costRequired:true};
+assert.equal(H.selectCostScopedMatch([futureSeven,futureSix],genericSeven).cardId,'futureSeven','generic cost 7 must be reusable by any future 7-cost card');
+const futureSevenGate=H.resolveCostGate(futureSeven,genericSeven);
+assert.equal(futureSevenGate.matched,true,'generic cost 7 must validate a non-Barbaros 7-cost card');
+assert.equal(futureSevenGate.validatedCost,7);
+assert.equal(H.resolveCostGate(futureSix,genericSeven).matched,false,'generic cost 7 must not leak into a 6-cost card');
+const qbGate=H.resolveCostGate(costScopeFixture.find(x=>x.cardId==='quickBlader'),{accepted:true,value:3,source:'ocr'});
 assert.equal(qbGate.matched,false,'QB wrong OCR cost must remain blocked');
 
 let enhanceDisplayDecision=H.decideHandSamples([
@@ -310,7 +322,7 @@ let barbarosTemplateDecision=H.decideHandSamples([
  {counts:{barbaros:1},scores:{barbaros:[.949]},candidates:[{best:{cardId:'barbaros',imageScore:.949,expectedCost:7,acceptedCosts:[7],detectedCost:null,validatedCost:7,ocrCostAccepted:false,costAccepted:true,costMatched:true,costSource:'template',costTemplateScore:.97,matched:true,decision:'matched'}}]},
  {counts:{barbaros:1},scores:{barbaros:[.946]},candidates:[{best:{cardId:'barbaros',imageScore:.946,expectedCost:7,acceptedCosts:[7],detectedCost:2,validatedCost:7,ocrCostAccepted:true,costAccepted:true,costMatched:true,costSource:'template',costTemplateScore:.96,matched:true,decision:'matched'}}]}
 ]);
-assert.equal(barbarosTemplateDecision.recognized.barbaros.count,1,'actual iPhone cost-7 template rescue must confirm Barbaros');
+assert.equal(barbarosTemplateDecision.recognized.barbaros.count,1,'actual iPhone generic displayed-cost 7 rescue must confirm Barbaros');
 
 let multiCardDecision=H.decideHandSamples([{counts:{zetaBeatrix:1,barbaros:1},scores:{zetaBeatrix:[.97],barbaros:[.96]}},{counts:{zetaBeatrix:1,barbaros:1},scores:{zetaBeatrix:[.96],barbaros:[.95]}},{counts:{zetaBeatrix:1,barbaros:1},scores:{zetaBeatrix:[.95],barbaros:[.94]}}]);
 assert.equal(multiCardDecision.recognized.zetaBeatrix.count,1);
