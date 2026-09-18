@@ -9,9 +9,11 @@ const WB={
 };
 const sandbox={
   window:{WB},localStorage:{getItem:k=>store[k]??null,setItem:(k,v)=>{store[k]=String(v)}},
+  atob:s=>Buffer.from(s,'base64').toString('binary'),Float32Array,Map,
   console,document:{querySelectorAll:()=>[]}
 };
 vm.createContext(sandbox);
+new vm.Script(fs.readFileSync(new URL('../card-db.js',import.meta.url),'utf8')).runInContext(sandbox);
 new vm.Script(fs.readFileSync(new URL('../review-engine.js',import.meta.url),'utf8')).runInContext(sandbox);
 const R=WB.ReviewEngine;
 
