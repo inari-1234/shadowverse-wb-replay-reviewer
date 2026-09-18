@@ -182,6 +182,19 @@ let latestPrevious=H.choosePreviousStableHandWindow(latestPreviousLayout,latestC
 assert.deepEqual(latestCurrent.frames.map(x=>x.sampleTime),[19.816,19.856,19.896,19.936],'latest diagnostic current hand must remain the post-play 4-card hand');
 assert.deepEqual(latestPrevious.frames.map(x=>x.sampleTime),[19.507,19.547,19.587],'latest diagnostic previous hand must recover the pre-play 5-card hand');
 assert.equal(latestPrevious.candidateCount,5);
+const historyWithTransition=[
+  mkLayout(19.700,[943]),
+  mkLayout(19.660,[943]),
+  mkLayout(19.620,[943]),
+  mkLayout(19.580,[708,770,828,896,959]),
+  mkLayout(19.540,[708,770,828,896,959]),
+  mkLayout(19.500,[708,770,828,896,959])
+];
+const previousWindows=H.collectPreviousStableHandWindows(historyWithTransition,latestCurrent,1200,4);
+assert.equal(previousWindows.length,2,'history scan must retain both transition and older stable hand windows');
+assert.equal(previousWindows[0].candidateCount,1,'newer animation-like stable window is kept as first attempt');
+assert.equal(previousWindows[1].candidateCount,5,'older pre-play hand remains available as a later recognition attempt');
+
 
 const actualDiagLayout=[
   mkLayout(19.467,[708,770,828,896]),
