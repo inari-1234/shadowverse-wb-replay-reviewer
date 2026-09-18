@@ -12,6 +12,31 @@ vm.createContext(sandbox);
 new vm.Script(fs.readFileSync(new URL('../state-recognition.js',import.meta.url),'utf8')).runInContext(sandbox);
 const S=WB.StateRecognition;
 
+assert.equal(S.classifyFaceAttackGlowScore(.08).state,'face');
+assert.equal(S.classifyFaceAttackGlowScore(.02).state,'no-face');
+assert.equal(S.classifyFaceAttackGlowScore(.042).state,'unknown');
+
+const directFace=[{badgeCount:2,readable:true,values:[1,1],candidateTotal:2,faceDamageConfirmed:true,value:1,offset:0}];
+let fd=S.decideBoardSamples(directFace,{nearOwnStart:false});
+assert.equal(fd.accepted,true);
+assert.equal(fd.value,1);
+assert.equal(fd.reason,'direct-face-attack-glow-confirmed');
+
+const directNoFace=[{badgeCount:2,readable:true,values:[1,1],candidateTotal:2,faceDamageConfirmed:true,value:0,offset:0}];
+fd=S.decideBoardSamples(directNoFace,{nearOwnStart:false});
+assert.equal(fd.accepted,true);
+assert.equal(fd.value,0);
+
+const startFace=[
+ {badgeCount:2,readable:true,values:[1,1],candidateTotal:2,faceDamageConfirmed:true,value:2,offset:.25},
+ {badgeCount:2,readable:true,values:[1,1],candidateTotal:2,faceDamageConfirmed:true,value:2,offset:.50}
+];
+fd=S.decideBoardSamples(startFace,{nearOwnStart:true});
+assert.equal(fd.accepted,true);
+assert.equal(fd.value,2);
+assert.equal(fd.reason,'turn-start-face-attack-glow-consensus');
+
+
 const zero=[0,.25,.5].map(offset=>({badgeCount:0,readable:true,values:[],candidateTotal:0,offset}));
 let d=S.decideBoardSamples(zero,{nearOwnStart:true});
 assert.equal(d.accepted,true);
