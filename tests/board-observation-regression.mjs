@@ -65,7 +65,8 @@ assert.equal(d.value,1);
 d=S.decideBoardSamples([
   sample([1],['not-attackable'],0,{layoutKey:'35:52'}),
   sample([1],['not-attackable'],.25,{layoutKey:'35:52'}),
-  sample([1],['not-attackable'],.50,{layoutKey:'35:52',ocrIndependent:false})
+  sample([1],['not-attackable'],.50,{layoutKey:'35:52',ocrIndependent:false}),
+  sample([1],['not-attackable'],.75,{layoutKey:'35:52',ocrIndependent:false})
 ],{nearOwnStart:false});
 assert.equal(d.accepted,true);
 assert.equal(d.value,0);
@@ -82,7 +83,7 @@ assert.equal(d.known,false);
 assert.equal(d.candidateStable,true);
 assert.equal(d.reason,'board-attackability-unresolved');
 
-const zero=[0,.25,.5].map(offset=>({
+const zero=[0,.25,.5,.75].map(offset=>({
   badgeCount:0,readable:true,values:[],candidateTotal:0,offset,sampleTime:87.5+offset,
   layoutKey:'',ocrIndependent:false,followers:[]
 }));
