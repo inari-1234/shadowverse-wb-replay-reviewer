@@ -8,7 +8,7 @@ const CARDS=Object.freeze({
  zetaBeatrix:Object.freeze({id:'zetaBeatrix',officialId:10424110,name:'真紅と群青・ゼタ＆ベアトリクス',label:'ゼタ＆ベアトリクス',class:'ロイヤル',type:'フォロワー',cost:4,atk:3,life:2,maxCount:3,tags:['突進','エンハンス6','疾走'],category:'疾走・フィニッシャー',recognition:{enabled:false}}),
  barbaros:Object.freeze({id:'barbaros',officialId:null,name:'逆行の咎人・バルバロス',label:'バルバロス',class:'ロイヤル',type:'フォロワー',cost:7,atk:4,life:3,maxCount:3,tags:['疾走','海賊旗'],category:'フィニッシャー',recognition:{enabled:false}})
 });
-const META=Object.freeze({version:VERSION,complete:false,scope:'verified-tactical-subset',verifiedCards:Object.keys(CARDS).length,recognitionEnabledCards:Object.values(CARDS).filter(c=>c.recognition?.enabled).length,updatedAt:'2026-09-18',note:'全カードDBではありません。検証済みカードから段階拡張します。',recognitionSafety:'positive-only / 3-frame consensus / absence remains unknown'});
+const META=Object.freeze({version:VERSION,complete:false,scope:'verified-tactical-subset',registeredCards:Object.keys(CARDS).length,verifiedCards:Object.keys(CARDS).length,recognitionEnabledCards:Object.values(CARDS).filter(c=>c.recognition?.enabled).length,updatedAt:'2026-09-18',note:'全カードDBではありません。検証済みカードから段階拡張します。',recognitionSafety:'positive-only / 3-frame consensus / absence remains unknown'});
 const clone=x=>JSON.parse(JSON.stringify(x));
 function decodeProfile(p){const raw=atob(p.data),v=new Float32Array(raw.length);let norm=0;for(let i=0;i<raw.length;i++){let q=raw.charCodeAt(i);if(q>127)q-=256;const x=q/Number(p.scale||1);v[i]=x;norm+=x*x}norm=Math.sqrt(norm)||1;for(let i=0;i<v.length;i++)v[i]/=norm;return v}
 const decoded=new Map();
