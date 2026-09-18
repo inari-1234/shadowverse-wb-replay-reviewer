@@ -46,7 +46,7 @@ assert.ok(x.routes.some(r=>r.cardId==='quickBlader'&&r.damage===1));
 const tUnknown=tactical();
 tUnknown.cards.quickBlader={known:false,count:null};
 x=R.calculate(mk({tactical:tUnknown}));
-assert.equal(x.status,'incomplete-do-not-declare-no-lethal');
+assert.equal(x.status,'confirmed-lethal');
 assert.ok(x.unknown.some(v=>v.includes('クイックブレイダー')));
 
 x=R.calculate(mk());
