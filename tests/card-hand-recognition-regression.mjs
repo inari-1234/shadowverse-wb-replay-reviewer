@@ -117,7 +117,7 @@ let rescued=H.decideHandSamples([
   {counts:{quickBlader:1},scores:{quickBlader:[.972]},candidates:[{best:{cardId:'quickBlader',imageScore:.972,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]}
 ],{samplingLimited:true});
 assert.equal(rescued.recognized.quickBlader.count,1);
-assert.equal(rescued.recognized.quickBlader.decision,'boundary-limited-high-confidence-rescue');
+assert.equal(rescued.recognized.quickBlader.decision,'cost-proof-limited-rescue');
 
 let unsafeRescue=H.decideHandSamples([
   {counts:{quickBlader:1},scores:{quickBlader:[.961]}},
@@ -181,7 +181,21 @@ let actualIphoneTwoFrame=H.decideHandSamples([
   {counts:{quickBlader:1},scores:{quickBlader:[.9396]},candidates:[{best:{cardId:'quickBlader',imageScore:.9396,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]}
 ],{samplingLimited:true});
 assert.equal(actualIphoneTwoFrame.recognized.quickBlader.count,1,'actual iPhone two-frame cost-matched evidence must rescue Quick Blader');
-assert.equal(actualIphoneTwoFrame.recognized.quickBlader.decision,'boundary-limited-high-confidence-rescue');
+assert.equal(actualIphoneTwoFrame.recognized.quickBlader.decision,'cost-proof-limited-rescue');
+let oneUnreadable=H.decideHandSamples([
+  {counts:{quickBlader:1},scores:{quickBlader:[.9405]},candidates:[{best:{cardId:'quickBlader',imageScore:.9405,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]},
+  {counts:{quickBlader:1},scores:{quickBlader:[.9396]},candidates:[{best:{cardId:'quickBlader',imageScore:.9396,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]},
+  {counts:{},scores:{},candidates:[{best:{cardId:'quickBlader',imageScore:.9610,expectedCost:1,detectedCost:null,costAccepted:false,costMatched:false,matched:false,decision:'cost-unreadable'}}]}
+],{samplingLimited:false});
+assert.equal(oneUnreadable.recognized.quickBlader.count,1,'two explicit cost-matched frames plus one unreadable frame must rescue');
+
+let oneMismatchBlocksRescue=H.decideHandSamples([
+  {counts:{quickBlader:1},scores:{quickBlader:[.945]},candidates:[{best:{cardId:'quickBlader',imageScore:.945,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]},
+  {counts:{quickBlader:1},scores:{quickBlader:[.944]},candidates:[{best:{cardId:'quickBlader',imageScore:.944,expectedCost:1,detectedCost:1,costAccepted:true,costMatched:true,matched:true,decision:'matched'}}]},
+  {counts:{},scores:{},candidates:[{best:{cardId:'quickBlader',imageScore:.970,expectedCost:1,detectedCost:3,costAccepted:true,costMatched:false,matched:false,decision:'cost-mismatch'}}]}
+],{samplingLimited:false});
+assert.equal(oneMismatchBlocksRescue.recognized.quickBlader,undefined,'one explicit cost mismatch must block rescue even with two positive frames');
+
 
 
 const sampleCanvas={width:120,height:55,getContext(){return{getImageData(){return{data:new Uint8ClampedArray(120*55*4),width:120,height:55}},drawImage(){},putImageData(){},imageSmoothingEnabled:true}}};
