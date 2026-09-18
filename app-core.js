@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-const APP={version:'4.12.0',build:'4.12.0-20260918-clean-12',revision:'clean-12'};
+const APP={version:'4.13.0',build:'4.13.0-20260918-clean-13',revision:'clean-13'};
 const WB=window.WB={APP,modules:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
 WB.$=s=>document.querySelector(s);
 WB.registerModule=(name,version)=>{const row={name,version};if(!WB.modules.some(x=>x.name===name))WB.modules.push(row);return row};
@@ -55,7 +55,7 @@ WB.registerServiceWorker=async()=>{if(!('serviceWorker'in navigator))return;try{
 }catch(err){WB.recordError('service-worker',err)}};
 
 function init(){
-  const sub=document.querySelector('header p');if(sub)sub.textContent='Build 2026.09.18-clean-12 / 動的戦術情報・まとめ出力';
+  const sub=document.querySelector('header p');if(sub)sub.textContent='Build 2026.09.18-clean-13 / カードDB・手札画像認識';
   WB.video=WB.$('#video');
   const file=WB.$('#videoFile'),scrub=WB.$('#scrub');
   file?.addEventListener('change',e=>{const f=e.target.files?.[0];if(!f)return;if(WB.objectUrl)URL.revokeObjectURL(WB.objectUrl);WB.videoMeta={name:f.name,size:f.size,type:f.type,lastModified:f.lastModified};WB.videoName=WB.safeName(f.name);WB.objectUrl=URL.createObjectURL(f);WB.video.src=WB.objectUrl;WB.resetForVideo();WB.$('#videoStatus').textContent='動画情報を読み込み中…';WB.log('video-selected',WB.videoMeta)});
