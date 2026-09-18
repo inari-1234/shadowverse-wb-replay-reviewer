@@ -70,5 +70,5 @@ assert.ok(x.routes.some(r=>r.name==='バルバロス'));
 assert.equal(x.status,'incomplete-do-not-declare-no-lethal');
 assert.ok(x.unknown.some(v=>v.includes('クイックブレイダー')));
 
-assert.equal(R.catalog.cards.some(c=>c.id==='quickBlader'&&c.cost===1&&c.baseDamage===1),true);
+assert.equal(R.catalog.cards.some(c=>c.id==='quickBlader'&&c.route?.type==='storm'&&c.route.cost===1&&c.route.baseDamage===1),true);
 console.log('TACTICAL SUMMARY REGRESSION PASS');
