@@ -162,7 +162,7 @@ chosen=H.chooseStableHandWindow(afterPlayScan,4,3,1200);
 assert.deepEqual(chosen.frames.map(x=>x.sampleTime),[19.916,19.956,19.996,20.036],'stable post-play hand must not resurrect an older hand');
 assert.equal(H.layoutsCompatible(mkLayout(1,[700,760,820]),mkLayout(2,[701,761,821]),1200),true);
 assert.equal(H.layoutsCompatible(mkLayout(1,[700,760,820]),mkLayout(2,[700,760]),1200),false);
-assert.equal(H.layoutsCompatible(mkLayout(1,[708,770,828,896,959]),mkLayout(2,[708,770,828,896]),1200),true,'one temporarily missing detector must still be the same hand layout');
+assert.equal(H.layoutsCompatible(mkLayout(1,[708,770,828,896,959]),mkLayout(2,[708,770,828,896]),1200),false,'missing-card layout must stay distinct to avoid swallowing play animation');
 assert.equal(H.layoutsCompatible(mkLayout(1,[708,770,828,896,959]),mkLayout(2,[737,801,865,930]),1200),false,'post-play reflow must not be treated as the same hand');
 
 const actualDiagLayout=[
@@ -172,7 +172,7 @@ const actualDiagLayout=[
   mkLayout(19.587,[708,770,828,830,895,959])
 ];
 chosen=H.chooseStableHandWindow(actualDiagLayout,4,2,1200);
-assert.deepEqual(chosen.frames.map(x=>x.sampleTime),[19.467,19.507,19.547,19.587],'actual iPhone 5/4/5/duplicate layout must resolve as one stable hand');
+assert.deepEqual(chosen.frames.map(x=>x.sampleTime),[19.507,19.547,19.587],'actual iPhone duplicate must collapse so the latest three 5-card frames form a stable hand');
 assert.equal(chosen.candidateCount,5);
 assert.equal(chosen.layoutMode,'robust-overlap');
 
