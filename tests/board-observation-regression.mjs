@@ -48,6 +48,29 @@ assert.ok(d.followers[0].attackableEvidence);
 assert.ok(d.followers[0].position);
 assert.equal(d.boardAttackTotalConfirmed,true);
 
+// Real 2T-style settle: the attack ring can appear late under the YOUR TURN animation.
+// Early absence must not be accepted as 0 before the full settle window completes.
+d=S.decideBoardSamples([
+  sample([1,1],['not-attackable','not-attackable'],0),
+  sample([1,1],['not-attackable','not-attackable'],.25),
+  sample([1,1],['not-attackable','not-attackable'],.50,{ocrIndependent:false}),
+  sample([1,1],['attackable','not-attackable'],.75,{ocrIndependent:false}),
+  sample([1,1],['attackable','not-attackable'],1.00,{ocrIndependent:false})
+],{nearOwnStart:false});
+assert.equal(d.accepted,true);
+assert.equal(d.value,1);
+assert.equal(d.followers[0].attackable,true);
+assert.equal(d.followers[1].attackable,false);
+
+d=S.decideBoardSamples([
+  sample([1,1],['not-attackable','not-attackable'],0),
+  sample([1,1],['not-attackable','not-attackable'],.25),
+  sample([1,1],['not-attackable','not-attackable'],.50,{ocrIndependent:false}),
+  sample([1,1],['attackable','not-attackable'],.75,{ocrIndependent:false}),
+  sample([1,1],['not-attackable','not-attackable'],1.00,{ocrIndependent:false})
+],{nearOwnStart:false});
+assert.equal(d.accepted,false,'a single transient ring frame must stay unresolved');
+
 d=S.decideBoardSamples([
   sample([1,1],['attackable','attackable'],0),
   sample([1,1],['attackable','attackable'],.25)
