@@ -32,7 +32,8 @@ const sample=(values,states,offset,{layoutKey='35:52|43:52',ocrIndependent=true}
 let d=S.decideBoardSamples([
   sample([1,1],['attackable','not-attackable'],0),
   sample([1,1],['attackable','not-attackable'],.25),
-  sample([1,1],['attackable','not-attackable'],.50,{ocrIndependent:false})
+  sample([1,1],['attackable','not-attackable'],.50,{ocrIndependent:false}),
+  sample([1,1],['attackable','not-attackable'],.75,{ocrIndependent:false})
 ],{nearOwnStart:false});
 assert.equal(d.accepted,true);
 assert.equal(d.known,true);
