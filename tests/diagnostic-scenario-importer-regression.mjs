@@ -30,11 +30,17 @@ assert.deepEqual(compact,{
   template:{value:1,score:.9449,threshold:.98,accepted:false},
   ocr:{value:0,accepted:true}
 });
-const scenario=scenarioFromSnapshot({...diagnostic,sourceName:'diag.json'},hand,{id:'fixture',split:'validation'});
+const scenario=scenarioFromSnapshot({...diagnostic,sourceName:'diag.json'},hand,{id:'fixture',split:'validation',expectedRecognized:['quickBlader','barbaros']});
 assert.equal(scenario.id,'fixture');
 assert.equal(scenario.split,'validation');
-assert.deepEqual(scenario.expected.recognized,['quickBlader']);
-assert.deepEqual(scenario.expected.decisions,{quickBlader:'temporal-stable-leader-rescue'});
+assert.deepEqual(scenario.observed.recognized,['quickBlader']);
+assert.deepEqual(scenario.observed.decisions,{quickBlader:'temporal-stable-leader-rescue'});
+assert.deepEqual(scenario.expected.recognized,['barbaros','quickBlader']);
+assert.deepEqual(scenario.expected.decisions,{});
+assert.equal(scenario.needsHumanLabel,false);
+const unlabeled=scenarioFromSnapshot(diagnostic,hand,{id:'unlabeled'});
+assert.equal(unlabeled.needsHumanLabel,true);
+assert.equal(unlabeled.expected.recognized,null);
 assert.deepEqual(scenario.source.window,[12.34,12.34]);
 assert.equal(scenario.samples[0].candidates[0].cardId,'quickBlader');
 console.log('DIAGNOSTIC SCENARIO IMPORTER REGRESSION PASS');
