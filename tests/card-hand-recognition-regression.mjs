@@ -310,13 +310,23 @@ assert.equal(H.selectCostScopedMatch(costScopeFixture,{accepted:true,value:7}).c
 assert.equal(H.selectCostScopedMatch(costScopeFixture,{accepted:false,value:null}).cardId,'quickBlader');
 assert.equal(DB.costRecognitionProfiles,undefined,'card DB must not own displayed-cost digit templates');
 assert.equal(WB.DisplayedCostRecognition.meta.cardIndependent,true);
-assert.deepEqual(WB.DisplayedCostRecognition.meta.templateValues,[7]);
+assert.deepEqual(WB.DisplayedCostRecognition.meta.templateValues,[1,7]);
+const cost1Profiles=H.displayedCostProfiles(1);
+assert.equal(cost1Profiles.length,5);
+for(const p of cost1Profiles){
+  assert.equal(p.length,160);
+  const m=H.matchDisplayedCostFeature(p).find(x=>x.value===1);
+  assert.ok(m.score>.999,'generic displayed-cost 1 template must self-match');
+  assert.equal(m.accepted,true);
+}
 const cost7Profiles=H.displayedCostProfiles(7);
 assert.equal(cost7Profiles.length,5);
 assert.equal(WB.DisplayedCostRecognition.meta.templates[0].threshold,.98);
 for(const p of cost7Profiles){assert.equal(p.length,160);const m=H.matchDisplayedCostFeature(p).find(x=>x.value===7);assert.ok(m.score>.999,'generic displayed-cost 7 template must self-match');assert.equal(m.accepted,true)}
 const decodeCostFixture=p=>decodeFixture(p);
 const cost6Negative=decodeCostFixture({"scale":643.3189086914062,"data":"X1VDRUAzLg/n3EsjFgr17P0VGSgRHhAJD/Te4QImEyX7JR/5DvTR6yEULD0PBQsM9eQSDE08IUEPBOToDAxUJQdMNf326AwISysFRjAY/ur/AxIfGCgbGusX8fkBBBEZE/MM7fz47PH+9vAYDZoK/TY1R0ET04+B6e04RRG1mZC8nPvzOh7MkJOJlM4NDy4X9puOkpCNIQk1IO3RopiTlA=="});
+const cost6Vs1=H.matchDisplayedCostFeature(cost6Negative).find(x=>x.value===1);
+assert.ok(cost6Vs1.score<.98,'visible cost 6 must not pass generic displayed-cost 1 template');
 const cost6Match=H.matchDisplayedCostFeature(cost6Negative).find(x=>x.value===7);
 assert.ok(cost6Match.score<.98,`visible cost 6 must not pass generic displayed-cost 7 template: ${cost6Match.score}`);
 
@@ -396,5 +406,22 @@ const temporalDrift=[.89,.91,.93,.95].map((score,i)=>({sampleTime:i,counts:{},sc
 assert.equal(H.decideHandSamples(temporalDrift).recognized.quickBlader,undefined);
 const temporalTwoFrames=[.893,.892].map((score,i)=>({sampleTime:i,counts:{},scores:{},candidates:[temporalCandidate('quickBlader',score,2,{detected:1,validated:1,ocrAccepted:true,matched:true})]}));
 assert.equal(H.decideHandSamples(temporalTwoFrames).recognized.quickBlader,undefined);
+
+
+assert.equal(H.version,'hand-clean-1.12');
+WB.turnTimeline=[
+ {side:'bottom',turn:6,time:74.41},
+ {side:'top',turn:7,time:81.863},
+ {side:'bottom',turn:7,time:86.2}
+];
+assert.equal(H.latestTargetTurnStart({time:81.933,targetSide:'bottom',relativeSide:'相手'}),74.41,'opponent turn must retain latest bottom-side turn start for safe backscan bounds');
+assert.equal(H.latestTargetTurnStart({time:86.25,targetSide:'bottom',relativeSide:'自分'}),86.2);
+assert.equal(typeof H.latestTargetTurnStart,'function');
+
+
+for(const p of cost7Profiles){
+  const cross=H.matchDisplayedCostFeature(p).find(x=>x.value===1);
+  assert.ok(cross.score<.98,'cost-7 template must not cross-match generic cost 1');
+}
 
 console.log('CARD DB + HAND RECOGNITION REGRESSION PASS');
