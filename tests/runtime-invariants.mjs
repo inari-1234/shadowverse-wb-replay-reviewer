@@ -50,7 +50,7 @@ assert.deepEqual(swScripts,expectedRuntime,'service worker must cache the same a
 assert.equal(swScripts.some(x=>/fix-v/i.test(x)),false,'service worker must not cache historical fix-v runtime scripts');
 
 assert.equal(review.includes('historyObserved'),false,'review-engine must never consume historyObserved');
-assert.equal(/shadowverse-wb-(?:diagnostic|review)-v\\d+\\.\\d+\\.\\d+-clean/.test(diagnostics),false,'diagnostic and review format IDs must not hard-code an app version');
+assert.equal(/shadowverse-wb-(?:diagnostic|review)-v\d+\.\d+\.\d+-clean/.test(diagnostics),false,'diagnostic and review format IDs must not hard-code an app version');
 assert.ok(diagnostics.includes('shadowverse-wb-diagnostic-v${WB.APP.version}-clean'),'diagnostic format ID must derive from WB.APP.version');
 assert.ok(diagnostics.includes('shadowverse-wb-review-v${WB.APP.version}-clean'),'review format ID must derive from WB.APP.version');
 const applyStart=review.indexOf('applyDetectedHand(result)');
