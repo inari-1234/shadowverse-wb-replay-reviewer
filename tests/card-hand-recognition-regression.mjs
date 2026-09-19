@@ -397,4 +397,15 @@ assert.equal(H.decideHandSamples(temporalDrift).recognized.quickBlader,undefined
 const temporalTwoFrames=[.893,.892].map((score,i)=>({sampleTime:i,counts:{},scores:{},candidates:[temporalCandidate('quickBlader',score,2,{detected:1,validated:1,ocrAccepted:true,matched:true})]}));
 assert.equal(H.decideHandSamples(temporalTwoFrames).recognized.quickBlader,undefined);
 
+
+assert.equal(H.version,'hand-clean-1.12');
+WB.turnTimeline=[
+ {side:'bottom',turn:6,time:74.41},
+ {side:'top',turn:7,time:81.863},
+ {side:'bottom',turn:7,time:86.2}
+];
+assert.equal(H.latestTargetTurnStart({time:81.933,targetSide:'bottom',relativeSide:'相手'}),74.41,'opponent turn must retain latest bottom-side turn start for safe backscan bounds');
+assert.equal(H.latestTargetTurnStart({time:86.25,targetSide:'bottom',relativeSide:'自分'}),86.2);
+assert.equal(typeof H.latestTargetTurnStart,'function');
+
 console.log('CARD DB + HAND RECOGNITION REGRESSION PASS');
