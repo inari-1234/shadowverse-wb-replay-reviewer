@@ -461,9 +461,13 @@ assert.ok(barbarosFanFixture.best>=.93,`real-video Barbaros fan-position fixture
 const barbarosHardNegative=H.matchFeature(realVideoFixtureDecode({"scale":800.8372672539656,"data":"+f/+Bwj99vTy+QIVLS76wcDF6QceBxL65NvX4Of/BCcAzMfC7/sCFSYX9+XoAhcr6RQQ2tTI7PgFRmRaHOvqLUEY5AIKzczE7PoILkA/AvDuWzD85QMHwsDA6hUUNEUyLgr0Dvnu5w0Hwb++IA7qFh9HRyT///YF8wsOwL++GTwDJlktCN30Dh4LABQSv76++QIHBgADDAoB6fLg3+LTy8fBNUb7EhcQCgsDCgsB9PPdu77FVFYXIhYREBYMCg4QCQHetbm/a1AzKP/6AhUTERcTBwXovr3DQ0cwIBYMDRQL+gwQChT4y8rKJS0JAv0GGRshFg8IAjcSysnL8fbl59nk4eENOiggFlAYysrR+vPq8NXmx8f2/ggeN2Mn19HPMikgFQ8LCwsRLzx5f2IwERgS3evy6Nvj8vXy+/UAQV04JBsbyNje2NPd7vLq7d7F4ic6JhwdwdLY0crW5+ri3d7U7ik6Ix4c0Nrh28vR5Ofc3+rj8iQyJRoa59TzFATbyuDV2ePo7/IRFwcJ+PwaQ08zCggF7Obh3N8CEgkK3+z0DjJISigRFwbs2dHyBQcN"})).find(x=>x.cardId==='barbaros');
 assert.ok(barbarosHardNegative.best<.90,`real-video cost-7 hard negative must stay below .90 candidate gate: ${barbarosHardNegative.best}`);
 
-assert.equal(H.version,'hand-clean-1.20');
+assert.equal(H.version,'hand-clean-1.21');
 const qbRecognition=DB.recognitionCards().find(x=>x.id==='quickBlader');
-assert.equal(H.temporalProbeFloor(qbRecognition),.89);
+assert.equal(H.temporalProbeFloor(qbRecognition),.88,'Quick Blader alone may probe down to the guarded .88 floor');
+const zetaRecognition=DB.recognitionCards().find(x=>x.id==='zetaBeatrix');
+const barbarosRecognition=DB.recognitionCards().find(x=>x.id==='barbaros');
+assert.equal(H.temporalProbeFloor(zetaRecognition),.89,'Zeta default temporal probe floor must stay unchanged');
+assert.equal(H.temporalProbeFloor(barbarosRecognition),.89,'Barbaros default temporal probe floor must stay unchanged');
 const temporalCandidate=(cardId,score,index,{detected=null,validated=null,ocrAccepted=false,matched=false,templateValue=null,templateScore=null,templateThreshold=null}={})=>({index,best:{cardId,imageScore:score,imageCandidate:false,imageConfirmed:false,imageSource:'anchor',titleScore:score-.05,anchorScore:score,temporalProbe:true,temporalProbeFloor:.88,expectedCost:cardId==='quickBlader'?1:7,acceptedCosts:cardId==='quickBlader'?[1]:[7],detectedCost:detected,validatedCost:validated,ocrCostAccepted:ocrAccepted,costAccepted:ocrAccepted,costMatched:matched,costSource:matched?'ocr':null,costTemplateValue:templateValue,costTemplateScore:templateScore,costTemplateThreshold:templateThreshold,matched:false,decision:'temporal-probe-only'}});
 const diag811Qb=[.8948,.8919,.8908,.8921].map((score,i)=>({sampleTime:81.67+i*.04,counts:{},scores:{},candidates:[temporalCandidate('quickBlader',score,2,{detected:1,validated:1,ocrAccepted:true,matched:true})]}));
 assert.equal(H.decideHandSamples(diag811Qb).recognized.quickBlader?.decision,'temporal-slot-consensus');
@@ -477,7 +481,7 @@ const temporalTwoFrames=[.893,.892].map((score,i)=>({sampleTime:i,counts:{},scor
 assert.equal(H.decideHandSamples(temporalTwoFrames).recognized.quickBlader,undefined);
 
 
-assert.equal(H.version,'hand-clean-1.20');
+assert.equal(H.version,'hand-clean-1.21');
 WB.turnTimeline=[
  {side:'bottom',turn:6,time:74.41},
  {side:'top',turn:7,time:81.863},
@@ -606,6 +610,38 @@ const qbMissingLeader=[.8962,.9118,.8957].map((score,i)=>({sampleTime:i,counts:{
 qbMissingLeader.push({sampleTime:4,counts:{},scores:{},candidates:[imageConsensusCandidate('barbaros',.91,2,{templateValue:7,templateScore:.8})]});
 assert.equal(H.decideHandSamples(qbMissingLeader).recognized.quickBlader,undefined,'same image leader must persist through the whole stable window');
 
+
+const stableLeaderCandidate=(cardId,score,index,{source='anchor',templateValue=null,templateScore=null,templateAccepted=false,ocrValue=null,ocrAccepted=false}={})=>({
+ index,
+ imageBest:{cardId,imageScore:score,imageSource:source,titleScore:source==='title'?score:.5,anchorScore:source==='anchor'?score:.4},
+ displayedCost:{templateValue,templateScore,templateAccepted,ocrValue,ocrAccepted},
+ best:{cardId,imageScore:score,imageSource:source,temporalProbe:score>=H.temporalProbeFloor(DB.recognitionCards().find(x=>x.id===cardId))}
+});
+const realZetaStable=[.8594,.8581,.8581,.8581].map((score,i)=>({sampleTime:36.985+i*.04,counts:{},scores:{},candidates:[stableLeaderCandidate('zetaBeatrix',score,4)]}));
+const realZetaDecision=H.decideHandSamples(realZetaStable);
+assert.equal(realZetaDecision.recognized.zetaBeatrix?.decision,'temporal-stable-leader-rescue','real clean-13.23 Zeta stable anchor sequence must be rescued');
+assert.equal(realZetaDecision.recognized.zetaBeatrix?.count,1);
+assert.ok(realZetaDecision.recognized.zetaBeatrix?.confidence>=.858);
+
+const realQbLate=[
+ {score:.8907,template:.9449},
+ {score:.8914,template:.9430},
+ {score:.8910,template:.9423},
+ {score:.8940,template:.9456}
+].map((x,i)=>({sampleTime:81.835+i*.04,counts:{},scores:{},candidates:[stableLeaderCandidate('quickBlader',x.score,2,{templateValue:1,templateScore:x.template,ocrValue:0,ocrAccepted:true})]}));
+const realQbLateDecision=H.decideHandSamples(realQbLate);
+assert.equal(realQbLateDecision.recognized.quickBlader?.decision,'temporal-stable-leader-rescue','stable Quick Blader with repeated OCR-zero artifact and cost-1 template support must be rescued');
+assert.equal(realQbLateDecision.recognized.quickBlader?.count,1);
+assert.equal(realQbLateDecision.recognized.quickBlader?.stableLeader?.groups?.[0]?.templateMedian,.9439);
+
+const zetaFalseStable=[.6659,.6661,.6673,.6700].map((score,i)=>({sampleTime:i,counts:{},scores:{},candidates:[stableLeaderCandidate('zetaBeatrix',score,0,{source:'title'})]}));
+assert.equal(H.decideHandSamples(zetaFalseStable).recognized.zetaBeatrix,undefined,'stable but weak/non-anchor Zeta lookalike must not pass rescue');
+
+const qbWrongCostStable=[.889,.889,.889,.889].map((score,i)=>({sampleTime:i,counts:{},scores:{},candidates:[stableLeaderCandidate('quickBlader',score,1,{templateValue:7,templateScore:.99,templateAccepted:true,ocrValue:7,ocrAccepted:true})]}));
+assert.equal(H.decideHandSamples(qbWrongCostStable).recognized.quickBlader,undefined,'stable Quick Blader lookalike with strong wrong-cost evidence must not pass rescue');
+
+const zetaThreeFrames=[.858,.859,.8585].map((score,i)=>({sampleTime:i,counts:{},scores:{},candidates:[stableLeaderCandidate('zetaBeatrix',score,4)]}));
+assert.equal(H.decideHandSamples(zetaThreeFrames).recognized.zetaBeatrix,undefined,'stable-leader rescue must require four frames');
 
 const zetaDrawSettling=[.3945,.765,.8578,.8642].map((score,i)=>({sampleTime:[36.627,36.667,36.707,36.747][i],candidates:[{index:4,best:{cardId:'zetaBeatrix',imageScore:score}}]}));
 const zetaTrend=H.settlingRecognitionTrend(zetaDrawSettling);
