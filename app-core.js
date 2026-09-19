@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.27',build:'4.13.27-20260920-clean-13-27',revision:'clean-13-27',subtitle:'Build 2026.09.20-clean-13-27 / ターン開始時の判定安定化'};
+const APP={version:'4.13.28',build:'4.13.28-20260920-clean-13-28',revision:'clean-13-28',subtitle:'Build 2026.09.20-clean-13-28 / 判定タイミング安定化・未来状態混入防止'};
 const WB=window.WB={APP,modules:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
 WB.$=s=>document.querySelector(s);
 WB.registerModule=(name,version)=>{const row={name,version};if(!WB.modules.some(x=>x.name===name))WB.modules.push(row);return row};
