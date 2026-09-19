@@ -80,3 +80,32 @@ assert.equal(JSON.stringify(dm.timeline.slice(0,6).map(r=>[r.side,r.turn,r.time]
 ]));
 assert.equal(dm.timeline.some(r=>r.time===.813),false,'isolated prebattle HUD must not survive as top turn 1');
 assert.equal(dm.timeline[0].side==='bottom'?'先攻':'後攻','先攻');
+
+const fullDiagnosticStable=[
+ {side:'top',turn:1,time:.813,source:'stable13-turn-indicator'},
+ {side:'bottom',turn:1,time:21.3,source:'stable13-turn-indicator'},
+ {side:'top',turn:2,time:25.337,source:'stable13-turn-indicator'},
+ {side:'bottom',turn:2,time:29.337,source:'stable13-turn-indicator'},
+ {side:'top',turn:3,time:31.438,source:'stable13-turn-indicator'},
+ {side:'bottom',turn:3,time:39.135,source:'stable13-turn-indicator'},
+ {side:'top',turn:4,time:42.625,source:'stable13-turn-indicator'},
+ {side:'bottom',turn:4,time:56.218,source:'stable13-turn-indicator'},
+ {side:'top',turn:5,time:65.75,source:'stable13-turn-indicator'},
+ {side:'bottom',turn:5,time:72.875,source:'stable13-turn-indicator'},
+ {side:'top',turn:6,time:80.09,source:'stable13-turn-indicator'},
+ {side:'bottom',turn:6,time:90.218,source:'stable13-turn-indicator'},
+ {side:'top',turn:7,time:95.868,source:'stable13-turn-indicator'},
+ {side:'bottom',turn:7,time:107.438,source:'stable13-turn-indicator'},
+ {side:'top',turn:8,time:124.313,source:'stable13-turn-indicator'},
+ {side:'bottom',turn:8,time:133.42,source:'stable13-turn-indicator'}
+];
+const fm=T.mergeEarly(fullDiagnosticStable,earlyTimeline,{allowSideOffsets:true}).timeline;
+const expectedFull=[
+ ['bottom',1,15.032],['top',1,18.719],['bottom',2,21.837],['top',2,25.337],
+ ['bottom',3,29.337],['top',3,31.43],['bottom',4,39.135],['top',4,42.625],
+ ['bottom',5,56.218],['top',5,65.75],['bottom',6,72.875],['top',6,80.09],
+ ['bottom',7,90.218],['top',7,95.868],['bottom',8,107.438],['top',8,124.313],
+ ['bottom',9,133.42]
+];
+assert.equal(JSON.stringify(fm.map(r=>[r.side,r.turn,r.time])),JSON.stringify(expectedFull),'full diagnostic timeline must remain gap-free after dropping 0.813s false prefix');
+for(let i=1;i<fm.length;i++)assert.notEqual(fm[i-1].side,fm[i].side,'full diagnostic timeline must remain alternating');
