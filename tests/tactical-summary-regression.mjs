@@ -108,6 +108,15 @@ assert.ok(R.decisionSummary(d).includes('現在手札（確認済み）：'));
 assert.ok(R.decisionSummary(d).includes('刹那のクイックブレイダー×1'));
 assert.ok(R.decisionSummary(d).includes('バルバロス×1'));
 
+
+const boardVisible=R.calculate(mk({knownBoardLeaderDamage:2,boardDamageKnown:true,boardFollowers:[1,1]}));
+const boardDecision=R.decisionSnapshot(boardVisible);
+assert.equal(boardDecision.resources.boardDamage.known,true);
+assert.equal(boardDecision.resources.boardDamage.value,2);
+assert.deepEqual(Array.from(boardDecision.resources.boardDamage.followers),[1,1]);
+assert.ok(R.decisionSummary(boardDecision).includes('確定打点：場 2点（1+1）'),'decision summary must visibly surface confirmed board damage breakdown');
+assert.ok(R.tacticalSummary(boardVisible).includes('場の攻撃可能総打点：2点（1+1）'),'tactical summary must visibly surface confirmed board damage breakdown');
+
 const incomplete=R.decisionSnapshot(R.calculate(mk({opponentWard:'unknown'})));
 assert.equal(incomplete.coverage.complete,false);
 assert.ok(incomplete.coverage.missing.includes('守護'));
