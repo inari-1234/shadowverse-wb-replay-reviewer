@@ -72,5 +72,46 @@ assert.ok(x.routes.some(r=>r.name==='バルバロス'));
 assert.equal(x.status,'confirmed-lethal');
 assert.ok(x.unknown.some(v=>v.includes('クイックブレイダー')));
 
+
+const recState=mk({
+  opponentHP:6,pp:7,
+  tactical:tactical(1,1,0,true),
+  hand:{
+    otherDamageRoutesChecked:true,
+    recognition:{
+      windowMode:'forward-settle',
+      recognized:{
+        quickBlader:{known:true,count:1,confidence:.901},
+        barbaros:{known:true,count:1,confidence:.925}
+      },
+      historyObserved:{
+        zetaBeatrix:{known:true,count:1,confidence:.99}
+      }
+    }
+  }
+});
+x=R.calculate(recState);
+const d=R.decisionSnapshot(x);
+assert.equal(d.version,'decision-input-v1');
+assert.equal(d.context.turn,2);
+assert.equal(d.context.effectivePP,7);
+assert.equal(d.handRecognition.windowMode,'forward-settle');
+assert.deepEqual(Array.from(d.handRecognition.currentRecognizedIds).sort(),['barbaros','quickBlader']);
+assert.equal(d.currentHand.some(v=>v.id==='quickBlader'&&v.source==='image-current-hand'&&v.count===1),true);
+assert.equal(d.currentHand.some(v=>v.id==='barbaros'&&v.source==='image-current-hand'&&v.count===1),true);
+assert.equal(d.currentHand.some(v=>v.id==='zetaBeatrix'),false);
+assert.equal(JSON.stringify(d).includes('historyObserved'),false);
+assert.equal(d.invariants.historyObservedPromotedToCurrent,false);
+assert.equal(d.resources.boardDamage.known,true);
+assert.equal(d.coverage.complete,true);
+assert.ok(R.decisionSummary(d).includes('現在手札（確認済み）：'));
+assert.ok(R.decisionSummary(d).includes('刹那のクイックブレイダー×1'));
+assert.ok(R.decisionSummary(d).includes('バルバロス×1'));
+
+const incomplete=R.decisionSnapshot(R.calculate(mk({opponentWard:'unknown'})));
+assert.equal(incomplete.coverage.complete,false);
+assert.ok(incomplete.coverage.missing.includes('守護'));
+assert.ok(R.decisionSummary(incomplete).includes('リーサルなし断定禁止'));
+
 assert.equal(R.catalog.cards.some(c=>c.id==='quickBlader'&&c.route?.type==='storm'&&c.route.cost===1&&c.route.baseDamage===1),true);
 console.log('TACTICAL SUMMARY REGRESSION PASS');
