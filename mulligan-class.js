@@ -1,7 +1,7 @@
 (()=>{
 'use strict';
 const WB=window.WB;if(!WB)return;
-const VERSION='mulligan-class-clean-1.4';WB.registerModule('mulligan-class',VERSION);
+const VERSION='mulligan-class-clean-1.5';WB.registerModule('mulligan-class',VERSION);
 let manualKey='';
 const hsv=(R,G,B)=>{const r=R/255,g=G/255,b=B/255,max=Math.max(r,g,b),min=Math.min(r,g,b),d=max-min;let h=0;if(d){if(max===r)h=((g-b)/d)%6;else if(max===g)h=(b-r)/d+2;else h=(r-g)/d+4;h*=60;if(h<0)h+=360}return{h,s:max?d/max:0,v:max}};
 const settle=()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
@@ -15,51 +15,68 @@ function mulliganPlan(firstTurn){const v=WB.video,early=firstTurn<6;let start,en
 async function buildMulligan(firstTurn,reason='turn-finalized'){const v=WB.video,key=WB.videoKey();if(!v?.videoWidth||!Number.isFinite(firstTurn))return null;const original=+v.currentTime.toFixed(3),wasPaused=v.paused,still=WB.$('#mulliganStill'),timeEl=WB.$('#mulliganStillTime'),status=WB.$('#previewStatus');v.pause();if(still)still.style.display='none';if(timeEl)timeEl.textContent='';if(status)status.textContent='確定した初回ターンからマリガン画像を取得中…';try{const p=mulliganPlan(firstTurn),rows=[];if(p.times.length<2){const result={version:VERSION,time:null,handCount:null,score:null,firstTurn:+firstTurn.toFixed(3),targetTime:+p.target.toFixed(3),scanStart:+p.start.toFixed(3),scanEnd:+p.end.toFixed(3),planMode:p.mode,run:[],sampleCount:0,reason:'mulligan-screen-not-recorded',imageCaptured:false};WB.mulligan=result;window.mulliganPreview442=result;if(timeEl)timeEl.textContent='マリガン画面未収録';if(status)status.textContent='未取得：初回ターン前の録画区間が短く、マリガン画面を確認できません。';WB.log('mulligan-preview',result);return result}for(const t of p.times){if(WB.cancelRequested||key!==WB.videoKey())throw new Error('cancelled');await seekSafe(t,'mulligan-scan');const src=WB.frameCanvas(1200);if(!src)continue;const hs=handScore(src),structure=p.requireStructure?mulliganStructure(src):{pass:true,darkFrac:null,meanV:null},acceptedCount=p.requireStructure&&!structure.pass?0:hs.count;rows.push({time:t,handCount:acceptedCount,rawHandCount:hs.count,handScore:hs.total,structurePass:structure.pass,darkFrac:structure.darkFrac,meanV:structure.meanV})}const run=bestFourRun(rows,p.target);let chosen=null;if(run.length)chosen=run.slice().sort((a,b)=>Math.abs(a.time-p.target)-Math.abs(b.time-p.target)||b.handScore-a.handScore)[0];if(!chosen){const result={version:VERSION,time:null,handCount:null,score:null,firstTurn:+firstTurn.toFixed(3),targetTime:+p.target.toFixed(3),scanStart:+p.start.toFixed(3),scanEnd:+p.end.toFixed(3),planMode:p.mode,run:[],sampleCount:rows.length,reason:'mulligan-four-card-run-not-confirmed',imageCaptured:false};WB.mulligan=result;window.mulliganPreview442=result;if(timeEl)timeEl.textContent='マリガン4枚区間を確定できません';if(status)status.textContent='未取得：4枚表示が連続して確認できる区間を確定できませんでした。';WB.log('mulligan-preview',{...result,samples:rows});return result}await seekSafe(chosen.time,'mulligan-capture');const src=WB.frameCanvas(1500);if(still&&src){still.src=src.toDataURL('image/jpeg',.88);still.style.display='block'}if(timeEl)timeEl.textContent=`初期4枚：${WB.fmt(chosen.time)} / 初回ターン ${WB.fmt(firstTurn)}`;const result={version:VERSION,time:chosen.time,handCount:chosen.handCount,score:chosen.handScore,firstTurn:+firstTurn.toFixed(3),targetTime:+p.target.toFixed(3),scanStart:+p.start.toFixed(3),scanEnd:+p.end.toFixed(3),planMode:p.mode,structurePass:chosen.structurePass,darkFrac:chosen.darkFrac,run:run.map(r=>r.time),sampleCount:rows.length,reason,imageCaptured:!!src};WB.mulligan=result;window.mulliganPreview442=result;if(status)status.textContent=chosen.handCount===4?'初回ターン直前の4枚表示区間から代表画像を取得しました。':'4枚区間を確定できなかったため候補画像を表示しています。';WB.log('mulligan-preview',{...result,samples:rows});return result}finally{try{if(key===WB.videoKey())await seekSafe(original,'mulligan-restore')}catch{}if(!wasPaused&&key===WB.videoKey())try{await v.play()}catch{}}}
 function classifyClassIconStats(ic,vsCyan=0){
   const empty={candidate:'',confidence:0,reason:Number(vsCyan)<.15?'vs-anchor-weak':'class-color-not-confident'};
-  if(Number(vsCyan)<.15||Number(ic?.satFrac)<.25||Number(ic?.meanV)<.25)return empty;
+  if(Number(vsCyan)<.15||Number(ic?.meanV)<.25)return empty;
+
+  // Bishop/Havencraft is intentionally separated from the chromatic classes:
+  // the public class icon is pale/cream rather than a saturated hue.
+  const paleFrac=Number(ic?.paleFrac)||0,brightFrac=Number(ic?.brightFrac)||0;
+  if(brightFrac>=.18&&paleFrac>=.58&&Number(ic?.meanV)>=.40){
+    const confidence=Math.min(.98,.72+paleFrac*.20+brightFrac*.06);
+    return{candidate:'ビショップ',confidence:+confidence.toFixed(3),reason:'pale-class-icon',dominant:'ビショップ',dominantScore:+paleFrac.toFixed(3),margin:+paleFrac.toFixed(3)};
+  }
+
+  if(Number(ic?.satFrac)<.25)return empty;
   const scores=[
     ['エルフ',Number(ic.green)||0],
-    ['ロイヤル',Number(ic.orange)||0],
+    ['ロイヤル',Number(ic.yellow)||0],
     ['ウィッチ',Number(ic.blue)||0],
-    ['ドラゴン',Number(ic.red)||0],
-    ['ナイトメア',Number(ic.purple)||0],
-    ['ビショップ',Number(ic.yellow)||0],
+    ['ドラゴン',Number(ic.orange)||0],
+    ['ナイトメア',Number(ic.pinkPurple)||0],
     ['ネメシス',Number(ic.cyan)||0]
   ].sort((a,b)=>b[1]-a[1]);
   const [best,next]=scores;
   const margin=best[1]-(next?.[1]||0);
   if(best[1]<.45||margin<.12)return{...empty,dominant:best[0],dominantScore:+best[1].toFixed(3),margin:+margin.toFixed(3)};
-  return{candidate:best[0],confidence:+Math.min(.99,.70+best[1]*.24+margin*.08).toFixed(3),reason:'dominant-class-color',dominant:best[0],dominantScore:+best[1].toFixed(3),margin:+margin.toFixed(3)};
+  return{candidate:best[0],confidence:+Math.min(.99,.70+best[1]*.24+margin*.08).toFixed(3),reason:'public-palette-dominant-color',dominant:best[0],dominantScore:+best[1].toFixed(3),margin:+margin.toFixed(3)};
 }
 function classFrameStats(){
   const f=WB.frameCanvas(1200);if(!f)return null;
   const x=f.getContext('2d',{willReadFrequently:true});
   const region=(r,mode)=>{
     const x0=Math.floor(r.x0*f.width),x1=Math.ceil(r.x1*f.width),y0=Math.floor(r.y0*f.height),y1=Math.ceil(r.y1*f.height),w=Math.max(1,x1-x0),h=Math.max(1,y1-y0),d=x.getImageData(x0,y0,w,h).data;
-    let n=0,sat=0,red=0,orange=0,yellow=0,green=0,cyan=0,blue=0,purple=0,vsCyan=0,sumV=0;
+    let n=0,sat=0,bright=0,pale=0,orange=0,yellow=0,green=0,cyan=0,blue=0,pinkPurple=0,vsCyan=0,sumV=0;
     for(let i=0;i<d.length;i+=4){
       const z=hsv(d[i],d[i+1],d[i+2]);n++;sumV+=z.v;
       if(mode==='vs'){if(z.h>=175&&z.h<=240&&z.s>=.25&&z.v>=.55)vsCyan++;continue}
+      if(z.v>=.45){bright++;if(z.v>=.55&&z.s<=.30)pale++}
       if(z.s>.25&&z.v>.25){
         sat++;
-        if(z.h<20||z.h>=345)red++;
-        else if(z.h<50)orange++;
+        if(z.h<15||z.h>=285)pinkPurple++;
+        else if(z.h<45)orange++;
         else if(z.h<80)yellow++;
-        else if(z.h<150)green++;
+        else if(z.h<160)green++;
         else if(z.h<205)cyan++;
-        else if(z.h<275)blue++;
-        else purple++;
+        else blue++;
       }
     }
     if(mode==='vs')return{frac:n?vsCyan/n:0};
-    const den=Math.max(1,sat),canvas=document.createElement('canvas');canvas.width=160;canvas.height=160;canvas.getContext('2d').drawImage(f,x0,y0,w,h,0,0,160,160);
-    return{satFrac:n?sat/n:0,red:red/den,orange:orange/den,yellow:yellow/den,green:green/den,cyan:cyan/den,blue:blue/den,purple:purple/den,mag:purple/den,meanV:n?sumV/n:0,canvas};
+    const den=Math.max(1,sat),brightDen=Math.max(1,bright),canvas=document.createElement('canvas');canvas.width=160;canvas.height=160;canvas.getContext('2d').drawImage(f,x0,y0,w,h,0,0,160,160);
+    return{
+      satFrac:n?sat/n:0,brightFrac:n?bright/n:0,paleFrac:pale/brightDen,
+      orange:orange/den,yellow:yellow/den,green:green/den,cyan:cyan/den,blue:blue/den,pinkPurple:pinkPurple/den,
+      purple:pinkPurple/den,mag:pinkPurple/den,meanV:n?sumV/n:0,canvas
+    };
   };
   const vs=region({x0:.43,x1:.57,y0:.28,y1:.72},'vs'),ic=region({x0:.84,x1:.885,y0:.61,y1:.735},'icon'),cls=classifyClassIconStats(ic,vs.frac);
-  return{candidate:cls.candidate,confidence:cls.confidence,classificationReason:cls.reason,dominant:cls.dominant||'',dominantScore:cls.dominantScore??0,margin:cls.margin??0,vsCyan:+vs.frac.toFixed(3),satFrac:+ic.satFrac.toFixed(3),meanV:+ic.meanV.toFixed(3),red:+ic.red.toFixed(3),orange:+ic.orange.toFixed(3),yellow:+ic.yellow.toFixed(3),green:+ic.green.toFixed(3),magenta:+ic.mag.toFixed(3),purple:+ic.purple.toFixed(3),cyan:+ic.cyan.toFixed(3),blue:+ic.blue.toFixed(3),canvas:ic.canvas};
+  return{
+    candidate:cls.candidate,confidence:cls.confidence,classificationReason:cls.reason,dominant:cls.dominant||'',dominantScore:cls.dominantScore??0,margin:cls.margin??0,
+    vsCyan:+vs.frac.toFixed(3),satFrac:+ic.satFrac.toFixed(3),brightFrac:+ic.brightFrac.toFixed(3),paleFrac:+ic.paleFrac.toFixed(3),meanV:+ic.meanV.toFixed(3),
+    orange:+ic.orange.toFixed(3),yellow:+ic.yellow.toFixed(3),green:+ic.green.toFixed(3),magenta:+ic.mag.toFixed(3),purple:+ic.purple.toFixed(3),pinkPurple:+ic.pinkPurple.toFixed(3),cyan:+ic.cyan.toFixed(3),blue:+ic.blue.toFixed(3),canvas:ic.canvas
+  };
 }
 function drawClass(result){const cv=WB.$('#classMark'),p=WB.$('#classMarkPlaceholder'),sel=WB.$('#classSelect'),st=WB.$('#classStatus'),match=WB.$('#matchup');if(result?.accepted&&result.canvas){cv.classList.remove('hidden');p.classList.add('hidden');const x=cv.getContext('2d');x.clearRect(0,0,cv.width,cv.height);x.imageSmoothingEnabled=false;x.drawImage(result.canvas,0,0,cv.width,cv.height);if(sel)sel.value=result.candidate;if(match)match.value=result.candidate;if(st)st.textContent=`自動判定：${result.candidate}（VS画面 ${Number(result.time).toFixed(1)}秒 / 連続一致）。`}else{if(cv){cv.getContext('2d').clearRect(0,0,cv.width,cv.height);cv.classList.add('hidden')}if(p){p.classList.remove('hidden');p.textContent='クラス画像を確認できません'}if(sel&&manualKey!==WB.videoKey())sel.value='';if(st)st.textContent=result?.reason==='vs-screen-not-recorded'?'未判定：VS画面未収録 / クラスアイコン確認不可':'未判定：VS画面のクラスアイコンを確認できません'}}
-async function validateClass(reason='turn-finalized'){const v=WB.video,key=WB.videoKey();if(!v?.videoWidth)return null;if(manualKey===key)return{accepted:false,manual:true,candidate:WB.$('#classSelect')?.value||'',reason:'manual-current-video'};const original=+v.currentTime.toFixed(3),wasPaused=v.paused;v.pause();const samples=[];let prior='',found=null;try{for(const t of [1,1.5,2,2.5,3]){if(WB.cancelRequested||key!==WB.videoKey())throw new Error('cancelled');await seekSafe(t,'class-vs-validation');const r=classFrameStats();samples.push({time:t,candidate:r?.candidate||'',confidence:+(r?.confidence||0).toFixed(3),vsCyan:r?.vsCyan||0,satFrac:r?.satFrac||0,meanV:r?.meanV||0,red:r?.red||0,orange:r?.orange||0,yellow:r?.yellow||0,green:r?.green||0,magenta:r?.magenta||0,purple:r?.purple||0,cyan:r?.cyan||0,blue:r?.blue||0,dominant:r?.dominant||'',dominantScore:r?.dominantScore||0,margin:r?.margin||0});if(r?.candidate&&prior===r.candidate){found={time:t,r};break}prior=r?.candidate||''}const anyVs=samples.some(s=>s.vsCyan>=.15);let result;if(found){result={version:VERSION,accepted:true,candidate:found.r.candidate,confidence:+found.r.confidence.toFixed(3),time:found.time,anchorSource:'validated-vs-screen',method:'vs-screen-tight-class-icon-consecutive',vsCyan:found.r.vsCyan,satFrac:found.r.satFrac,meanV:found.r.meanV,red:found.r.red,orange:found.r.orange,yellow:found.r.yellow,green:found.r.green,magenta:found.r.magenta,purple:found.r.purple,cyan:found.r.cyan,blue:found.r.blue,dominant:found.r.dominant,dominantScore:found.r.dominantScore,margin:found.r.margin,canvas:found.r.canvas,reason:'accepted'}}else result={version:VERSION,accepted:false,candidate:'',confidence:0,time:null,anchorSource:'validated-vs-screen-none',method:'vs-screen-tight-class-icon-consecutive',reason:anyVs?'class-icon-not-confident':'vs-screen-not-recorded'};WB.classDetection={...result,canvas:undefined};window.classDetection442=WB.classDetection;drawClass(result);WB.log('class-validation',{reason,result:WB.classDetection,samples});return result}finally{try{if(key===WB.videoKey())await seekSafe(original,'class-restore')}catch{}if(!wasPaused&&key===WB.videoKey())try{await v.play()}catch{}}}
+async function validateClass(reason='turn-finalized'){const v=WB.video,key=WB.videoKey();if(!v?.videoWidth)return null;if(manualKey===key)return{accepted:false,manual:true,candidate:WB.$('#classSelect')?.value||'',reason:'manual-current-video'};const original=+v.currentTime.toFixed(3),wasPaused=v.paused;v.pause();const samples=[];let prior='',found=null;try{for(const t of [1,1.5,2,2.5,3]){if(WB.cancelRequested||key!==WB.videoKey())throw new Error('cancelled');await seekSafe(t,'class-vs-validation');const r=classFrameStats();samples.push({time:t,candidate:r?.candidate||'',confidence:+(r?.confidence||0).toFixed(3),vsCyan:r?.vsCyan||0,satFrac:r?.satFrac||0,brightFrac:r?.brightFrac||0,paleFrac:r?.paleFrac||0,meanV:r?.meanV||0,orange:r?.orange||0,yellow:r?.yellow||0,green:r?.green||0,magenta:r?.magenta||0,purple:r?.purple||0,pinkPurple:r?.pinkPurple||0,cyan:r?.cyan||0,blue:r?.blue||0,dominant:r?.dominant||'',dominantScore:r?.dominantScore||0,margin:r?.margin||0});if(r?.candidate&&prior===r.candidate){found={time:t,r};break}prior=r?.candidate||''}const anyVs=samples.some(s=>s.vsCyan>=.15);let result;if(found){result={version:VERSION,accepted:true,candidate:found.r.candidate,confidence:+found.r.confidence.toFixed(3),time:found.time,anchorSource:'validated-vs-screen',method:'vs-screen-tight-class-icon-consecutive',vsCyan:found.r.vsCyan,satFrac:found.r.satFrac,brightFrac:found.r.brightFrac,paleFrac:found.r.paleFrac,meanV:found.r.meanV,orange:found.r.orange,yellow:found.r.yellow,green:found.r.green,magenta:found.r.magenta,purple:found.r.purple,pinkPurple:found.r.pinkPurple,cyan:found.r.cyan,blue:found.r.blue,dominant:found.r.dominant,dominantScore:found.r.dominantScore,margin:found.r.margin,canvas:found.r.canvas,reason:'accepted'}}else result={version:VERSION,accepted:false,candidate:'',confidence:0,time:null,anchorSource:'validated-vs-screen-none',method:'vs-screen-tight-class-icon-consecutive',reason:anyVs?'class-icon-not-confident':'vs-screen-not-recorded'};WB.classDetection={...result,canvas:undefined};window.classDetection442=WB.classDetection;drawClass(result);WB.log('class-validation',{reason,result:WB.classDetection,samples});return result}finally{try{if(key===WB.videoKey())await seekSafe(original,'class-restore')}catch{}if(!wasPaused&&key===WB.videoKey())try{await v.play()}catch{}}}
 async function runPipeline({firstTurnTime,reason='turn-finalized'}={}){const first=Number(firstTurnTime||WB.turnTimeline?.[0]?.time);if(!Number.isFinite(first))throw new Error('初回ターン未確定');const key=WB.videoKey();WB.log('postprocess-start',{order:['turn-final','mulligan','class','unlock'],key,firstTurn:first});const mull=await buildMulligan(first,reason);if(key!==WB.videoKey())return null;const cls=await validateClass(reason);WB.log('postprocess-complete',{key,firstTurn:first,mulligan:!!mull,classAccepted:!!cls?.accepted,classCandidate:cls?.candidate||'',classReason:cls?.reason||''});return{mulligan:mull,classDetection:cls}}
 WB.MulliganClass={version:VERSION,buildMulligan,validateClass,runPipeline,classFrameStats,classifyClassIconStats,handScore,mulliganStructure,fourRuns,bestFourRun,mulliganPlan};
-WB.onReady(()=>{WB.$('#previewMulligan')?.addEventListener('click',async()=>{if(WB.task||!WB.turnTimeline.length)return;manualKey='';try{await WB.runTask('マリガン・クラス再取得',()=>runPipeline({firstTurnTime:WB.turnTimeline[0]?.time,reason:'manual-reacquire'}),{lockText:'マリガン取得後にVSクラス判定を実行しています。'})}catch(err){if(err.message!=='cancelled')WB.recordError('mulligan-class-ui',err)}});WB.$('#classSelect')?.addEventListener('change',e=>{if(e.isTrusted&&e.target.value){manualKey=WB.videoKey();WB.classDetection={version:VERSION,accepted:false,manual:true,candidate:e.target.value,reason:'manual-current-video'};WB.log('class-manual-current-video',{value:e.target.value,videoKey:manualKey})}});WB.on('video-reset',()=>{manualKey='';WB.mulligan=null;WB.classDetection=null});WB.log('module-ready',{module:'mulligan-class',version:VERSION,classMethod:'VS-center + 7-class dominant-color icon ROI + consecutive frames',mulliganShortStartAdaptive:true,mulliganStructureGate:true,legacyTentativeFallback:false})});
+WB.onReady(()=>{WB.$('#previewMulligan')?.addEventListener('click',async()=>{if(WB.task||!WB.turnTimeline.length)return;manualKey='';try{await WB.runTask('マリガン・クラス再取得',()=>runPipeline({firstTurnTime:WB.turnTimeline[0]?.time,reason:'manual-reacquire'}),{lockText:'マリガン取得後にVSクラス判定を実行しています。'})}catch(err){if(err.message!=='cancelled')WB.recordError('mulligan-class-ui',err)}});WB.$('#classSelect')?.addEventListener('change',e=>{if(e.isTrusted&&e.target.value){manualKey=WB.videoKey();WB.classDetection={version:VERSION,accepted:false,manual:true,candidate:e.target.value,reason:'manual-current-video'};WB.log('class-manual-current-video',{value:e.target.value,videoKey:manualKey})}});WB.on('video-reset',()=>{manualKey='';WB.mulligan=null;WB.classDetection=null});WB.log('module-ready',{module:'mulligan-class',version:VERSION,classMethod:'VS-center + public-palette class icon ROI + consecutive frames',mulliganShortStartAdaptive:true,mulliganStructureGate:true,legacyTentativeFallback:false})});
 })();
