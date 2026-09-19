@@ -56,4 +56,29 @@ assert.equal(queue[1].base,37.105);
 assert.equal(queue[1].stable,true);
 assert.equal(queue.some(x=>x.base===50),false,'low-score noise must not enter the default queue');
 assert.equal(queue.some(x=>x.cardId==='barbaros'),false,'recognized cards are excluded by default');
+
+const validationQueue=buildReviewQueue(diagnostic,{mode:'validation'});
+const recognizedBarbaros=validationQueue.find(x=>x.cardId==='barbaros'&&x.base===82.395);
+assert.ok(recognizedBarbaros,'validation mode must include recognized cards for false-positive review');
+assert.equal(recognizedBarbaros.priority,100);
+assert.ok(recognizedBarbaros.reasons.includes('validation-confirm-recognized'));
+assert.equal(recognizedBarbaros.recommendedAction,'human-label');
+assert.ok(validationQueue.some(x=>x.cardId==='quickBlader'&&x.base===82.395),'validation mode must retain high-risk unresolved candidates');
+
+const rescueDiagnostic={events:[{hand:{result:{
+  base:19.427,windowMode:'stable-backscan',reason:'fixture-rescue',
+  recognized:{zetaBeatrix:{decision:'temporal-stable-leader-rescue',confidence:.881}},unresolved:{},
+  samples:[
+    {sampleTime:19.307,candidates:[candidate('zetaBeatrix',3,.881,{acceptedCosts:[4,6]})]},
+    {sampleTime:19.347,candidates:[candidate('zetaBeatrix',3,.882,{acceptedCosts:[4,6]})]},
+    {sampleTime:19.387,candidates:[candidate('zetaBeatrix',3,.883,{acceptedCosts:[4,6]})]},
+    {sampleTime:19.427,candidates:[candidate('zetaBeatrix',3,.8862,{acceptedCosts:[4,6]})]}
+  ]
+}}}]};
+const rescueQueue=buildReviewQueue(rescueDiagnostic,{mode:'validation'});
+assert.equal(rescueQueue.length,1);
+assert.equal(rescueQueue[0].cardId,'zetaBeatrix');
+assert.equal(rescueQueue[0].priority,130,'validation rescue below candidate threshold should receive extra review priority');
+assert.ok(rescueQueue[0].reasons.includes('recognized-via-rescue'));
+assert.ok(rescueQueue[0].reasons.includes('recognized-below-candidate-threshold'));
 console.log('DIAGNOSTIC REVIEW QUEUE REGRESSION PASS');
