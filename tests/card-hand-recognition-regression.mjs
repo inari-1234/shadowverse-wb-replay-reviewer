@@ -667,6 +667,20 @@ assert.equal(settleMerged.decision.recognized.zetaBeatrix?.count,1,'newly settle
 assert.equal(settleMerged.decision.recognized.quickBlader,undefined,'draw-settle retry must not promote unrelated cards observed only in the retry window');
 assert.equal(settleMerged.decision.recognized.zetaBeatrix?.settle?.mode,'own-turn-draw-settle');
 assert.equal(settleMerged.decision.unresolved.zetaBeatrix,undefined);
+// Real 30.005/30.071s turn-start draw transition: an older stable five-card
+// backscan must not outrank the visibly different current hand layout.
+const timingOldStable=[29.405,29.445,29.485,29.525].map(t=>mkLayout(t,[708,770,835,895,959]));
+const timingOldSelected=H.chooseStableHandWindow(timingOldStable,4,4,1200);
+const timingAnchor30005=mkLayout(30.005,[708,757,811,858,908,958]);
+assert.equal(H.currentAnchorNeedsForwardSettle(timingOldSelected,timingAnchor30005,1200),true,'30.005 current six-card layout must reject the stale five-card backscan');
+const timingForward30005=[30.05,30.09,30.13,30.17].map(t=>mkLayout(t,[708,757,811,858,908,959]));
+const timingRecovered30005=H.chooseForwardSettleHandWindow(timingForward30005,timingAnchor30005,4,1200);
+assert.ok(timingRecovered30005&&timingRecovered30005.candidateCount===6,'30.005 transient must settle to the current six-card hand');
+const timingAnchor30071=mkLayout(30.071,[708,757,811,858,908]);
+assert.equal(H.currentAnchorNeedsForwardSettle(timingOldSelected,timingAnchor30071,1200),true,'30.071 reflowed five-card anchor must not reuse the geometrically different old five-card hand');
+const timingForward30071=[30.116,30.156,30.196,30.236].map(t=>mkLayout(t,[708,757,811,858,908,959]));
+assert.ok(H.chooseForwardSettleHandWindow(timingForward30071,timingAnchor30071,4,1200),'30.071 partial current layout must be allowed to settle into the six-card current hand');
+
 const settleAnchor={sampleTime:36.747,centers:[{cx:708},{cx:766},{cx:829},{cx:893},{cx:959}]};
 const sameLayoutForward=[36.792,36.832,36.872,36.912].map(t=>({sampleTime:t,centers:[{cx:708},{cx:766},{cx:829},{cx:893},{cx:959}]}));
 const sameLayoutWindow=H.chooseSameLayoutForwardSettleHandWindow(sameLayoutForward,settleAnchor,4,1200);
