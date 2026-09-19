@@ -31,6 +31,13 @@ assert.equal(appVersion,latest.version,'app-core version must match latest.json'
 assert.equal(appBuild,latest.build,'app-core build must match latest.json');
 assert.equal(appRevision,latest.revision,'app-core revision must match latest.json');
 
+const shellTitleVersion=index.match(/<title>シャドバWB リプレイ診断 v([^<]+)<\/title>/)?.[1];
+const shellHeader=index.match(/<header><h1>シャドバWB リプレイ診断 v([^<]+)<\/h1><p>([^<]+)<\/p><\/header>/);
+assert.equal(shellTitleVersion,latest.version,'static document title must match latest.json version');
+assert.ok(shellHeader,'static shell header metadata must be parseable');
+assert.equal(shellHeader[1],latest.version,'static shell header version must match latest.json');
+assert.ok(shellHeader[2].includes(latest.revision),'static shell subheader must include latest.json revision');
+
 const swBuild=sw.match(/const BUILD='([^']+)'/)?.[1];
 const swCache=sw.match(/const CACHE='([^']+)'/)?.[1];
 assert.equal(swBuild,latest.build,'service worker build must match latest.json');
