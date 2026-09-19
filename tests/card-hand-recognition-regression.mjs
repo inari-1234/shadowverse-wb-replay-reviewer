@@ -607,22 +607,37 @@ qbMissingLeader.push({sampleTime:4,counts:{},scores:{},candidates:[imageConsensu
 assert.equal(H.decideHandSamples(qbMissingLeader).recognized.quickBlader,undefined,'same image leader must persist through the whole stable window');
 
 
-const zetaDrawSettling=[.3945,.765,.8578,.8642].map((score,i)=>({sampleTime:[36.627,36.667,36.707,36.747][i],candidates:[{best:{cardId:'zetaBeatrix',imageScore:score}}]}));
+const zetaDrawSettling=[.3945,.765,.8578,.8642].map((score,i)=>({sampleTime:[36.627,36.667,36.707,36.747][i],candidates:[{index:4,best:{cardId:'zetaBeatrix',imageScore:score}}]}));
 const zetaTrend=H.settlingRecognitionTrend(zetaDrawSettling);
 assert.equal(zetaTrend?.cardId,'zetaBeatrix','rising Zeta draw animation must trigger a guarded forward-settle retry');
+assert.equal(zetaTrend?.slot,4,'draw-settle trend must stay bound to the same hand slot');
 assert.ok(zetaTrend?.latest>=.864&&zetaTrend?.gain>.4,'Zeta settling trend must preserve observed score rise');
-const flatSettling=[.85,.848,.852,.849].map((score,i)=>({sampleTime:i,candidates:[{best:{cardId:'zetaBeatrix',imageScore:score}}]}));
+const flatSettling=[.85,.848,.852,.849].map((score,i)=>({sampleTime:i,candidates:[{index:4,best:{cardId:'zetaBeatrix',imageScore:score}}]}));
 assert.equal(H.settlingRecognitionTrend(flatSettling),null,'flat sub-threshold similarity must not trigger forward-settle retry');
-const fallingSettling=[.88,.87,.85,.84].map((score,i)=>({sampleTime:i,candidates:[{best:{cardId:'zetaBeatrix',imageScore:score}}]}));
+const fallingSettling=[.88,.87,.85,.84].map((score,i)=>({sampleTime:i,candidates:[{index:4,best:{cardId:'zetaBeatrix',imageScore:score}}]}));
 assert.equal(H.settlingRecognitionTrend(fallingSettling),null,'falling similarity must not trigger forward-settle retry');
+const splitSlotSettling=[
+ {sampleTime:0,candidates:[{index:2,best:{cardId:'zetaBeatrix',imageScore:.70}}]},
+ {sampleTime:.04,candidates:[{index:3,best:{cardId:'zetaBeatrix',imageScore:.80}}]},
+ {sampleTime:.08,candidates:[{index:4,best:{cardId:'zetaBeatrix',imageScore:.865}}]}
+];
+assert.equal(H.settlingRecognitionTrend(splitSlotSettling),null,'scores from different hand slots must never be combined into a false rising trend');
 const settleCurrent={known:true,recognized:{barbaros:{cardId:'barbaros',label:'バルバロス',known:true,count:1,confidence:.92}},unresolved:{zetaBeatrix:{cardId:'zetaBeatrix',known:false,count:null}},samples:[]};
-const settleRetry={known:true,recognized:{zetaBeatrix:{cardId:'zetaBeatrix',label:'ゼタ＆ベアトリクス',known:true,count:1,confidence:.94,decision:'stable-consensus'}},unresolved:{barbaros:{cardId:'barbaros',known:false,count:null}},samples:[]};
+const settleRetry={known:true,recognized:{zetaBeatrix:{cardId:'zetaBeatrix',label:'ゼタ＆ベアトリクス',known:true,count:1,confidence:.94,decision:'stable-consensus'},quickBlader:{cardId:'quickBlader',label:'刹那のクイックブレイダー',known:true,count:1,confidence:.95,decision:'stable-consensus'}},unresolved:{barbaros:{cardId:'barbaros',known:false,count:null}},samples:[]};
 const settleMerged=H.mergeForwardSettleRecognition(settleCurrent,settleRetry,'zetaBeatrix',{windowStart:36.792,windowEnd:36.912,candidateCount:5});
 assert.equal(settleMerged.applied,true,'ordinary retry recognition should be mergeable into current hand');
 assert.equal(settleMerged.decision.recognized.barbaros?.count,1,'existing current-hand positives must survive draw-settle retry');
 assert.equal(settleMerged.decision.recognized.zetaBeatrix?.count,1,'newly settled Zeta must be promoted only after ordinary recognition passes');
+assert.equal(settleMerged.decision.recognized.quickBlader,undefined,'draw-settle retry must not promote unrelated cards observed only in the retry window');
 assert.equal(settleMerged.decision.recognized.zetaBeatrix?.settle?.mode,'own-turn-draw-settle');
 assert.equal(settleMerged.decision.unresolved.zetaBeatrix,undefined);
+const settleAnchor={sampleTime:36.747,centers:[{cx:708},{cx:766},{cx:829},{cx:893},{cx:959}]};
+const sameLayoutForward=[36.792,36.832,36.872,36.912].map(t=>({sampleTime:t,centers:[{cx:708},{cx:766},{cx:829},{cx:893},{cx:959}]}));
+const sameLayoutWindow=H.chooseSameLayoutForwardSettleHandWindow(sameLayoutForward,settleAnchor,4,1200);
+assert.ok(sameLayoutWindow&&sameLayoutWindow.candidateCount===5,'draw-settle retry must accept only a stable same-count hand layout');
+const extraCardForward=[36.792,36.832,36.872,36.912].map(t=>({sampleTime:t,centers:[{cx:680},{cx:735},{cx:790},{cx:845},{cx:900},{cx:955}]}));
+assert.equal(H.chooseSameLayoutForwardSettleHandWindow(extraCardForward,settleAnchor,4,1200),null,'draw-settle retry must reject a forward window where hand count changed');
+
 const settleNoPass=H.mergeForwardSettleRecognition(settleCurrent,{known:false,recognized:{},unresolved:{zetaBeatrix:{known:false,count:null}},samples:[]},'zetaBeatrix',{});
 assert.equal(settleNoPass.applied,false,'forward-settle retry must not lower thresholds or promote unresolved cards');
 
