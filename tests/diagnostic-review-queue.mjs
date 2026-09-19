@@ -75,6 +75,7 @@ function summarizeCard(snapshot,cardId){
   const minScore=Math.min(...scores);
   const nearFloor=maxScore>=candidateThreshold-.05;
   const recognized=Object.prototype.hasOwnProperty.call(snapshot.recognized||{},cardId);
+  const recognizedRow=recognized?(snapshot.recognized||{})[cardId]||{}:null;
   const unresolved=Object.prototype.hasOwnProperty.call(snapshot.unresolved||{},cardId);
 
   let priority=0;
@@ -92,6 +93,8 @@ function summarizeCard(snapshot,cardId){
 
   return {
     cardId,recognized,unresolved,
+    recognizedDecision:recognizedRow?.decision??null,
+    recognizedConfidence:Number.isFinite(Number(recognizedRow?.confidence))?round4(recognizedRow.confidence):null,
     frames:rows.length,
     sampleTimes:rows.map(x=>round4(x.sampleTime)),
     slot:sameSlot?slots[0]:null,
@@ -104,14 +107,25 @@ function summarizeCard(snapshot,cardId){
   };
 }
 
-export function buildReviewQueue(diagnostic,{minPriority=50,includeRecognized=false}={}){
+export function buildReviewQueue(diagnostic,{minPriority=50,includeRecognized=false,mode='calibration'}={}){
+  if(!['calibration','validation'].includes(mode))throw new Error('mode must be calibration or validation');
   const snapshots=findHandSnapshots(diagnostic);
   const items=[];
   for(const snapshot of snapshots){
     for(const cardId of cardIdsForSnapshot(snapshot)){
       const summary=summarizeCard(snapshot,cardId);
       if(!summary)continue;
-      if(summary.recognized&&!includeRecognized)continue;
+      if(summary.recognized){
+        if(mode==='validation'){
+          summary.priority=100;
+          summary.reasons=['validation-confirm-recognized'];
+          if(String(summary.recognizedDecision||'').includes('rescue')){summary.priority+=20;summary.reasons.push('recognized-via-rescue')}
+          if(Number.isFinite(summary.minScore)&&summary.minScore<summary.candidateThreshold){summary.priority+=10;summary.reasons.push('recognized-below-candidate-threshold')}
+        }else if(includeRecognized){
+          summary.priority=Math.max(summary.priority,50);
+          summary.reasons=['recognized-manual-review'];
+        }else continue;
+      }
       if(summary.priority<minPriority)continue;
       items.push({
         base:round4(snapshot.base),
@@ -127,16 +141,18 @@ export function buildReviewQueue(diagnostic,{minPriority=50,includeRecognized=fa
 }
 
 function parseArgs(argv){
-  const args={file:null,minPriority:50,includeRecognized:false};
+  const args={file:null,minPriority:50,includeRecognized:false,mode:'calibration'};
   const rest=[...argv];
   args.file=rest.shift()||null;
   while(rest.length){
     const flag=rest.shift();
     if(flag==='--min-priority')args.minPriority=Number(rest.shift());
     else if(flag==='--include-recognized')args.includeRecognized=true;
+    else if(flag==='--validation')args.mode='validation';
+    else if(flag==='--mode')args.mode=rest.shift();
     else throw new Error(`Unknown argument: ${flag}`);
   }
-  if(!args.file)throw new Error('Usage: node tests/diagnostic-review-queue.mjs <diagnostic.json> [--min-priority 50] [--include-recognized]');
+  if(!args.file)throw new Error('Usage: node tests/diagnostic-review-queue.mjs <diagnostic.json> [--min-priority 50] [--include-recognized] [--validation|--mode calibration|validation]');
   return args;
 }
 
@@ -147,7 +163,8 @@ if(isCli){
   const queue=buildReviewQueue(diagnostic,args);
   console.log(JSON.stringify({
     source:path.basename(args.file),
-    generatedFrom:'diagnostic-review-queue-v1',
+    generatedFrom:'diagnostic-review-queue-v2',
+    mode:args.mode,
     humanLabelsRequired:true,
     items:queue
   },null,2));
