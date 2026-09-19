@@ -197,6 +197,29 @@ assert.equal(H.layoutsCompatible(mkLayout(1,[700,760,820]),mkLayout(2,[700,760])
 assert.equal(H.layoutsCompatible(mkLayout(1,[708,770,828,896,959]),mkLayout(2,[708,770,828,896]),1200),false,'missing-card layout must stay distinct to avoid swallowing play animation');
 assert.equal(H.layoutsCompatible(mkLayout(1,[708,770,828,896,959]),mkLayout(2,[737,801,865,930]),1200),false,'post-play reflow must not be treated as the same hand');
 
+const zeroOnlyLayout=[
+  mkLayout(81.25,[]),
+  mkLayout(81.29,[]),
+  mkLayout(81.33,[])
+];
+assert.equal(H.chooseStableHandWindow(zeroOnlyLayout,4,2,1200),null,'zero detected cost centers must not be promoted to a stable current hand window');
+
+const actual8141Anchor=mkLayout(81.41,[741,806]);
+const actualForwardSettle=[
+  mkLayout(81.455,[736,800,864,929]),
+  mkLayout(81.495,[736,800,864,929]),
+  mkLayout(81.535,[737,801,866,931]),
+  mkLayout(81.575,[737,801,865,930])
+];
+assert.equal(H.layoutsSubsetCompatible(actual8141Anchor,actualForwardSettle[0],1200),true,'actual 81.41 partial layout must align with the recovered four-card layout');
+chosen=H.chooseForwardSettleHandWindow(actualForwardSettle,actual8141Anchor,4,1200);
+assert.ok(chosen,'actual 81.41 transient must recover a forward settle window');
+assert.deepEqual(chosen.frames.map(x=>x.sampleTime),[81.455,81.495,81.535,81.575]);
+assert.equal(chosen.candidateCount,4);
+assert.equal(chosen.layoutMode,'forward-settle-stable');
+assert.equal(H.chooseForwardSettleHandWindow(actualForwardSettle,mkLayout(81.41,[650,710]),4,1200),null,'forward settle must be rejected when target-visible centers do not persist');
+assert.equal(H.chooseForwardSettleHandWindow(actualForwardSettle,mkLayout(81.41,[806]),4,1200),null,'one target-visible center is insufficient for forward settle rescue');
+
 const latestCurrentLayout=[
   mkLayout(19.816,[737,801,865,930]),
   mkLayout(19.856,[737,801,865,930]),
@@ -393,7 +416,7 @@ assert.ok(barbarosFanFixture.best>=.93,`real-video Barbaros fan-position fixture
 const barbarosHardNegative=H.matchFeature(realVideoFixtureDecode({"scale":800.8372672539656,"data":"+f/+Bwj99vTy+QIVLS76wcDF6QceBxL65NvX4Of/BCcAzMfC7/sCFSYX9+XoAhcr6RQQ2tTI7PgFRmRaHOvqLUEY5AIKzczE7PoILkA/AvDuWzD85QMHwsDA6hUUNEUyLgr0Dvnu5w0Hwb++IA7qFh9HRyT///YF8wsOwL++GTwDJlktCN30Dh4LABQSv76++QIHBgADDAoB6fLg3+LTy8fBNUb7EhcQCgsDCgsB9PPdu77FVFYXIhYREBYMCg4QCQHetbm/a1AzKP/6AhUTERcTBwXovr3DQ0cwIBYMDRQL+gwQChT4y8rKJS0JAv0GGRshFg8IAjcSysnL8fbl59nk4eENOiggFlAYysrR+vPq8NXmx8f2/ggeN2Mn19HPMikgFQ8LCwsRLzx5f2IwERgS3evy6Nvj8vXy+/UAQV04JBsbyNje2NPd7vLq7d7F4ic6JhwdwdLY0crW5+ri3d7U7ik6Ix4c0Nrh28vR5Ofc3+rj8iQyJRoa59TzFATbyuDV2ePo7/IRFwcJ+PwaQ08zCggF7Obh3N8CEgkK3+z0DjJISigRFwbs2dHyBQcN"})).find(x=>x.cardId==='barbaros');
 assert.ok(barbarosHardNegative.best<.90,`real-video cost-7 hard negative must stay below .90 candidate gate: ${barbarosHardNegative.best}`);
 
-assert.equal(H.version,'hand-clean-1.15');
+assert.equal(H.version,'hand-clean-1.16');
 const qbRecognition=DB.recognitionCards().find(x=>x.id==='quickBlader');
 assert.equal(H.temporalProbeFloor(qbRecognition),.89);
 const temporalCandidate=(cardId,score,index,{detected=null,validated=null,ocrAccepted=false,matched=false,templateValue=null,templateScore=null,templateThreshold=null}={})=>({index,best:{cardId,imageScore:score,imageCandidate:false,imageConfirmed:false,imageSource:'anchor',titleScore:score-.05,anchorScore:score,temporalProbe:true,temporalProbeFloor:.88,expectedCost:cardId==='quickBlader'?1:7,acceptedCosts:cardId==='quickBlader'?[1]:[7],detectedCost:detected,validatedCost:validated,ocrCostAccepted:ocrAccepted,costAccepted:ocrAccepted,costMatched:matched,costSource:matched?'ocr':null,costTemplateValue:templateValue,costTemplateScore:templateScore,costTemplateThreshold:templateThreshold,matched:false,decision:'temporal-probe-only'}});
@@ -409,7 +432,7 @@ const temporalTwoFrames=[.893,.892].map((score,i)=>({sampleTime:i,counts:{},scor
 assert.equal(H.decideHandSamples(temporalTwoFrames).recognized.quickBlader,undefined);
 
 
-assert.equal(H.version,'hand-clean-1.15');
+assert.equal(H.version,'hand-clean-1.16');
 WB.turnTimeline=[
  {side:'bottom',turn:6,time:74.41},
  {side:'top',turn:7,time:81.863},
