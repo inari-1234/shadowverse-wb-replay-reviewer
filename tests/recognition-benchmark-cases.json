@@ -1,11 +1,12 @@
 {
-  "version": "recognition-benchmark-v1",
-  "description": "Curated hand-recognition cases extracted from real iPhone diagnostics plus explicit synthetic safety negatives. Real cases are calibration-only until independent validation videos are added.",
+  "version": "recognition-benchmark-v2",
+  "description": "Curated real-device hand-recognition cases plus full-frame multi-candidate scenarios and explicit synthetic safety negatives. Calibration and validation remain separate to prevent tuning on the validation set.",
   "policy": {
     "zeroFalsePositives": true,
     "zeroFalseNegatives": true,
     "requirePositiveAndNegativePerTunedCard": true,
-    "validationRequiredForGeneralizationClaim": true
+    "validationRequiredForGeneralizationClaim": true,
+    "requireFullFrameScenarioCoverage": true
   },
   "cases": [
     {
@@ -491,6 +492,417 @@
           "slot": 4,
           "score": 0.8585,
           "source": "anchor"
+        }
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "real-full-frame-37.105-zeta-only",
+      "split": "calibration",
+      "origin": "real-diagnostic",
+      "source": {
+        "diagnostic": "shadowverse-wb-diagnostic-v4.13.23-2026-09-19T1230.json",
+        "build": "4.13.23-20260919-clean-13-23",
+        "video": "ScreenRecording_09-14-2026 21-17-26_1.mp4",
+        "base": 37.105,
+        "window": [
+          36.985,
+          37.105
+        ]
+      },
+      "expected": {
+        "recognized": [
+          "zetaBeatrix"
+        ],
+        "decisions": {
+          "zetaBeatrix": "temporal-stable-leader-rescue"
+        }
+      },
+      "samples": [
+        {
+          "time": 36.985,
+          "candidates": [
+            {
+              "slot": 0,
+              "cardId": "barbaros",
+              "score": 0.4518,
+              "source": "title"
+            },
+            {
+              "slot": 1,
+              "cardId": "quickBlader",
+              "score": 0.7717,
+              "source": "title"
+            },
+            {
+              "slot": 2,
+              "cardId": "barbaros",
+              "score": 0.4378,
+              "source": "title"
+            },
+            {
+              "slot": 3,
+              "cardId": "zetaBeatrix",
+              "score": 0.5309,
+              "source": "title"
+            },
+            {
+              "slot": 4,
+              "cardId": "zetaBeatrix",
+              "score": 0.8594,
+              "source": "anchor",
+              "titleScore": 0.5056,
+              "anchorScore": 0.8594
+            }
+          ]
+        },
+        {
+          "time": 37.025,
+          "candidates": [
+            {
+              "slot": 0,
+              "cardId": "barbaros",
+              "score": 0.4299,
+              "source": "title"
+            },
+            {
+              "slot": 1,
+              "cardId": "quickBlader",
+              "score": 0.784,
+              "source": "title"
+            },
+            {
+              "slot": 2,
+              "cardId": "barbaros",
+              "score": 0.4389,
+              "source": "title"
+            },
+            {
+              "slot": 3,
+              "cardId": "zetaBeatrix",
+              "score": 0.5164,
+              "source": "title"
+            },
+            {
+              "slot": 4,
+              "cardId": "zetaBeatrix",
+              "score": 0.8581,
+              "source": "anchor",
+              "anchorScore": 0.8581
+            }
+          ]
+        },
+        {
+          "time": 37.065,
+          "candidates": [
+            {
+              "slot": 0,
+              "cardId": "barbaros",
+              "score": 0.4114,
+              "source": "title"
+            },
+            {
+              "slot": 1,
+              "cardId": "quickBlader",
+              "score": 0.7892,
+              "source": "title"
+            },
+            {
+              "slot": 2,
+              "cardId": "barbaros",
+              "score": 0.4391,
+              "source": "title"
+            },
+            {
+              "slot": 3,
+              "cardId": "zetaBeatrix",
+              "score": 0.5343,
+              "source": "title"
+            },
+            {
+              "slot": 4,
+              "cardId": "zetaBeatrix",
+              "score": 0.8581,
+              "source": "anchor",
+              "anchorScore": 0.8581
+            }
+          ]
+        },
+        {
+          "time": 37.105,
+          "candidates": [
+            {
+              "slot": 0,
+              "cardId": "barbaros",
+              "score": 0.3965,
+              "source": "title"
+            },
+            {
+              "slot": 1,
+              "cardId": "quickBlader",
+              "score": 0.795,
+              "source": "title"
+            },
+            {
+              "slot": 2,
+              "cardId": "barbaros",
+              "score": 0.4397,
+              "source": "title"
+            },
+            {
+              "slot": 3,
+              "cardId": "zetaBeatrix",
+              "score": 0.5149,
+              "source": "title"
+            },
+            {
+              "slot": 4,
+              "cardId": "zetaBeatrix",
+              "score": 0.8581,
+              "source": "anchor",
+              "anchorScore": 0.8581
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "real-full-frame-82.395-qb-barbaros",
+      "split": "calibration",
+      "origin": "real-diagnostic",
+      "source": {
+        "diagnostic": "shadowverse-wb-diagnostic-v4.13.23-2026-09-19T1230.json",
+        "build": "4.13.23-20260919-clean-13-23",
+        "video": "ScreenRecording_09-14-2026 21-17-26_1.mp4",
+        "base": 82.395,
+        "window": [
+          81.835,
+          81.955
+        ]
+      },
+      "expected": {
+        "recognized": [
+          "quickBlader",
+          "barbaros"
+        ],
+        "decisions": {
+          "quickBlader": "temporal-stable-leader-rescue",
+          "barbaros": "temporal-image-cost-hypothesis-consensus"
+        }
+      },
+      "samples": [
+        {
+          "time": 81.835,
+          "candidates": [
+            {
+              "slot": 0,
+              "cardId": "zetaBeatrix",
+              "score": 0.6659,
+              "source": "title"
+            },
+            {
+              "slot": 1,
+              "cardId": "barbaros",
+              "score": 0.9137,
+              "source": "title",
+              "titleScore": 0.9137,
+              "anchorScore": 0.9014,
+              "template": {
+                "value": 7,
+                "score": 0.9655,
+                "threshold": 0.98,
+                "accepted": false
+              },
+              "ocr": {
+                "value": 2,
+                "accepted": true
+              }
+            },
+            {
+              "slot": 2,
+              "cardId": "quickBlader",
+              "score": 0.8907,
+              "source": "anchor",
+              "titleScore": 0.8254,
+              "anchorScore": 0.8907,
+              "template": {
+                "value": 1,
+                "score": 0.9449,
+                "threshold": 0.98,
+                "accepted": false
+              },
+              "ocr": {
+                "value": 0,
+                "accepted": true
+              }
+            },
+            {
+              "slot": 3,
+              "cardId": "barbaros",
+              "score": 0.6145,
+              "source": "title"
+            }
+          ]
+        },
+        {
+          "time": 81.875,
+          "candidates": [
+            {
+              "slot": 0,
+              "cardId": "zetaBeatrix",
+              "score": 0.6661,
+              "source": "title"
+            },
+            {
+              "slot": 1,
+              "cardId": "barbaros",
+              "score": 0.914,
+              "source": "title",
+              "titleScore": 0.914,
+              "anchorScore": 0.9015,
+              "template": {
+                "value": 7,
+                "score": 0.9653,
+                "threshold": 0.98,
+                "accepted": false
+              },
+              "ocr": {
+                "value": 2,
+                "accepted": true
+              }
+            },
+            {
+              "slot": 2,
+              "cardId": "quickBlader",
+              "score": 0.8914,
+              "source": "anchor",
+              "titleScore": 0.8254,
+              "anchorScore": 0.8914,
+              "template": {
+                "value": 1,
+                "score": 0.943,
+                "threshold": 0.98,
+                "accepted": false
+              },
+              "ocr": {
+                "value": 0,
+                "accepted": true
+              }
+            },
+            {
+              "slot": 3,
+              "cardId": "barbaros",
+              "score": 0.6145,
+              "source": "title"
+            }
+          ]
+        },
+        {
+          "time": 81.915,
+          "candidates": [
+            {
+              "slot": 0,
+              "cardId": "zetaBeatrix",
+              "score": 0.6673,
+              "source": "title"
+            },
+            {
+              "slot": 1,
+              "cardId": "barbaros",
+              "score": 0.9135,
+              "source": "title",
+              "titleScore": 0.9135,
+              "anchorScore": 0.9008,
+              "template": {
+                "value": 7,
+                "score": 0.9634,
+                "threshold": 0.98,
+                "accepted": false
+              },
+              "ocr": {
+                "value": 2,
+                "accepted": true
+              }
+            },
+            {
+              "slot": 2,
+              "cardId": "quickBlader",
+              "score": 0.891,
+              "source": "anchor",
+              "titleScore": 0.8254,
+              "anchorScore": 0.891,
+              "template": {
+                "value": 1,
+                "score": 0.9423,
+                "threshold": 0.98,
+                "accepted": false
+              },
+              "ocr": {
+                "value": 0,
+                "accepted": true
+              }
+            },
+            {
+              "slot": 3,
+              "cardId": "barbaros",
+              "score": 0.615,
+              "source": "title"
+            }
+          ]
+        },
+        {
+          "time": 81.955,
+          "candidates": [
+            {
+              "slot": 0,
+              "cardId": "zetaBeatrix",
+              "score": 0.67,
+              "source": "title"
+            },
+            {
+              "slot": 1,
+              "cardId": "barbaros",
+              "score": 0.914,
+              "source": "title",
+              "titleScore": 0.914,
+              "anchorScore": 0.9015,
+              "template": {
+                "value": 7,
+                "score": 0.965,
+                "threshold": 0.98,
+                "accepted": false
+              },
+              "ocr": {
+                "value": 7,
+                "accepted": true
+              }
+            },
+            {
+              "slot": 2,
+              "cardId": "quickBlader",
+              "score": 0.894,
+              "source": "anchor",
+              "titleScore": 0.8278,
+              "anchorScore": 0.894,
+              "template": {
+                "value": 1,
+                "score": 0.9456,
+                "threshold": 0.98,
+                "accepted": false
+              },
+              "ocr": {
+                "value": 0,
+                "accepted": true
+              }
+            },
+            {
+              "slot": 3,
+              "cardId": "barbaros",
+              "score": 0.6179,
+              "source": "title"
+            }
+          ]
         }
       ]
     }
