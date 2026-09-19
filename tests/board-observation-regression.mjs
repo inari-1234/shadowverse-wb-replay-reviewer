@@ -81,7 +81,8 @@ assert.equal(d.value,2);
 d=S.decideBoardSamples([
   sample([1,1],['not-attackable','attackable'],0),
   sample([1,1],['not-attackable','attackable'],.25),
-  sample([1,1],['not-attackable','attackable'],.50,{ocrIndependent:false})
+  sample([1,1],['not-attackable','attackable'],.50,{ocrIndependent:false}),
+  sample([1,1],['not-attackable','attackable'],.75,{ocrIndependent:false})
 ],{nearOwnStart:false});
 assert.equal(d.accepted,true);
 assert.equal(d.value,1);
