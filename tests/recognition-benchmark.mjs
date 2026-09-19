@@ -80,6 +80,20 @@ function samplesFor(testCase){
   }));
 }
 
+function scenarioSamples(scenario){
+  return scenario.samples.map(frame=>({
+    sampleTime:frame.time,counts:{},scores:{},costs:{},
+    candidates:frame.candidates.map(row=>{
+      const card=cards[row.cardId];
+      assert.ok(card,`Unknown cardId in scenario: ${row.cardId}`);
+      return candidate(row,card);
+    })
+  }));
+}
+
+function sortedUnique(values){return [...new Set(values)].sort()}
+function sameStringSet(a,b){return JSON.stringify(sortedUnique(a))===JSON.stringify(sortedUnique(b))}
+
 const results=[];
 const byCard={};
 const bySplit={};
@@ -102,6 +116,26 @@ for(const testCase of fixture.cases){
   s[outcome]++;s.total++;
 }
 
+
+const scenarioResults=[];
+for(const scenario of fixture.scenarios||[]){
+  const decision=H.decideHandSamples(scenarioSamples(scenario));
+  const actual=Object.keys(decision.recognized||{});
+  const expected=scenario.expected?.recognized||[];
+  const missing=expected.filter(id=>!actual.includes(id));
+  const unexpected=actual.filter(id=>!expected.includes(id));
+  const decisionMismatches=[];
+  for(const [id,expectedDecision] of Object.entries(scenario.expected?.decisions||{})){
+    const actualDecision=decision.recognized?.[id]?.decision??null;
+    if(actualDecision!==expectedDecision)decisionMismatches.push({cardId:id,expected:expectedDecision,actual:actualDecision});
+  }
+  scenarioResults.push({
+    id:scenario.id,split:scenario.split,origin:scenario.origin,
+    expected:sortedUnique(expected),actual:sortedUnique(actual),
+    exact:sameStringSet(actual,expected),missing,unexpected,decisionMismatches
+  });
+}
+
 const realCases=fixture.cases.filter(x=>x.origin!=='synthetic-safety');
 const cardsWithReal=[...new Set(realCases.map(x=>x.cardId))];
 const coverage=Object.fromEntries(cardsWithReal.map(id=>{
@@ -119,7 +153,17 @@ const metrics=Object.fromEntries(Object.entries(byCard).map(([id,v])=>{
     support:v.total
   }];
 }));
-const validationCount=fixture.cases.filter(x=>x.split==='validation').length;
+const validationCount=fixture.cases.filter(x=>x.split==='validation').length+(fixture.scenarios||[]).filter(x=>x.split==='validation').length;
+const scenarioFailures=scenarioResults.filter(x=>!x.exact||x.decisionMismatches.length);
+const scenarioCoverage=Object.fromEntries(Object.keys(cards).map(id=>{
+  const positive=(fixture.scenarios||[]).filter(x=>x.origin==='real-diagnostic'&&(x.expected?.recognized||[]).includes(id)).length;
+  const negative=(fixture.scenarios||[]).filter(x=>x.origin==='real-diagnostic'&&!(x.expected?.recognized||[]).includes(id)).length;
+  return [id,{positive,negative,total:positive+negative}];
+}));
+const missingScenarioCoverage=fixture.policy.requireFullFrameScenarioCoverage
+  ? Object.entries(scenarioCoverage).filter(([,v])=>v.positive<1||v.negative<1)
+  : [];
+
 const falsePositives=results.filter(x=>x.outcome==='FP');
 const falseNegatives=results.filter(x=>x.outcome==='FN');
 const decisionMismatches=results.filter(x=>!x.pass&&x.outcome!=='FP'&&x.outcome!=='FN');
@@ -130,15 +174,18 @@ const missingPolarity=fixture.policy.requirePositiveAndNegativePerTunedCard
 console.log(JSON.stringify({
   benchmark:fixture.version,
   cases:results.length,
-  byCard,metrics,bySplit,coverage,
+  scenarios:scenarioResults,
+  byCard,metrics,bySplit,coverage,scenarioCoverage,
   validation:{cases:validationCount,ready:validationCount>0},
-  failures:{falsePositives,falseNegatives,decisionMismatches,missingPolarity}
+  failures:{falsePositives,falseNegatives,decisionMismatches,missingPolarity,scenarioFailures,missingScenarioCoverage}
 },null,2));
 
 assert.equal(falsePositives.length,0,'recognition benchmark must have zero false positives');
 assert.equal(falseNegatives.length,0,'recognition benchmark must have zero false negatives');
 assert.equal(decisionMismatches.length,0,'recognition benchmark expected decision paths must remain stable');
 assert.equal(missingPolarity.length,0,'each tuned card needs at least one real positive and real negative calibration case');
+assert.equal(scenarioFailures.length,0,'full-frame benchmark must recognize exactly the expected card set and decision paths');
+assert.equal(missingScenarioCoverage.length,0,'each recognition card needs positive and negative full-frame real-device scenario coverage');
 
 if(fixture.policy.validationRequiredForGeneralizationClaim&&validationCount===0){
   console.log('RECOGNITION BENCHMARK NOTE: validation split is empty; calibration PASS does not prove cross-video generalization.');
