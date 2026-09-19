@@ -57,10 +57,11 @@ export function compactCandidate(row){
   return out;
 }
 
-export function scenarioFromSnapshot(diagnostic,snapshot,{id,split='calibration'}={}){
+export function scenarioFromSnapshot(diagnostic,snapshot,{id,split='calibration',expectedRecognized=null}={}){
   const base=round4(snapshot.base);
-  const recognized=Object.keys(snapshot.recognized||{}).sort();
-  const decisions=Object.fromEntries(recognized.map(cardId=>[cardId,snapshot.recognized[cardId]?.decision??null]));
+  const observedRecognized=Object.keys(snapshot.recognized||{}).sort();
+  const observedDecisions=Object.fromEntries(observedRecognized.map(cardId=>[cardId,snapshot.recognized[cardId]?.decision??null]));
+  const expected=Array.isArray(expectedRecognized)?[...new Set(expectedRecognized)].sort():null;
   const samples=(snapshot.samples||[]).map(sample=>({
     time:round4(sample.sampleTime),
     candidates:(sample.candidates||[]).map(compactCandidate)
@@ -77,13 +78,15 @@ export function scenarioFromSnapshot(diagnostic,snapshot,{id,split='calibration'
       base,
       window:sampleTimes.length?[Math.min(...sampleTimes),Math.max(...sampleTimes)]:null
     },
-    expected:{recognized,decisions},
+    observed:{recognized:observedRecognized,decisions:observedDecisions},
+    expected:{recognized:expected,decisions:{}},
+    needsHumanLabel:expected==null,
     samples
   };
 }
 
 function parseArgs(argv){
-  const args={file:null,base:null,id:null,split:'calibration'};
+  const args={file:null,base:null,id:null,split:'calibration',expectedRecognized:null};
   const rest=[...argv];
   args.file=rest.shift()||null;
   while(rest.length){
@@ -92,9 +95,10 @@ function parseArgs(argv){
     if(flag==='--base')args.base=Number(value);
     else if(flag==='--id')args.id=value;
     else if(flag==='--split')args.split=value;
+    else if(flag==='--expected')args.expectedRecognized=value==='none'?[]:String(value).split(',').map(x=>x.trim()).filter(Boolean);
     else throw new Error(`Unknown argument: ${flag}`);
   }
-  if(!args.file||!Number.isFinite(args.base))throw new Error('Usage: node tests/diagnostic-scenario-importer.mjs <diagnostic.json> --base <seconds> [--id <id>] [--split calibration|validation]');
+  if(!args.file||!Number.isFinite(args.base)||args.expectedRecognized==null)throw new Error('Usage: node tests/diagnostic-scenario-importer.mjs <diagnostic.json> --base <seconds> --expected <cardId,cardId|none> [--id <id>] [--split calibration|validation]');
   if(!['calibration','validation'].includes(args.split))throw new Error('split must be calibration or validation');
   return args;
 }
@@ -105,5 +109,5 @@ if(isCli){
   const diagnostic=JSON.parse(fs.readFileSync(args.file,'utf8'));
   diagnostic.sourceName=path.basename(args.file);
   const snapshot=pickHandSnapshot(diagnostic,args.base);
-  console.log(JSON.stringify(scenarioFromSnapshot(diagnostic,snapshot,{id:args.id,split:args.split}),null,2));
+  console.log(JSON.stringify(scenarioFromSnapshot(diagnostic,snapshot,{id:args.id,split:args.split,expectedRecognized:args.expectedRecognized}),null,2));
 }
