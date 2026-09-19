@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.16',build:'4.13.16-20260919-clean-13-16',revision:'clean-13-16',subtitle:'Build 2026.09.19-clean-13-16 / 表示コスト中心位置補正'};
+const APP={version:'4.13.17',build:'4.13.17-20260919-clean-13-17',revision:'clean-13-17',subtitle:'Build 2026.09.19-clean-13-17 / 手札画像主証拠の時系列合議'};
 const WB=window.WB={APP,modules:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
 WB.$=s=>document.querySelector(s);
 WB.registerModule=(name,version)=>{const row={name,version};if(!WB.modules.some(x=>x.name===name))WB.modules.push(row);return row};

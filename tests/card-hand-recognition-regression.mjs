@@ -393,7 +393,7 @@ assert.ok(barbarosFanFixture.best>=.93,`real-video Barbaros fan-position fixture
 const barbarosHardNegative=H.matchFeature(realVideoFixtureDecode({"scale":800.8372672539656,"data":"+f/+Bwj99vTy+QIVLS76wcDF6QceBxL65NvX4Of/BCcAzMfC7/sCFSYX9+XoAhcr6RQQ2tTI7PgFRmRaHOvqLUEY5AIKzczE7PoILkA/AvDuWzD85QMHwsDA6hUUNEUyLgr0Dvnu5w0Hwb++IA7qFh9HRyT///YF8wsOwL++GTwDJlktCN30Dh4LABQSv76++QIHBgADDAoB6fLg3+LTy8fBNUb7EhcQCgsDCgsB9PPdu77FVFYXIhYREBYMCg4QCQHetbm/a1AzKP/6AhUTERcTBwXovr3DQ0cwIBYMDRQL+gwQChT4y8rKJS0JAv0GGRshFg8IAjcSysnL8fbl59nk4eENOiggFlAYysrR+vPq8NXmx8f2/ggeN2Mn19HPMikgFQ8LCwsRLzx5f2IwERgS3evy6Nvj8vXy+/UAQV04JBsbyNje2NPd7vLq7d7F4ic6JhwdwdLY0crW5+ri3d7U7ik6Ix4c0Nrh28vR5Ofc3+rj8iQyJRoa59TzFATbyuDV2ePo7/IRFwcJ+PwaQ08zCggF7Obh3N8CEgkK3+z0DjJISigRFwbs2dHyBQcN"})).find(x=>x.cardId==='barbaros');
 assert.ok(barbarosHardNegative.best<.90,`real-video cost-7 hard negative must stay below .90 candidate gate: ${barbarosHardNegative.best}`);
 
-assert.equal(H.version,'hand-clean-1.14');
+assert.equal(H.version,'hand-clean-1.15');
 const qbRecognition=DB.recognitionCards().find(x=>x.id==='quickBlader');
 assert.equal(H.temporalProbeFloor(qbRecognition),.89);
 const temporalCandidate=(cardId,score,index,{detected=null,validated=null,ocrAccepted=false,matched=false,templateValue=null,templateScore=null,templateThreshold=null}={})=>({index,best:{cardId,imageScore:score,imageCandidate:false,imageConfirmed:false,imageSource:'anchor',titleScore:score-.05,anchorScore:score,temporalProbe:true,temporalProbeFloor:.88,expectedCost:cardId==='quickBlader'?1:7,acceptedCosts:cardId==='quickBlader'?[1]:[7],detectedCost:detected,validatedCost:validated,ocrCostAccepted:ocrAccepted,costAccepted:ocrAccepted,costMatched:matched,costSource:matched?'ocr':null,costTemplateValue:templateValue,costTemplateScore:templateScore,costTemplateThreshold:templateThreshold,matched:false,decision:'temporal-probe-only'}});
@@ -409,7 +409,7 @@ const temporalTwoFrames=[.893,.892].map((score,i)=>({sampleTime:i,counts:{},scor
 assert.equal(H.decideHandSamples(temporalTwoFrames).recognized.quickBlader,undefined);
 
 
-assert.equal(H.version,'hand-clean-1.14');
+assert.equal(H.version,'hand-clean-1.15');
 WB.turnTimeline=[
  {side:'bottom',turn:6,time:74.41},
  {side:'top',turn:7,time:81.863},
@@ -483,5 +483,23 @@ const quickBlader81926=[.8915,.8907,.8911,.8910].map((score,i)=>({sampleTime:[81
 const quickBlader81926Decision=H.decideHandSamples(quickBlader81926);
 assert.equal(quickBlader81926Decision.recognized.quickBlader?.decision,'temporal-slot-consensus','actual 81.806-81.926 QB must survive three OCR-0 conflicts when shifted cost-1 template resolves all four frames');
 assert.equal(quickBlader81926Decision.recognized.quickBlader?.temporal?.groups?.[0]?.directProof,true);
+
+
+const imageConsensusCandidate=(cardId,score,index,{templateValue=null,templateScore=null,templateThreshold=.98,templateAccepted=false,ocrValue=null,ocrAccepted=false}={})=>({index,imageBest:{cardId,label:cardId,imageScore:score,imageSource:'anchor',titleScore:score-.08,anchorScore:score,temporalProbe:score>=.89,temporalProbeFloor:.89},displayedCost:{accepted:false,value:null,source:null,ocrValue,ocrAccepted,templateValue,templateScore,templateThreshold,templateCenterDx:0,templateAccepted},best:{cardId,label:cardId,imageScore:score,imageCandidate:score>=.9,imageConfirmed:false,imageSource:'anchor',titleScore:score-.08,anchorScore:score,temporalProbe:score>=.89,temporalProbeFloor:.89,expectedCost:cardId==='quickBlader'?1:7,acceptedCosts:cardId==='quickBlader'?[1]:[7],detectedCost:ocrValue,validatedCost:null,ocrCostAccepted:ocrAccepted,costAccepted:ocrAccepted,costMatched:false,costSource:null,costTemplateValue:templateValue,costTemplateScore:templateScore,costTemplateThreshold:templateThreshold,costTemplateCenterDx:0,matched:false,decision:'temporal-probe-only'}});
+const qb816=[.8169,.8962,.9118,.8957].map((score,i)=>({sampleTime:[81.455,81.495,81.535,81.575][i],counts:{},scores:{},candidates:[imageConsensusCandidate('quickBlader',score,2,i===0?{}:{templateValue:1,templateScore:[0,.7974,.7683,.8055][i],ocrValue:i<3?0:null,ocrAccepted:i<3})]}));
+const qb816Decision=H.decideHandSamples(qb816);
+assert.equal(qb816Decision.recognized.quickBlader?.decision,'temporal-image-cost-hypothesis-consensus','actual v4.13.16 QB sequence must recover from OCR instability');
+const bb816=[.9288,.9362,.9248,.9155].map((score,i)=>({sampleTime:[81.455,81.495,81.535,81.575][i],counts:{},scores:{},candidates:[imageConsensusCandidate('barbaros',score,1,{templateValue:7,templateScore:[.751,.8785,.9572,.9656][i],ocrValue:i===3?2:null,ocrAccepted:i===3})]}));
+const bb816Decision=H.decideHandSamples(bb816);
+assert.equal(bb816Decision.recognized.barbaros?.decision,'temporal-image-cost-hypothesis-consensus','actual v4.13.16 Barbaros sequence must recover from weak displayed-cost crops');
+const qbOnlyTwoProbe=[.8169,.82,.9118,.8957].map((score,i)=>({sampleTime:i,counts:{},scores:{},candidates:[imageConsensusCandidate('quickBlader',score,2,{templateValue:i?1:null,templateScore:.8})]}));
+assert.equal(H.decideHandSamples(qbOnlyTwoProbe).recognized.quickBlader,undefined,'two probe-range frames must not pass image-primary temporal consensus');
+const qbUnstableCore=[.8169,.89,.915,.94].map((score,i)=>({sampleTime:i,counts:{},scores:{},candidates:[imageConsensusCandidate('quickBlader',score,2,{templateValue:i?1:null,templateScore:.8})]}));
+assert.equal(H.decideHandSamples(qbUnstableCore).recognized.quickBlader,undefined,'unstable top-three image scores must not pass image-primary temporal consensus');
+const qbWrongStrongTemplate=[.8169,.8962,.9118,.8957].map((score,i)=>({sampleTime:i,counts:{},scores:{},candidates:[imageConsensusCandidate('quickBlader',score,2,i===0?{}:{templateValue:i===2?7:1,templateScore:i===2?.995:.80,templateAccepted:i===2})]}));
+assert.equal(H.decideHandSamples(qbWrongStrongTemplate).recognized.quickBlader,undefined,'accepted conflicting cost template must veto image-primary temporal consensus');
+const qbMissingLeader=[.8962,.9118,.8957].map((score,i)=>({sampleTime:i,counts:{},scores:{},candidates:[imageConsensusCandidate('quickBlader',score,2,{templateValue:1,templateScore:.8})]}));
+qbMissingLeader.push({sampleTime:4,counts:{},scores:{},candidates:[imageConsensusCandidate('barbaros',.91,2,{templateValue:7,templateScore:.8})]});
+assert.equal(H.decideHandSamples(qbMissingLeader).recognized.quickBlader,undefined,'same image leader must persist through the whole stable window');
 
 console.log('CARD DB + HAND RECOGNITION REGRESSION PASS');
