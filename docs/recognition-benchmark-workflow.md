@@ -1,4 +1,4 @@
-# 実機認識ベンチマーク運用
+# 実機認識ベンチマーク運用 v2
 
 ## 目的
 
@@ -18,14 +18,15 @@ runtime の8スクリプト構成は変更せず、テスト層だけで運用�
 
 1. iPhone実機で認識結果を確認し、人間が「カードあり／なし」を確定する。
 2. 診断JSONから、対象カードの同一スロットの連続フレーム、画像一致度、画像ソース、コストテンプレート、OCR結果を抜き出す。
-3. **コードを直す前に** `tests/recognition-benchmark-cases.json` へケースを追加する。
-4. 既存版で新ケースが期待どおりFAILすることを確認する。
-5. candidateブランチで最小限の修正を行う。
-6. `node tests/run-quality-gate.mjs` を実行し、既存6回帰＋ベンチマークを全PASSさせる。
-7. false positiveが1件でも出た場合はmainへ入れない。
-8. candidateとmainを比較し、behind 0を確認してからfast-forwardする。
-9. mainを再取得し、品質ゲートを再実行する。
-10. 次の別動画は可能な限りvalidationとして登録し、調整には使わず最終確認だけに使う。
+3. `node tests/diagnostic-scenario-importer.mjs <診断JSON> --base <秒> --expected <cardId,cardId|none>` で実フレーム全候補を抽出する。`observed` は当時のアプリ判定、`expected` は人間が動画を見て確定した正解として分離する。
+4. **コードを直す前に** 抽出したシナリオを `tests/recognition-benchmark-cases.json` へ追加する。人間ラベル未設定のシナリオは品質ゲートで拒否する。
+5. 既存版で新ケースが期待どおりFAILすることを確認する。
+6. candidateブランチで最小限の修正を行う。
+7. `node tests/run-quality-gate.mjs` を実行し、既存回帰・runtime不変条件・抽出器回帰・実機ベンチマークを全PASSさせる。
+8. false positive、false negative、全候補シナリオの認識集合差分が1件でも出た場合はmainへ入れない。
+9. candidateとmainを比較し、behind 0を確認してからfast-forwardする。
+10. mainを再取得し、品質ゲートを再実行する。
+11. 次の別動画は可能な限りvalidationとして登録し、調整には使わず最終確認だけに使う。
 
 ## 精度調整のルール
 
@@ -62,3 +63,15 @@ runtime の8スクリプト構成は変更せず、テスト層だけで運用�
 clean-13.24で問題になったゼタ＆ベアトリクスと刹那のクイックブレイダーに加え、同じ実機診断からバルバロスの正例・負例も登録している。ターン境界のクイブレは、通常判定で先回りせず継続確認へ残すケースとして固定する。現在は3カードすべてにreal positive / real negativeが最低1件ずつある。
 
 このファイルと `tests/recognition-benchmark-cases.json` を今後の認識調整の基準にする。
+
+
+## v2で追加した検証
+
+- 単一カードだけでなく、同一フレーム内の全候補をまとめて再現する。
+- 最終認識集合が完全一致することを確認する。余計なカード1枚でも認識した場合はFAIL。
+- 診断当時のアプリ出力は `observed`、人間の正解は `expected` として分離する。
+- `expected` の未設定シナリオはベンチマークへ採用しない。
+- runtime 8本、fix-v非読込、Service Worker build/cache整合、current handとhistory分離、主要カードの候補閾値を自動確認する。
+- 診断JSONからの転記は補助スクリプトで行い、手入力する値を最小化する。
+
+現在のfull-frame calibrationでは、37.105秒はゼタ＆ベアトリクスのみ、82.395秒は刹那のクイックブレイダー＋バルバロスのみを正解集合として固定している。
