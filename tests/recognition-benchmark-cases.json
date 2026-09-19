@@ -665,7 +665,11 @@
             }
           ]
         }
-      ]
+      ],
+      "observed": {
+        "recognized": [],
+        "decisions": {}
+      }
     },
     {
       "id": "real-full-frame-82.395-qb-barbaros",
@@ -904,7 +908,15 @@
             }
           ]
         }
-      ]
+      ],
+      "observed": {
+        "recognized": [
+          "barbaros"
+        ],
+        "decisions": {
+          "barbaros": "temporal-slot-consensus"
+        }
+      }
     }
   ]
 }
