@@ -461,7 +461,7 @@ assert.ok(barbarosFanFixture.best>=.93,`real-video Barbaros fan-position fixture
 const barbarosHardNegative=H.matchFeature(realVideoFixtureDecode({"scale":800.8372672539656,"data":"+f/+Bwj99vTy+QIVLS76wcDF6QceBxL65NvX4Of/BCcAzMfC7/sCFSYX9+XoAhcr6RQQ2tTI7PgFRmRaHOvqLUEY5AIKzczE7PoILkA/AvDuWzD85QMHwsDA6hUUNEUyLgr0Dvnu5w0Hwb++IA7qFh9HRyT///YF8wsOwL++GTwDJlktCN30Dh4LABQSv76++QIHBgADDAoB6fLg3+LTy8fBNUb7EhcQCgsDCgsB9PPdu77FVFYXIhYREBYMCg4QCQHetbm/a1AzKP/6AhUTERcTBwXovr3DQ0cwIBYMDRQL+gwQChT4y8rKJS0JAv0GGRshFg8IAjcSysnL8fbl59nk4eENOiggFlAYysrR+vPq8NXmx8f2/ggeN2Mn19HPMikgFQ8LCwsRLzx5f2IwERgS3evy6Nvj8vXy+/UAQV04JBsbyNje2NPd7vLq7d7F4ic6JhwdwdLY0crW5+ri3d7U7ik6Ix4c0Nrh28vR5Ofc3+rj8iQyJRoa59TzFATbyuDV2ePo7/IRFwcJ+PwaQ08zCggF7Obh3N8CEgkK3+z0DjJISigRFwbs2dHyBQcN"})).find(x=>x.cardId==='barbaros');
 assert.ok(barbarosHardNegative.best<.90,`real-video cost-7 hard negative must stay below .90 candidate gate: ${barbarosHardNegative.best}`);
 
-assert.equal(H.version,'hand-clean-1.22');
+assert.equal(H.version,'hand-clean-1.23');
 const qbRecognition=DB.recognitionCards().find(x=>x.id==='quickBlader');
 assert.equal(H.temporalProbeFloor(qbRecognition),.88,'Quick Blader alone may probe down to the guarded .88 floor');
 const zetaRecognition=DB.recognitionCards().find(x=>x.id==='zetaBeatrix');
@@ -481,7 +481,7 @@ const temporalTwoFrames=[.893,.892].map((score,i)=>({sampleTime:i,counts:{},scor
 assert.equal(H.decideHandSamples(temporalTwoFrames).recognized.quickBlader,undefined);
 
 
-assert.equal(H.version,'hand-clean-1.22');
+assert.equal(H.version,'hand-clean-1.23');
 WB.turnTimeline=[
  {side:'bottom',turn:6,time:74.41},
  {side:'top',turn:7,time:81.863},
@@ -675,12 +675,27 @@ const timingAnchor30005=mkLayout(30.005,[708,757,811,858,908,958]);
 const timingAdjacentNoise=mkLayout(29.565,[708,757,811,858,908,958]);
 assert.equal(H.currentAnchorNeedsForwardSettle(timingOldSelected,timingAdjacentNoise,1200),false,'one adjacent noisy frame must not displace a fresh stable window');
 assert.equal(H.currentAnchorNeedsForwardSettle(timingOldSelected,timingAnchor30005,1200),true,'30.005 current six-card layout must reject the stale five-card backscan');
-const timingForward30005=[30.05,30.09,30.13,30.17].map(t=>mkLayout(t,[708,757,811,858,908,959]));
+assert.equal(H.config.forwardSettleScan,.32,'forward settle must cover the observed 30.005 -> 30.289 reflow while remaining layout-guarded');
+const timingForward30005=[
+  mkLayout(30.05,[708,759,813,862,914]),
+  mkLayout(30.09,[708,757,811,858,908]),
+  mkLayout(30.13,[708,757,811,858,908,954]),
+  mkLayout(30.17,[708,757,811,858,908,959]),
+  mkLayout(30.21,[708,757,811,858,908,959]),
+  mkLayout(30.25,[708,757,811,858,908,959]),
+  mkLayout(30.29,[708,757,811,858,908,959])
+];
 const timingRecovered30005=H.chooseForwardSettleHandWindow(timingForward30005,timingAnchor30005,4,1200);
 assert.ok(timingRecovered30005&&timingRecovered30005.candidateCount===6,'30.005 transient must settle to the current six-card hand');
 const timingAnchor30071=mkLayout(30.071,[708,757,811,858,908]);
 assert.equal(H.currentAnchorNeedsForwardSettle(timingOldSelected,timingAnchor30071,1200),true,'30.071 reflowed five-card anchor must not reuse the geometrically different old five-card hand');
-const timingForward30071=[30.116,30.156,30.196,30.236].map(t=>mkLayout(t,[708,757,811,858,908,959]));
+const timingForward30071=[
+  mkLayout(30.116,[708,757,811,858,908]),
+  mkLayout(30.156,[708,757,811,858,908,959]),
+  mkLayout(30.196,[708,757,811,858,908,959]),
+  mkLayout(30.236,[708,757,811,858,908,959]),
+  mkLayout(30.276,[708,757,811,858,908,959])
+];
 assert.ok(H.chooseForwardSettleHandWindow(timingForward30071,timingAnchor30071,4,1200),'30.071 partial current layout must be allowed to settle into the six-card current hand');
 
 const settleAnchor={sampleTime:36.747,centers:[{cx:708},{cx:766},{cx:829},{cx:893},{cx:959}]};
