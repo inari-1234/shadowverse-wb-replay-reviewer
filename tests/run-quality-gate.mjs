@@ -7,6 +7,7 @@ const tests=[
   'tests/turn-control-sync-regression.mjs',
   'tests/turn-prefix-regression.mjs',
   'tests/ward-tristate-regression.mjs',
+  'tests/runtime-invariants.mjs',
   'tests/recognition-benchmark.mjs'
 ];
 
