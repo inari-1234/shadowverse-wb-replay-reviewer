@@ -119,9 +119,11 @@ for(const testCase of fixture.cases){
 
 const scenarioResults=[];
 for(const scenario of fixture.scenarios||[]){
+  assert.ok(Array.isArray(scenario.expected?.recognized),`Scenario ${scenario.id} requires an explicit human expected.recognized label`);
+  assert.equal(scenario.needsHumanLabel===true,false,`Scenario ${scenario.id} is still marked as needing a human label`);
   const decision=H.decideHandSamples(scenarioSamples(scenario));
   const actual=Object.keys(decision.recognized||{});
-  const expected=scenario.expected?.recognized||[];
+  const expected=scenario.expected.recognized;
   const missing=expected.filter(id=>!actual.includes(id));
   const unexpected=actual.filter(id=>!expected.includes(id));
   const decisionMismatches=[];
@@ -129,9 +131,13 @@ for(const scenario of fixture.scenarios||[]){
     const actualDecision=decision.recognized?.[id]?.decision??null;
     if(actualDecision!==expectedDecision)decisionMismatches.push({cardId:id,expected:expectedDecision,actual:actualDecision});
   }
+  const observed=Array.isArray(scenario.observed?.recognized)?scenario.observed.recognized:[];
   scenarioResults.push({
     id:scenario.id,split:scenario.split,origin:scenario.origin,
+    observed:sortedUnique(observed),
     expected:sortedUnique(expected),actual:sortedUnique(actual),
+    baselineMisses:expected.filter(id=>!observed.includes(id)),
+    baselineUnexpected:observed.filter(id=>!expected.includes(id)),
     exact:sameStringSet(actual,expected),missing,unexpected,decisionMismatches
   });
 }
