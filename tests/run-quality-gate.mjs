@@ -9,6 +9,7 @@ const tests=[
   'tests/ward-tristate-regression.mjs',
   'tests/runtime-invariants.mjs',
   'tests/diagnostic-scenario-importer-regression.mjs',
+  'tests/diagnostic-review-queue-regression.mjs',
   'tests/recognition-benchmark.mjs'
 ];
 
