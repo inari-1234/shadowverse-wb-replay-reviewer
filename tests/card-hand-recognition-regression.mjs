@@ -392,7 +392,7 @@ assert.ok(barbarosFanFixture.best>=.93,`real-video Barbaros fan-position fixture
 const barbarosHardNegative=H.matchFeature(realVideoFixtureDecode({"scale":800.8372672539656,"data":"+f/+Bwj99vTy+QIVLS76wcDF6QceBxL65NvX4Of/BCcAzMfC7/sCFSYX9+XoAhcr6RQQ2tTI7PgFRmRaHOvqLUEY5AIKzczE7PoILkA/AvDuWzD85QMHwsDA6hUUNEUyLgr0Dvnu5w0Hwb++IA7qFh9HRyT///YF8wsOwL++GTwDJlktCN30Dh4LABQSv76++QIHBgADDAoB6fLg3+LTy8fBNUb7EhcQCgsDCgsB9PPdu77FVFYXIhYREBYMCg4QCQHetbm/a1AzKP/6AhUTERcTBwXovr3DQ0cwIBYMDRQL+gwQChT4y8rKJS0JAv0GGRshFg8IAjcSysnL8fbl59nk4eENOiggFlAYysrR+vPq8NXmx8f2/ggeN2Mn19HPMikgFQ8LCwsRLzx5f2IwERgS3evy6Nvj8vXy+/UAQV04JBsbyNje2NPd7vLq7d7F4ic6JhwdwdLY0crW5+ri3d7U7ik6Ix4c0Nrh28vR5Ofc3+rj8iQyJRoa59TzFATbyuDV2ePo7/IRFwcJ+PwaQ08zCggF7Obh3N8CEgkK3+z0DjJISigRFwbs2dHyBQcN"})).find(x=>x.cardId==='barbaros');
 assert.ok(barbarosHardNegative.best<.90,`real-video cost-7 hard negative must stay below .90 candidate gate: ${barbarosHardNegative.best}`);
 
-assert.equal(H.version,'hand-clean-1.12');
+assert.equal(H.version,'hand-clean-1.13');
 const qbRecognition=DB.recognitionCards().find(x=>x.id==='quickBlader');
 assert.equal(H.temporalProbeFloor(qbRecognition),.89);
 const temporalCandidate=(cardId,score,index,{detected=null,validated=null,ocrAccepted=false,matched=false,templateValue=null,templateScore=null,templateThreshold=null}={})=>({index,best:{cardId,imageScore:score,imageCandidate:false,imageConfirmed:false,imageSource:'anchor',titleScore:score-.05,anchorScore:score,temporalProbe:true,temporalProbeFloor:.88,expectedCost:cardId==='quickBlader'?1:7,acceptedCosts:cardId==='quickBlader'?[1]:[7],detectedCost:detected,validatedCost:validated,ocrCostAccepted:ocrAccepted,costAccepted:ocrAccepted,costMatched:matched,costSource:matched?'ocr':null,costTemplateValue:templateValue,costTemplateScore:templateScore,costTemplateThreshold:templateThreshold,matched:false,decision:'temporal-probe-only'}});
@@ -408,7 +408,7 @@ const temporalTwoFrames=[.893,.892].map((score,i)=>({sampleTime:i,counts:{},scor
 assert.equal(H.decideHandSamples(temporalTwoFrames).recognized.quickBlader,undefined);
 
 
-assert.equal(H.version,'hand-clean-1.12');
+assert.equal(H.version,'hand-clean-1.13');
 WB.turnTimeline=[
  {side:'bottom',turn:6,time:74.41},
  {side:'top',turn:7,time:81.863},
@@ -438,5 +438,26 @@ const opponentTurn81933QbCostMatch=H.matchDisplayedCostFeature(opponentTurn81933
 const opponentTurn81933BarCostMatch=H.matchDisplayedCostFeature(opponentTurn81933BarCost).find(x=>x.value===7);
 assert.ok(opponentTurn81933QbCostMatch.score>=.98,'actual 81.933s QB cost 1 must pass generic template');
 assert.ok(opponentTurn81933BarCostMatch.score>=.98,'actual 81.933s Barbaros cost 7 must pass generic template');
+
+
+const barbaros81619=[.927,.9248,.9155,.9158].map((score,i)=>({sampleTime:[81.499,81.539,81.579,81.619][i],counts:{},scores:{},candidates:[temporalCandidate('barbaros',score,1,
+ i===3?{detected:7,validated:7,ocrAccepted:true,matched:true,templateValue:7,templateScore:.9592,templateThreshold:.98}:
+ i===0?{detected:2,ocrAccepted:true,matched:false,templateValue:7,templateScore:.9123,templateThreshold:.98}:
+ i===1?{detected:null,ocrAccepted:false,matched:false,templateValue:7,templateScore:.9469,templateThreshold:.98}:
+ {detected:2,ocrAccepted:true,matched:false,templateValue:7,templateScore:.9605,templateThreshold:.98}
+)]}));
+const barbaros81619Decision=H.decideHandSamples(barbaros81619);
+assert.equal(barbaros81619Decision.recognized.barbaros?.decision,'temporal-slot-consensus','actual 81.499-81.619 Barbaros evidence must be rescued');
+assert.equal(barbaros81619Decision.recognized.barbaros?.temporal?.groups?.[0]?.templateBacked,true);
+const weakTemplateEvidence=[.927,.9248,.9155,.9158].map((score,i)=>({sampleTime:i,counts:{},scores:{},candidates:[temporalCandidate('barbaros',score,1,
+ i===3?{detected:7,validated:7,ocrAccepted:true,matched:true,templateValue:7,templateScore:.949,templateThreshold:.98}:
+ {detected:2,ocrAccepted:true,matched:false,templateValue:7,templateScore:.92,templateThreshold:.98}
+)]}));
+assert.equal(H.decideHandSamples(weakTemplateEvidence).recognized.barbaros,undefined,'one direct OCR proof plus weak template evidence must not rescue');
+const wrongTemplateVotes=[.927,.9248,.9155,.9158].map((score,i)=>({sampleTime:i,counts:{},scores:{},candidates:[temporalCandidate('barbaros',score,1,
+ i===3?{detected:7,validated:7,ocrAccepted:true,matched:true,templateValue:7,templateScore:.96,templateThreshold:.98}:
+ {detected:2,ocrAccepted:true,matched:false,templateValue:1,templateScore:.99,templateThreshold:.98}
+)]}));
+assert.equal(H.decideHandSamples(wrongTemplateVotes).recognized.barbaros,undefined,'wrong-cost template votes must not rescue Barbaros');
 
 console.log('CARD DB + HAND RECOGNITION REGRESSION PASS');
