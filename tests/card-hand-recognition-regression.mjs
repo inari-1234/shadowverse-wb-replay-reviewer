@@ -461,7 +461,7 @@ assert.ok(barbarosFanFixture.best>=.93,`real-video Barbaros fan-position fixture
 const barbarosHardNegative=H.matchFeature(realVideoFixtureDecode({"scale":800.8372672539656,"data":"+f/+Bwj99vTy+QIVLS76wcDF6QceBxL65NvX4Of/BCcAzMfC7/sCFSYX9+XoAhcr6RQQ2tTI7PgFRmRaHOvqLUEY5AIKzczE7PoILkA/AvDuWzD85QMHwsDA6hUUNEUyLgr0Dvnu5w0Hwb++IA7qFh9HRyT///YF8wsOwL++GTwDJlktCN30Dh4LABQSv76++QIHBgADDAoB6fLg3+LTy8fBNUb7EhcQCgsDCgsB9PPdu77FVFYXIhYREBYMCg4QCQHetbm/a1AzKP/6AhUTERcTBwXovr3DQ0cwIBYMDRQL+gwQChT4y8rKJS0JAv0GGRshFg8IAjcSysnL8fbl59nk4eENOiggFlAYysrR+vPq8NXmx8f2/ggeN2Mn19HPMikgFQ8LCwsRLzx5f2IwERgS3evy6Nvj8vXy+/UAQV04JBsbyNje2NPd7vLq7d7F4ic6JhwdwdLY0crW5+ri3d7U7ik6Ix4c0Nrh28vR5Ofc3+rj8iQyJRoa59TzFATbyuDV2ePo7/IRFwcJ+PwaQ08zCggF7Obh3N8CEgkK3+z0DjJISigRFwbs2dHyBQcN"})).find(x=>x.cardId==='barbaros');
 assert.ok(barbarosHardNegative.best<.90,`real-video cost-7 hard negative must stay below .90 candidate gate: ${barbarosHardNegative.best}`);
 
-assert.equal(H.version,'hand-clean-1.16');
+assert.equal(H.version,'hand-clean-1.17');
 const qbRecognition=DB.recognitionCards().find(x=>x.id==='quickBlader');
 assert.equal(H.temporalProbeFloor(qbRecognition),.89);
 const temporalCandidate=(cardId,score,index,{detected=null,validated=null,ocrAccepted=false,matched=false,templateValue=null,templateScore=null,templateThreshold=null}={})=>({index,best:{cardId,imageScore:score,imageCandidate:false,imageConfirmed:false,imageSource:'anchor',titleScore:score-.05,anchorScore:score,temporalProbe:true,temporalProbeFloor:.88,expectedCost:cardId==='quickBlader'?1:7,acceptedCosts:cardId==='quickBlader'?[1]:[7],detectedCost:detected,validatedCost:validated,ocrCostAccepted:ocrAccepted,costAccepted:ocrAccepted,costMatched:matched,costSource:matched?'ocr':null,costTemplateValue:templateValue,costTemplateScore:templateScore,costTemplateThreshold:templateThreshold,matched:false,decision:'temporal-probe-only'}});
@@ -560,6 +560,34 @@ assert.equal(qb816Decision.recognized.quickBlader?.decision,'temporal-image-cost
 const bb816=[.9288,.9362,.9248,.9155].map((score,i)=>({sampleTime:[81.455,81.495,81.535,81.575][i],counts:{},scores:{},candidates:[imageConsensusCandidate('barbaros',score,1,{templateValue:7,templateScore:[.751,.8785,.9572,.9656][i],ocrValue:i===3?2:null,ocrAccepted:i===3})]}));
 const bb816Decision=H.decideHandSamples(bb816);
 assert.equal(bb816Decision.recognized.barbaros?.decision,'temporal-image-cost-hypothesis-consensus','actual v4.13.16 Barbaros sequence must recover from weak displayed-cost crops');
+const qbBoundaryCurrent=[.8908,.8915,.8907,.8914].map((score,i)=>({sampleTime:[81.757,81.797,81.837,81.877][i],counts:{},scores:{},candidates:[imageConsensusCandidate('quickBlader',score,2,{templateValue:1,templateScore:[.9268,.9461,.9449,.943][i],templateThreshold:.98,ocrValue:i>=2?0:null,ocrAccepted:i>=2})]}));
+const qbBoundaryDecision=H.decideHandSamples(qbBoundaryCurrent);
+assert.equal(qbBoundaryDecision.recognized.quickBlader,undefined,'81.877s boundary window must stay below ordinary recognition threshold before continuity proof');
+const qbBoundaryPrior=[.8962,.9118,.8957,.901].map((score,i)=>({sampleTime:[81.557,81.597,81.637,81.677][i],counts:{},scores:{},candidates:[imageConsensusCandidate('quickBlader',score,2,{templateValue:1,templateScore:.95,templateThreshold:.98})]}));
+const qbBoundaryPriorDecision=H.decideHandSamples(qbBoundaryPrior);
+assert.ok(qbBoundaryPriorDecision.recognized.quickBlader,'nearby same-layout window must pass existing recognition rules');
+const qbBoundaryProof=H.continuityProofForCard(qbBoundaryCurrent,qbRecognition);
+assert.ok(qbBoundaryProof&&qbBoundaryProof.frames===4&&qbBoundaryProof.scoreRange<=.002,'current boundary window must prove stable same-card continuity');
+const qbBoundaryMerged=H.applyTurnBoundaryContinuity(qbBoundaryDecision,qbBoundaryPriorDecision,qbBoundaryCurrent,{turnStart:81.863,delta:.014,windowStart:81.557,windowEnd:81.677,candidateCount:4});
+assert.equal(qbBoundaryMerged.decision.recognized.quickBlader?.decision,'turn-boundary-continuity-rescue','turn-boundary continuity must recover Quick Blader without lowering normal thresholds');
+assert.equal(qbBoundaryMerged.decision.recognized.quickBlader?.confidence,.8907,'continuity confidence must stay conservative');
+
+const qbBoundaryMissingCost=[.8908,.8915,.8907,.8914].map((score,i)=>({sampleTime:i,counts:{},scores:{},candidates:[imageConsensusCandidate('quickBlader',score,2,{templateValue:i===2?null:1,templateScore:i===2?null:.94,templateThreshold:.98})]}));
+assert.equal(H.continuityProofForCard(qbBoundaryMissingCost,qbRecognition),null,'continuity rescue requires same displayed-cost hypothesis in every current frame');
+const qbBoundaryWrongCost=[.8908,.8915,.8907,.8914].map((score,i)=>({sampleTime:i,counts:{},scores:{},candidates:[imageConsensusCandidate('quickBlader',score,2,{templateValue:i===2?7:1,templateScore:i===2?.995:.94,templateThreshold:.98,templateAccepted:i===2})]}));
+assert.equal(H.continuityProofForCard(qbBoundaryWrongCost,qbRecognition),null,'accepted conflicting displayed cost must veto continuity rescue');
+const qbBoundaryDrift=[.8908,.8915,.8942,.8909].map((score,i)=>({sampleTime:i,counts:{},scores:{},candidates:[imageConsensusCandidate('quickBlader',score,2,{templateValue:1,templateScore:.94,templateThreshold:.98})]}));
+assert.equal(H.continuityProofForCard(qbBoundaryDrift,qbRecognition),null,'continuity rescue must reject image drift above 0.002');
+const qbBoundaryMissingLeader=[.8908,.8915,.8907,.8914].map((score,i)=>({sampleTime:i,counts:{},scores:{},candidates:[i===2?imageConsensusCandidate('barbaros',.91,2,{templateValue:7,templateScore:.95,templateThreshold:.98}):imageConsensusCandidate('quickBlader',score,2,{templateValue:1,templateScore:.94,templateThreshold:.98})]}));
+assert.equal(H.continuityProofForCard(qbBoundaryMissingLeader,qbRecognition),null,'continuity rescue requires the same card image leader in every current frame');
+const qbBoundaryPriorTwo=structuredClone(qbBoundaryPriorDecision);qbBoundaryPriorTwo.recognized.quickBlader.count=2;
+assert.equal(H.applyTurnBoundaryContinuity(qbBoundaryDecision,qbBoundaryPriorTwo,qbBoundaryCurrent,{}).applied.length,0,'continuity rescue must not promote ambiguous multi-copy retry');
+
+const continuityLayoutFrames=[81.717,81.677,81.637,81.597,81.557,81.517,81.477,81.437].map(t=>({sampleTime:t,centers:[{cx:737},{cx:801},{cx:865},{cx:930}]}));
+const continuityCurrentSelected={frames:[{sampleTime:81.757,centers:[{cx:737},{cx:801},{cx:865},{cx:930}]}]};
+const continuityWindows=H.collectCompatibleStableHandWindows(continuityLayoutFrames,continuityCurrentSelected,1200,3);
+assert.ok(continuityWindows.length>=2&&continuityWindows.every(w=>w.size===4&&w.candidateCount===4),'same-layout continuity scan must return stable four-frame windows');
+
 const qbOnlyTwoProbe=[.8169,.82,.9118,.8957].map((score,i)=>({sampleTime:i,counts:{},scores:{},candidates:[imageConsensusCandidate('quickBlader',score,2,{templateValue:i?1:null,templateScore:.8})]}));
 assert.equal(H.decideHandSamples(qbOnlyTwoProbe).recognized.quickBlader,undefined,'two probe-range frames must not pass image-primary temporal consensus');
 const qbOnlyTwoTemplateVotes=[.8169,.8962,.9118,.8957].map((score,i)=>({sampleTime:i,counts:{},scores:{},candidates:[imageConsensusCandidate('quickBlader',score,2,{templateValue:i===1||i===2?1:null,templateScore:.8})]}));
