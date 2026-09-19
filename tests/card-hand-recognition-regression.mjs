@@ -181,7 +181,7 @@ const transitionScan=[
   mkLayout(19.738,[736,800,866,931])
 ];
 let chosen=H.chooseStableHandWindow(transitionScan,4,3,1200);
-assert.deepEqual(chosen.frames.map(x=>x.sampleTime),[19.498,19.538,19.578,19.618],'transition must fall back to the latest stable pre-action hand');
+assert.deepEqual(Array.from(chosen.frames,x=>x.sampleTime),[19.498,19.538,19.578,19.618],'transition must fall back to the latest stable pre-action hand');
 assert.equal(chosen.candidateCount,5);
 
 const afterPlayScan=[
@@ -191,7 +191,7 @@ const afterPlayScan=[
   mkLayout(20.036,[738,801,867,930])
 ];
 chosen=H.chooseStableHandWindow(afterPlayScan,4,3,1200);
-assert.deepEqual(chosen.frames.map(x=>x.sampleTime),[19.916,19.956,19.996,20.036],'stable post-play hand must not resurrect an older hand');
+assert.deepEqual(Array.from(chosen.frames,x=>x.sampleTime),[19.916,19.956,19.996,20.036],'stable post-play hand must not resurrect an older hand');
 assert.equal(H.layoutsCompatible(mkLayout(1,[700,760,820]),mkLayout(2,[701,761,821]),1200),true);
 assert.equal(H.layoutsCompatible(mkLayout(1,[700,760,820]),mkLayout(2,[700,760]),1200),false);
 assert.equal(H.layoutsCompatible(mkLayout(1,[708,770,828,896,959]),mkLayout(2,[708,770,828,896]),1200),false,'missing-card layout must stay distinct to avoid swallowing play animation');
@@ -214,7 +214,7 @@ const actualForwardSettle=[
 assert.equal(H.layoutsSubsetCompatible(actual8141Anchor,actualForwardSettle[0],1200),true,'actual 81.41 partial layout must align with the recovered four-card layout');
 chosen=H.chooseForwardSettleHandWindow(actualForwardSettle,actual8141Anchor,4,1200);
 assert.ok(chosen,'actual 81.41 transient must recover a forward settle window');
-assert.deepEqual(chosen.frames.map(x=>x.sampleTime),[81.455,81.495,81.535,81.575]);
+assert.deepEqual(Array.from(chosen.frames,x=>x.sampleTime),[81.455,81.495,81.535,81.575]);
 assert.equal(chosen.candidateCount,4);
 assert.equal(chosen.layoutMode,'forward-settle-stable');
 assert.equal(H.chooseForwardSettleHandWindow(actualForwardSettle,mkLayout(81.41,[650,710]),4,1200),null,'forward settle must be rejected when target-visible centers do not persist');
@@ -234,8 +234,8 @@ const latestPreviousLayout=[
 ];
 let latestCurrent=H.chooseStableHandWindow(latestCurrentLayout,4,2,1200);
 let latestPrevious=H.choosePreviousStableHandWindow(latestPreviousLayout,latestCurrent,1200);
-assert.deepEqual(latestCurrent.frames.map(x=>x.sampleTime),[19.816,19.856,19.896,19.936],'latest diagnostic current hand must remain the post-play 4-card hand');
-assert.deepEqual(latestPrevious.frames.map(x=>x.sampleTime),[19.507,19.547,19.587],'latest diagnostic previous hand must recover the pre-play 5-card hand');
+assert.deepEqual(Array.from(latestCurrent.frames,x=>x.sampleTime),[19.816,19.856,19.896,19.936],'latest diagnostic current hand must remain the post-play 4-card hand');
+assert.deepEqual(Array.from(latestPrevious.frames,x=>x.sampleTime),[19.507,19.547,19.587],'latest diagnostic previous hand must recover the pre-play 5-card hand');
 assert.equal(latestPrevious.candidateCount,5);
 const historyWithTransition=[
   mkLayout(19.700,[943]),
@@ -257,7 +257,7 @@ const actualDiagLayout=[
   mkLayout(19.587,[708,770,828,830,895,959])
 ];
 chosen=H.chooseStableHandWindow(actualDiagLayout,4,2,1200);
-assert.deepEqual(chosen.frames.map(x=>x.sampleTime),[19.507,19.547,19.587],'actual iPhone duplicate must collapse so the latest three 5-card frames form a stable hand');
+assert.deepEqual(Array.from(chosen.frames,x=>x.sampleTime),[19.507,19.547,19.587],'actual iPhone duplicate must collapse so the latest three 5-card frames form a stable hand');
 assert.equal(chosen.candidateCount,5);
 assert.equal(chosen.layoutMode,'robust-overlap');
 
@@ -354,7 +354,7 @@ windowRun=await H.recognizeHand({targetSide:'bottom',relativeSide:'自分',time:
 assert.equal(windowRun.windowMode,'forward-settle','actual 81.41 transient must use the verified forward settle path');
 assert.equal(windowRun.plannedFrames,4);
 assert.equal(windowRun.capturedFrames,4);
-assert.deepEqual(windowRun.forwardScan.rows.map(x=>x.sampleTime),[81.455,81.495,81.535,81.575]);
+assert.deepEqual(Array.from(windowRun.forwardScan.rows,x=>x.sampleTime),[81.455,81.495,81.535,81.575]);
 assert.equal(windowRun.forwardScan.selectedFrames,4);
 assert.equal(windowRun.forwardScan.candidateCount,4);
 assert.equal(WB.video.currentTime,81.41,'forward settle must restore the requested state time');
@@ -365,8 +365,8 @@ assert.equal(zeta.recognition.threshold,.93);
 assert.equal(barbaros.recognition.threshold,.93);
 assert.equal(zeta.recognition.rescueThreshold,.945);
 assert.equal(barbaros.recognition.rescueThreshold,.945);
-assert.deepEqual(zeta.recognition.acceptedCosts,[4,6]);
-assert.deepEqual(barbaros.recognition.acceptedCosts,[7]);
+assert.deepEqual(Array.from(zeta.recognition.acceptedCosts),[4,6]);
+assert.deepEqual(Array.from(barbaros.recognition.acceptedCosts),[7]);
 const zetaProfiles=DB.recognitionProfiles('zetaBeatrix'),barbarosProfiles=DB.recognitionProfiles('barbaros');
 assert.equal(zetaProfiles.length,7);
 assert.equal(barbarosProfiles.length,11);
@@ -378,8 +378,8 @@ assert.equal(H.selectCostScopedMatch(costScopeFixture,{accepted:true,value:7}).c
 assert.equal(H.selectCostScopedMatch(costScopeFixture,{accepted:false,value:null}).cardId,'quickBlader');
 assert.equal(DB.costRecognitionProfiles,undefined,'card DB must not own displayed-cost digit templates');
 assert.equal(WB.DisplayedCostRecognition.meta.cardIndependent,true);
-assert.deepEqual(WB.DisplayedCostRecognition.meta.templateValues,[1,7]);
-assert.deepEqual(WB.DisplayedCostRecognition.meta.centerDx,[-2,-1,0,1,2]);
+assert.deepEqual(Array.from(WB.DisplayedCostRecognition.meta.templateValues),[1,7]);
+assert.deepEqual(Array.from(WB.DisplayedCostRecognition.meta.centerDx),[-2,-1,0,1,2]);
 const cost1Profiles=H.displayedCostProfiles(1);
 assert.equal(cost1Profiles.length,5);
 for(const p of cost1Profiles){
