@@ -101,7 +101,7 @@ assert.equal(d.currentHand.some(v=>v.id==='quickBlader'&&v.source==='image-curre
 assert.equal(d.currentHand.some(v=>v.id==='barbaros'&&v.source==='image-current-hand'&&v.count===1),true);
 assert.equal(d.currentHand.some(v=>v.id==='zetaBeatrix'),false);
 assert.equal(JSON.stringify(d).includes('historyObserved'),false);
-assert.equal(d.invariants.historyObservedPromotedToCurrent,false);
+assert.equal(d.invariants.priorStableHandPromotedToCurrent,false);
 assert.equal(d.resources.boardDamage.known,true);
 assert.equal(d.coverage.complete,true);
 assert.ok(R.decisionSummary(d).includes('現在手札（確認済み）：'));
