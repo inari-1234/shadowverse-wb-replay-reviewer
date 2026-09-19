@@ -461,7 +461,7 @@ assert.ok(barbarosFanFixture.best>=.93,`real-video Barbaros fan-position fixture
 const barbarosHardNegative=H.matchFeature(realVideoFixtureDecode({"scale":800.8372672539656,"data":"+f/+Bwj99vTy+QIVLS76wcDF6QceBxL65NvX4Of/BCcAzMfC7/sCFSYX9+XoAhcr6RQQ2tTI7PgFRmRaHOvqLUEY5AIKzczE7PoILkA/AvDuWzD85QMHwsDA6hUUNEUyLgr0Dvnu5w0Hwb++IA7qFh9HRyT///YF8wsOwL++GTwDJlktCN30Dh4LABQSv76++QIHBgADDAoB6fLg3+LTy8fBNUb7EhcQCgsDCgsB9PPdu77FVFYXIhYREBYMCg4QCQHetbm/a1AzKP/6AhUTERcTBwXovr3DQ0cwIBYMDRQL+gwQChT4y8rKJS0JAv0GGRshFg8IAjcSysnL8fbl59nk4eENOiggFlAYysrR+vPq8NXmx8f2/ggeN2Mn19HPMikgFQ8LCwsRLzx5f2IwERgS3evy6Nvj8vXy+/UAQV04JBsbyNje2NPd7vLq7d7F4ic6JhwdwdLY0crW5+ri3d7U7ik6Ix4c0Nrh28vR5Ofc3+rj8iQyJRoa59TzFATbyuDV2ePo7/IRFwcJ+PwaQ08zCggF7Obh3N8CEgkK3+z0DjJISigRFwbs2dHyBQcN"})).find(x=>x.cardId==='barbaros');
 assert.ok(barbarosHardNegative.best<.90,`real-video cost-7 hard negative must stay below .90 candidate gate: ${barbarosHardNegative.best}`);
 
-assert.equal(H.version,'hand-clean-1.17');
+assert.equal(H.version,'hand-clean-1.18');
 const qbRecognition=DB.recognitionCards().find(x=>x.id==='quickBlader');
 assert.equal(H.temporalProbeFloor(qbRecognition),.89);
 const temporalCandidate=(cardId,score,index,{detected=null,validated=null,ocrAccepted=false,matched=false,templateValue=null,templateScore=null,templateThreshold=null}={})=>({index,best:{cardId,imageScore:score,imageCandidate:false,imageConfirmed:false,imageSource:'anchor',titleScore:score-.05,anchorScore:score,temporalProbe:true,temporalProbeFloor:.88,expectedCost:cardId==='quickBlader'?1:7,acceptedCosts:cardId==='quickBlader'?[1]:[7],detectedCost:detected,validatedCost:validated,ocrCostAccepted:ocrAccepted,costAccepted:ocrAccepted,costMatched:matched,costSource:matched?'ocr':null,costTemplateValue:templateValue,costTemplateScore:templateScore,costTemplateThreshold:templateThreshold,matched:false,decision:'temporal-probe-only'}});
@@ -477,7 +477,7 @@ const temporalTwoFrames=[.893,.892].map((score,i)=>({sampleTime:i,counts:{},scor
 assert.equal(H.decideHandSamples(temporalTwoFrames).recognized.quickBlader,undefined);
 
 
-assert.equal(H.version,'hand-clean-1.17');
+assert.equal(H.version,'hand-clean-1.18');
 WB.turnTimeline=[
  {side:'bottom',turn:6,time:74.41},
  {side:'top',turn:7,time:81.863},
@@ -582,6 +582,12 @@ const qbBoundaryMissingLeader=[.8908,.8915,.8907,.8914].map((score,i)=>({sampleT
 assert.equal(H.continuityProofForCard(qbBoundaryMissingLeader,qbRecognition),null,'continuity rescue requires the same card image leader in every current frame');
 const qbBoundaryPriorTwo=structuredClone(qbBoundaryPriorDecision);qbBoundaryPriorTwo.recognized.quickBlader.count=2;
 assert.equal(H.applyTurnBoundaryContinuity(qbBoundaryDecision,qbBoundaryPriorTwo,qbBoundaryCurrent,{}).applied.length,0,'continuity rescue must not promote ambiguous multi-copy retry');
+
+const dualPhaseFrames=[];for(let t=81.776;t>=81.396-.0001;t-=.02)dualPhaseFrames.push({sampleTime:+t.toFixed(3),centers:[{cx:737},{cx:801},{cx:865},{cx:930}]});
+const dualPhaseCurrent={frames:[{sampleTime:81.796,centers:[{cx:737},{cx:801},{cx:865},{cx:930}]}]};
+const dualPhaseWindows=H.collectCompatibleStableHandWindows(dualPhaseFrames,dualPhaseCurrent,1200,12);
+assert.ok(dualPhaseWindows.some(w=>Math.abs(w.startTime-81.456)<.002&&Math.abs(w.endTime-81.576)<.002),'dual-phase continuity scan must include the previously successful 81.456-81.576 phase');
+assert.ok(dualPhaseWindows.every(w=>w.size===4),'dual-phase continuity windows must keep four 40ms-spaced samples');
 
 const continuityLayoutFrames=[81.717,81.677,81.637,81.597,81.557,81.517,81.477,81.437].map(t=>({sampleTime:t,centers:[{cx:737},{cx:801},{cx:865},{cx:930}]}));
 const continuityCurrentSelected={frames:[{sampleTime:81.757,centers:[{cx:737},{cx:801},{cx:865},{cx:930}]}]};
