@@ -160,6 +160,23 @@ assert.equal(d.value,2);
 assert.equal(d.reason,'board-attackable-total-confirmed');
 assert.equal(d.followers.every(x=>x.attackable===true),true);
 
+// Real 30.005-30.071s timing sensitivity: the turn starts at 29.337s,
+// but attack rings settle only around 30.2s. Early-turn sampling may look forward
+// only inside the guarded turn-start window and must require two positive ring frames.
+assert.equal(S.config.board.turnStartNear,.85,'turn-start board settle guard must cover the observed ~0.73s UI delay without reaching the 30.227s direct-state regression');
+assert.deepEqual(Array.from(S.config.board.turnStartOffsets),[0,.25,.50,.75,.90,1.05]);
+d=S.decideBoardSamples([
+  sample([1,1],['not-attackable','not-attackable'],0),
+  sample([1,1],['not-attackable','not-attackable'],.25),
+  sample([1,1],['not-attackable','not-attackable'],.50,{ocrIndependent:false}),
+  sample([1,1],['unknown','unknown'],.75,{ocrIndependent:false}),
+  sample([1,1],['attackable','attackable'],.90,{ocrIndependent:false}),
+  sample([1,1],['attackable','attackable'],1.05,{ocrIndependent:false})
+],{nearOwnStart:true});
+assert.equal(d.accepted,true,'turn-start UI settle must recover the attackable board without requiring repeated user captures');
+assert.equal(d.value,2);
+assert.equal(d.reason,'board-attackable-total-confirmed');
+
 assert.equal(S.parseAttack('1'),1);
 assert.equal(S.parseAttack(' 9\n'),9);
 assert.equal(S.parseAttack('30'),30);
