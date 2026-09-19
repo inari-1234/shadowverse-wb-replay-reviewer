@@ -316,6 +316,49 @@ assert.equal(windowRun.forwardScan.scanFrames,0);
 assert.ok(seekLog.every(t=>t<=20.028),'zero-center after-play target must not trigger future sampling');
 assert.equal(WB.video.currentTime,20.028,'after-play run must restore current position');
 
+const syntheticHandCanvas=centers=>{
+  const width=1200,height=550,data=new Uint8ClampedArray(width*height*4);
+  for(const cx of centers)for(let y=466;y<=501;y++)for(let x=Math.max(0,cx-8);x<=Math.min(width-1,cx+8);x++){
+    const i=(y*width+x)*4;data[i]=50;data[i+1]=180;data[i+2]=80;data[i+3]=255;
+  }
+  const ctx={imageSmoothingEnabled:true,drawImage(){},putImageData(){},getImageData(x=0,y=0,w=width,h=height){
+    x=Math.max(0,Math.floor(x));y=Math.max(0,Math.floor(y));w=Math.max(1,Math.min(Math.floor(w),width-x));h=Math.max(1,Math.min(Math.floor(h),height-y));
+    const out=new Uint8ClampedArray(w*h*4);
+    for(let yy=0;yy<h;yy++)for(let xx=0;xx<w;xx++){const si=((y+yy)*width+(x+xx))*4,di=(yy*w+xx)*4;out[di]=data[si];out[di+1]=data[si+1];out[di+2]=data[si+2];out[di+3]=data[si+3]}
+    return{data:out,width:w,height:h};
+  }};
+  return{width,height,getContext(){return ctx}};
+};
+const actual8141Layout=t=>{
+  const q=Math.round(Number(t)*1000);
+  if(q===81410)return[741,806];
+  if(q===81370)return[795];
+  if(q===81330||q===81290||q===81250)return[];
+  if(q===81210||q===81170||q===81130)return[801,865,930];
+  if(q===81090)return[737,801,865,930];
+  if(q===81050)return[736,865,930];
+  if(q===81010)return[738,802,867];
+  if(q===80970)return[739,803,868,933];
+  if(q===80930)return[731];
+  if(q===80890)return[874];
+  if(q===81455||q===81495)return[736,800,864,929];
+  if(q===81535)return[737,801,866,931];
+  if(q===81575)return[737,801,865,930];
+  return[];
+};
+WB.video={duration:93.627,currentTime:81.41};
+WB.turnTimeline=[{side:'bottom',turn:6,time:74.41},{side:'top',turn:7,time:81.863}];
+seekLog.length=0;
+WB.frameCanvas=()=>syntheticHandCanvas(actual8141Layout(WB.video.currentTime));
+windowRun=await H.recognizeHand({targetSide:'bottom',relativeSide:'自分',time:81.41,row:{side:'bottom',turn:6,time:74.41}});
+assert.equal(windowRun.windowMode,'forward-settle','actual 81.41 transient must use the verified forward settle path');
+assert.equal(windowRun.plannedFrames,4);
+assert.equal(windowRun.capturedFrames,4);
+assert.deepEqual(windowRun.forwardScan.rows.map(x=>x.sampleTime),[81.455,81.495,81.535,81.575]);
+assert.equal(windowRun.forwardScan.selectedFrames,4);
+assert.equal(windowRun.forwardScan.candidateCount,4);
+assert.equal(WB.video.currentTime,81.41,'forward settle must restore the requested state time');
+
 assert.equal(zeta.recognition.enabled,true);
 assert.equal(barbaros.recognition.enabled,true);
 assert.equal(zeta.recognition.threshold,.93);
