@@ -311,6 +311,7 @@ assert.equal(H.selectCostScopedMatch(costScopeFixture,{accepted:false,value:null
 assert.equal(DB.costRecognitionProfiles,undefined,'card DB must not own displayed-cost digit templates');
 assert.equal(WB.DisplayedCostRecognition.meta.cardIndependent,true);
 assert.deepEqual(WB.DisplayedCostRecognition.meta.templateValues,[1,7]);
+assert.deepEqual(WB.DisplayedCostRecognition.meta.centerDx,[-2,-1,0,1,2]);
 const cost1Profiles=H.displayedCostProfiles(1);
 assert.equal(cost1Profiles.length,5);
 for(const p of cost1Profiles){
@@ -392,7 +393,7 @@ assert.ok(barbarosFanFixture.best>=.93,`real-video Barbaros fan-position fixture
 const barbarosHardNegative=H.matchFeature(realVideoFixtureDecode({"scale":800.8372672539656,"data":"+f/+Bwj99vTy+QIVLS76wcDF6QceBxL65NvX4Of/BCcAzMfC7/sCFSYX9+XoAhcr6RQQ2tTI7PgFRmRaHOvqLUEY5AIKzczE7PoILkA/AvDuWzD85QMHwsDA6hUUNEUyLgr0Dvnu5w0Hwb++IA7qFh9HRyT///YF8wsOwL++GTwDJlktCN30Dh4LABQSv76++QIHBgADDAoB6fLg3+LTy8fBNUb7EhcQCgsDCgsB9PPdu77FVFYXIhYREBYMCg4QCQHetbm/a1AzKP/6AhUTERcTBwXovr3DQ0cwIBYMDRQL+gwQChT4y8rKJS0JAv0GGRshFg8IAjcSysnL8fbl59nk4eENOiggFlAYysrR+vPq8NXmx8f2/ggeN2Mn19HPMikgFQ8LCwsRLzx5f2IwERgS3evy6Nvj8vXy+/UAQV04JBsbyNje2NPd7vLq7d7F4ic6JhwdwdLY0crW5+ri3d7U7ik6Ix4c0Nrh28vR5Ofc3+rj8iQyJRoa59TzFATbyuDV2ePo7/IRFwcJ+PwaQ08zCggF7Obh3N8CEgkK3+z0DjJISigRFwbs2dHyBQcN"})).find(x=>x.cardId==='barbaros');
 assert.ok(barbarosHardNegative.best<.90,`real-video cost-7 hard negative must stay below .90 candidate gate: ${barbarosHardNegative.best}`);
 
-assert.equal(H.version,'hand-clean-1.13');
+assert.equal(H.version,'hand-clean-1.14');
 const qbRecognition=DB.recognitionCards().find(x=>x.id==='quickBlader');
 assert.equal(H.temporalProbeFloor(qbRecognition),.89);
 const temporalCandidate=(cardId,score,index,{detected=null,validated=null,ocrAccepted=false,matched=false,templateValue=null,templateScore=null,templateThreshold=null}={})=>({index,best:{cardId,imageScore:score,imageCandidate:false,imageConfirmed:false,imageSource:'anchor',titleScore:score-.05,anchorScore:score,temporalProbe:true,temporalProbeFloor:.88,expectedCost:cardId==='quickBlader'?1:7,acceptedCosts:cardId==='quickBlader'?[1]:[7],detectedCost:detected,validatedCost:validated,ocrCostAccepted:ocrAccepted,costAccepted:ocrAccepted,costMatched:matched,costSource:matched?'ocr':null,costTemplateValue:templateValue,costTemplateScore:templateScore,costTemplateThreshold:templateThreshold,matched:false,decision:'temporal-probe-only'}});
@@ -408,7 +409,7 @@ const temporalTwoFrames=[.893,.892].map((score,i)=>({sampleTime:i,counts:{},scor
 assert.equal(H.decideHandSamples(temporalTwoFrames).recognized.quickBlader,undefined);
 
 
-assert.equal(H.version,'hand-clean-1.13');
+assert.equal(H.version,'hand-clean-1.14');
 WB.turnTimeline=[
  {side:'bottom',turn:6,time:74.41},
  {side:'top',turn:7,time:81.863},
@@ -459,5 +460,28 @@ const wrongTemplateVotes=[.927,.9248,.9155,.9158].map((score,i)=>({sampleTime:i,
  {detected:2,ocrAccepted:true,matched:false,templateValue:1,templateScore:.99,templateThreshold:.98}
 )]}));
 assert.equal(H.decideHandSamples(wrongTemplateVotes).recognized.barbaros,undefined,'wrong-cost template votes must not rescue Barbaros');
+
+
+const centerSearchRecovered=H.matchDisplayedCostFeatures([
+  {dx:0,feature:cost6Negative},
+  {dx:2,feature:cost1Profiles[0]}
+]).find(x=>x.value===1);
+assert.ok(centerSearchRecovered.score>.999,'bounded center search must select a strong shifted cost-1 feature');
+assert.equal(centerSearchRecovered.centerDx,2);
+const centerSearchWrongCost=H.matchDisplayedCostFeatures([
+  {dx:-2,feature:cost6Negative},
+  {dx:0,feature:cost6Negative},
+  {dx:2,feature:cost6Negative}
+]).find(x=>x.value===1);
+assert.ok(centerSearchWrongCost.score<.98,'bounded center search must not turn visible cost 6 into cost 1');
+
+
+const quickBlader81926=[.8915,.8907,.8911,.8910].map((score,i)=>({sampleTime:[81.806,81.846,81.886,81.926][i],counts:{},scores:{},candidates:[temporalCandidate('quickBlader',score,2,
+ i===0?{detected:null,validated:1,ocrAccepted:false,matched:true,templateValue:1,templateScore:.991,templateThreshold:.98}:
+ {detected:0,validated:1,ocrAccepted:true,matched:true,templateValue:1,templateScore:.991,templateThreshold:.98}
+)]}));
+const quickBlader81926Decision=H.decideHandSamples(quickBlader81926);
+assert.equal(quickBlader81926Decision.recognized.quickBlader?.decision,'temporal-slot-consensus','actual 81.806-81.926 QB must survive three OCR-0 conflicts when shifted cost-1 template resolves all four frames');
+assert.equal(quickBlader81926Decision.recognized.quickBlader?.temporal?.groups?.[0]?.directProof,true);
 
 console.log('CARD DB + HAND RECOGNITION REGRESSION PASS');
