@@ -1,13 +1,13 @@
 (()=>{
 'use strict';
 const WB=window.WB;if(!WB)return;
-const VERSION='state-clean-1.8.2';WB.registerModule('state-recognition',VERSION);
+const VERSION='state-clean-1.8.3';WB.registerModule('state-recognition',VERSION);
 const PP_CFG={dx:.01125,dy:.0325,green:18,active:72,strongActive:85,strongInactive:75,strongGreen:22,strongNonGreen:17,scanStep:.25,scanWindow:1.8};
 const HP_POS={top:{x:.573,y:.087},bottom:{x:.585,y:.790}},HP_CFG={outerHalfX:.025,outerHalfY:.052,innerHalfX:.018,innerHalfY:.034,scale:5,minRed:.25,minGold:.15,maxHp:30,turnStartNear:.30,turnStartMinRed:.02,stableFrames:2,stableVotes:3,turnStartOffsets:[0,.15,.30,.45,.60]};
 const PP_POINTS={top:{x:.8811,y:.2905},bottom:{x:.8822,y:.6065}};
 const EXTRA_CFG={scanStep:.25,scanWindow:1.8,button:{x0:.79,x1:.93,y0:.67,y1:.75},outer:{x0:.75,x1:.96,y0:.61,y1:.81}};
 const WARD_CFG={board:{x0:.25,x1:.75,y0:.18,y1:.48},stat:{x0:.25,x1:.75,y0:.30,y1:.47},green:{h0:55,h1:110,sMin:.47,vMin:.47},attack:{h0:180,h1:260,sMin:.47,vMin:.39},windowW:.075,windowH:.19,step:4,minFrac:.14,minThird:.13,emptyAttackFrac:.0023,turnStartNear:.35,turnStartOffsets:[0,.15,.30,.45,.60],emptyConfirmFrames:4};
-const BOARD_CFG={roi:{x0:.28,x1:.72,y0:.56,y1:.68},blue:{h0:180,h1:280,sMin:.39,vMin:.31},centerX0:.30,centerX1:.70,centerY0:.610,centerY1:.645,wMin:.0175,wMax:.038,hMin:.045,hMax:.085,areaMin:.00035,areaMax:.0018,aspectMin:.50,aspectMax:1.05,turnStartNear:.35,directOffsets:[0,.25,.50,.75,1.00],turnStartOffsets:[0,.25,.50,.75,1.00],zeroFrames:4,stableFrames:2,negativeFrames:4,maxAttack:30,digitThreshold:160,digitScale:12,positionBucket:.012,attackableRing:{h0:130,h1:190,sMin:.35,vMin:.35,dx:.0325,dy:-.100,rx:.043,ry:.090,inner:.72,outer:1.12,minFrac:.10,sectorMin:.07,minSectors:3,negativeMaxFrac:.04,negativeMaxSectors:1}};
+const BOARD_CFG={roi:{x0:.28,x1:.72,y0:.56,y1:.68},blue:{h0:180,h1:280,sMin:.39,vMin:.31},centerX0:.30,centerX1:.70,centerY0:.610,centerY1:.645,wMin:.0175,wMax:.038,hMin:.045,hMax:.085,areaMin:.00035,areaMax:.0018,aspectMin:.50,aspectMax:1.05,turnStartNear:.35,directOffsets:[0,-.04,-.08,-.12],turnStartOffsets:[0,.25,.50,.75,1.00],zeroFrames:4,stableFrames:2,negativeFrames:4,maxAttack:30,digitThreshold:160,digitScale:12,positionBucket:.012,attackableRing:{h0:130,h1:190,sMin:.35,vMin:.35,dx:.0325,dy:-.100,rx:.043,ry:.090,inner:.72,outer:1.12,minFrac:.10,sectorMin:.07,minSectors:3,negativeMaxFrac:.04,negativeMaxSectors:1}};
 const hsv=(R,G,B)=>{const r=R/255,g=G/255,b=B/255,max=Math.max(r,g,b),min=Math.min(r,g,b),d=max-min;let h=0;if(d){if(max===r)h=((g-b)/d)%6;else if(max===g)h=(b-r)/d+2;else h=(r-g)/d+4;h*=60;if(h<0)h+=360}return{h,s:max?d/max:0,v:max}};
 function expectedMaxAt(t,side){let last=null;for(const r of WB.turnTimeline)if(r?.side===side&&Number(r.time)<=t&&(!last||Number(r.time)>Number(last.time)))last=r;return last?Math.max(1,Math.min(10,Number(last.turn)||0)):null}
 function drawFrame(){const c=WB.frameCanvas(1200);return c?{c,x:c.getContext('2d',{willReadFrequently:true})}:null}
