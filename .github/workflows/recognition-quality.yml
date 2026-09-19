@@ -1,0 +1,36 @@
+name: Recognition Quality Gate
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '*.js'
+      - 'index.html'
+      - 'latest.json'
+      - 'tests/**'
+      - '.github/workflows/recognition-quality.yml'
+  push:
+    branches:
+      - main
+      - 'candidate/**'
+    paths:
+      - '*.js'
+      - 'index.html'
+      - 'latest.json'
+      - 'tests/**'
+      - '.github/workflows/recognition-quality.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run regression and real-device benchmark gate
+        run: node tests/run-quality-gate.mjs
