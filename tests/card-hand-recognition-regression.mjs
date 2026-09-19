@@ -461,7 +461,7 @@ assert.ok(barbarosFanFixture.best>=.93,`real-video Barbaros fan-position fixture
 const barbarosHardNegative=H.matchFeature(realVideoFixtureDecode({"scale":800.8372672539656,"data":"+f/+Bwj99vTy+QIVLS76wcDF6QceBxL65NvX4Of/BCcAzMfC7/sCFSYX9+XoAhcr6RQQ2tTI7PgFRmRaHOvqLUEY5AIKzczE7PoILkA/AvDuWzD85QMHwsDA6hUUNEUyLgr0Dvnu5w0Hwb++IA7qFh9HRyT///YF8wsOwL++GTwDJlktCN30Dh4LABQSv76++QIHBgADDAoB6fLg3+LTy8fBNUb7EhcQCgsDCgsB9PPdu77FVFYXIhYREBYMCg4QCQHetbm/a1AzKP/6AhUTERcTBwXovr3DQ0cwIBYMDRQL+gwQChT4y8rKJS0JAv0GGRshFg8IAjcSysnL8fbl59nk4eENOiggFlAYysrR+vPq8NXmx8f2/ggeN2Mn19HPMikgFQ8LCwsRLzx5f2IwERgS3evy6Nvj8vXy+/UAQV04JBsbyNje2NPd7vLq7d7F4ic6JhwdwdLY0crW5+ri3d7U7ik6Ix4c0Nrh28vR5Ofc3+rj8iQyJRoa59TzFATbyuDV2ePo7/IRFwcJ+PwaQ08zCggF7Obh3N8CEgkK3+z0DjJISigRFwbs2dHyBQcN"})).find(x=>x.cardId==='barbaros');
 assert.ok(barbarosHardNegative.best<.90,`real-video cost-7 hard negative must stay below .90 candidate gate: ${barbarosHardNegative.best}`);
 
-assert.equal(H.version,'hand-clean-1.24');
+assert.equal(H.version,'hand-clean-1.25');
 const qbRecognition=DB.recognitionCards().find(x=>x.id==='quickBlader');
 assert.equal(H.temporalProbeFloor(qbRecognition),.88,'Quick Blader alone may probe down to the guarded .88 floor');
 const zetaRecognition=DB.recognitionCards().find(x=>x.id==='zetaBeatrix');
@@ -481,7 +481,7 @@ const temporalTwoFrames=[.893,.892].map((score,i)=>({sampleTime:i,counts:{},scor
 assert.equal(H.decideHandSamples(temporalTwoFrames).recognized.quickBlader,undefined);
 
 
-assert.equal(H.version,'hand-clean-1.24');
+assert.equal(H.version,'hand-clean-1.25');
 WB.turnTimeline=[
  {side:'bottom',turn:6,time:74.41},
  {side:'top',turn:7,time:81.863},
@@ -633,6 +633,18 @@ assert.equal(H.decideHandSamples(zetaSixCardScores.map((score,i)=>({sampleTime:i
 assert.equal(H.decideHandSamples(zetaSixCardScores.map((score,i)=>({sampleTime:i,candidateCount:6,counts:{},scores:{},candidates:[stableLeaderCandidate('zetaBeatrix',score,3,{titleScore:.49})]}))).recognized.zetaBeatrix,undefined,'ultra-stable low-score rescue requires independent title support');
 assert.equal(H.decideHandSamples([.8125,.8123,.8120,.8180].map((score,i)=>({sampleTime:i,candidateCount:6,counts:{},scores:{},candidates:[stableLeaderCandidate('zetaBeatrix',score,3,{titleScore:.509})]}))).recognized.zetaBeatrix,undefined,'ultra-stable low-score rescue must reject a wider score range');
 assert.equal(H.decideHandSamples(zetaSixCardScores.map((score,i)=>({sampleTime:i,candidateCount:6,counts:{},scores:{},candidates:[stableLeaderCandidate('zetaBeatrix',score,3,{titleScore:zetaSixCardTitles[i],ocrValue:i===2?2:null,ocrAccepted:i===2})]}))).recognized.zetaBeatrix,undefined,'a conflicting displayed-cost OCR frame must veto the low-score rescue');
+const zetaProbeMatch={cardId:'zetaBeatrix',best:.8125,imageSource:'anchor',titleScore:.5087,imageCandidate:false};
+const zetaProbe=H.displayedCostProbeDecision(zetaProbeMatch,6);
+assert.equal(zetaProbe.read,true,'real 4.13.28 six-card Zeta candidate must execute displayed-cost probing before rescue evaluation');
+assert.equal(zetaProbe.temporalProbe,false,'0.8125 remains below the ordinary temporal probe floor');
+assert.equal(zetaProbe.stableLeaderCostProbe.enabled,true);
+assert.equal(zetaProbe.stableLeaderCostProbe.tier,'six-card-ultra-stable');
+assert.equal(H.displayedCostProbeDecision(zetaProbeMatch,5).read,false,'low-score Zeta cost probe must not run outside six-card layout');
+assert.equal(H.displayedCostProbeDecision({...zetaProbeMatch,titleScore:.49},6).read,false,'low-score Zeta cost probe requires independent title support');
+assert.equal(H.displayedCostProbeDecision({...zetaProbeMatch,best:.7999},6).read,false,'low-score Zeta cost probe must remain above the guarded .80 floor');
+assert.equal(H.displayedCostProbeDecision({...zetaProbeMatch,imageSource:'title'},6).read,false,'low-score Zeta cost probe must require anchor leadership');
+assert.equal(H.displayedCostProbeDecision({cardId:'barbaros',best:.8125,imageSource:'anchor',titleScore:.60,imageCandidate:false},6).read,false,'Zeta-specific low-score cost probing must not expand to unrelated cards');
+
 
 
 const realQbLate=[
