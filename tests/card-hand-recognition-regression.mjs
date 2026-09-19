@@ -301,17 +301,19 @@ WB.restoreOCRDefaults=async()=>true;
 WB.seekTo=async(t)=>{seekLog.push(+Number(t).toFixed(3));WB.video.currentTime=Number(t);return Number(t)};
 
 let windowRun=await H.recognizeHand({targetSide:'bottom',relativeSide:'自分',time:19.603,row:{side:'bottom',turn:1,time:18.719}});
-assert.deepEqual(windowRun.samples.map(s=>s.sampleTime),[19.483,19.523,19.563,19.603]);
-assert.equal(windowRun.windowMode,'stable-backscan');
-assert.equal(windowRun.plannedFrames,4);
-assert.equal(windowRun.capturedFrames,4);
-assert.ok(windowRun.samples.every(s=>s.sampleTime<=19.603),'stable backscan must never sample future frames');
+assert.equal(windowRun.reason,'no-stable-hand-window','zero-center frames must remain unresolved instead of becoming a stable hand');
+assert.equal(windowRun.samples.length,0);
+assert.equal(windowRun.windowMode,'stable-bidirectional-settle');
+assert.equal(windowRun.forwardScan.scanFrames,0,'forward settle requires at least two target-visible cost centers');
+assert.ok(seekLog.every(t=>t<=19.603),'zero-center target must not trigger future sampling');
 assert.equal(WB.video.currentTime,19.603,'video position must restore to requested state');
 
 WB.video.currentTime=20.028;seekLog.length=0;
 windowRun=await H.recognizeHand({targetSide:'bottom',relativeSide:'自分',time:20.028,row:{side:'bottom',turn:1,time:18.719}});
-assert.deepEqual(windowRun.samples.map(s=>s.sampleTime),[19.908,19.948,19.988,20.028]);
-assert.ok(windowRun.samples.every(s=>s.sampleTime<=20.028),'after-play capture must also remain past-only');
+assert.equal(windowRun.reason,'no-stable-hand-window');
+assert.equal(windowRun.samples.length,0);
+assert.equal(windowRun.forwardScan.scanFrames,0);
+assert.ok(seekLog.every(t=>t<=20.028),'zero-center after-play target must not trigger future sampling');
 assert.equal(WB.video.currentTime,20.028,'after-play run must restore current position');
 
 assert.equal(zeta.recognition.enabled,true);
