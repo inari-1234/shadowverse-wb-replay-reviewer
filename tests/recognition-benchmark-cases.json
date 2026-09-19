@@ -494,6 +494,128 @@
           "source": "anchor"
         }
       ]
+    },
+    {
+      "id": "validation-zeta-20260920-17.006",
+      "split": "validation",
+      "origin": "real-diagnostic-human-confirmed",
+      "source": {
+        "diagnostic": "shadowverse-wb-diagnostic-v4.13.24-2026-09-19T1529.json",
+        "build": "4.13.24-20260919-clean-13-24",
+        "video": "ScreenRecording_09-20-2026 00-06-12_1.mp4",
+        "window": [
+          17.051,
+          17.171
+        ],
+        "humanLabel": "user-confirmed-pass"
+      },
+      "cardId": "zetaBeatrix",
+      "expected": {
+        "recognized": true,
+        "decision": "temporal-stable-leader-rescue"
+      },
+      "samples": [
+        {
+          "time": 17.051,
+          "slot": 3,
+          "score": 0.8703,
+          "source": "anchor"
+        },
+        {
+          "time": 17.091,
+          "slot": 3,
+          "score": 0.8741,
+          "source": "anchor"
+        },
+        {
+          "time": 17.131,
+          "slot": 3,
+          "score": 0.8751,
+          "source": "anchor"
+        },
+        {
+          "time": 17.171,
+          "slot": 3,
+          "score": 0.8751,
+          "source": "anchor"
+        }
+      ]
+    },
+    {
+      "id": "validation-barbaros-20260920-30.227",
+      "split": "validation",
+      "origin": "real-diagnostic-human-confirmed",
+      "source": {
+        "diagnostic": "shadowverse-wb-diagnostic-v4.13.24-2026-09-19T1529.json",
+        "build": "4.13.24-20260919-clean-13-24",
+        "video": "ScreenRecording_09-20-2026 00-06-12_1.mp4",
+        "window": [
+          30.107,
+          30.227
+        ],
+        "humanLabel": "user-confirmed-pass"
+      },
+      "cardId": "barbaros",
+      "expected": {
+        "recognized": true,
+        "decision": "temporal-image-cost-hypothesis-consensus"
+      },
+      "samples": [
+        {
+          "time": 30.107,
+          "slot": 5,
+          "score": 0.8226,
+          "source": "anchor"
+        },
+        {
+          "time": 30.147,
+          "slot": 5,
+          "score": 0.8975,
+          "source": "anchor",
+          "template": {
+            "value": 7,
+            "score": 0.7572,
+            "threshold": 0.98,
+            "accepted": false
+          },
+          "ocr": {
+            "value": 2,
+            "accepted": true
+          }
+        },
+        {
+          "time": 30.187,
+          "slot": 5,
+          "score": 0.9022,
+          "source": "anchor",
+          "template": {
+            "value": 7,
+            "score": 0.7443,
+            "threshold": 0.98,
+            "accepted": false
+          },
+          "ocr": {
+            "value": 2,
+            "accepted": true
+          }
+        },
+        {
+          "time": 30.227,
+          "slot": 5,
+          "score": 0.9019,
+          "source": "anchor",
+          "template": {
+            "value": 7,
+            "score": 0.7397,
+            "threshold": 0.98,
+            "accepted": false
+          },
+          "ocr": {
+            "value": 2,
+            "accepted": true
+          }
+        }
+      ]
     }
   ],
   "scenarios": [
