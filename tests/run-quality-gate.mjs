@@ -1,11 +1,12 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v10';
+const GATE_VERSION='recognition-quality-gate-v11';
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
 const tests=[
   'tests/board-observation-regression.mjs',
   'tests/card-hand-recognition-regression.mjs',
+  'tests/class-detection-regression.mjs',
   'tests/tactical-summary-regression.mjs',
   'tests/turn-control-sync-regression.mjs',
   'tests/turn-prefix-regression.mjs',
