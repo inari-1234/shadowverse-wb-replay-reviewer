@@ -97,3 +97,21 @@ clean-13.24で問題になったゼタ＆ベアトリクスと刹那のクイッ
 6. 品質ゲートを実行する。
 
 これにより、診断全体の大量の通常場面ではなく「閾値近傍・安定した未解決・コスト競合」から先にラベルを増やせる。
+
+
+## validation動画のfalse positive確認
+
+validation動画では、未解決候補だけでなく、**認識済みカードも必ず人間確認対象**にする。
+
+`node tests/diagnostic-review-queue.mjs <診断JSON> --validation`
+
+validationモードでは次を確認対象へ出す。
+
+- 認識済みカード：false positive確認のため必須
+- 救済経路で認識したカード：優先度を上げる
+- candidate threshold未満から救済されたカード：さらに優先度を上げる
+- 従来どおりの高優先未解決候補：false negative確認のため残す
+
+診断に候補フレーム詳細が欠けていても、認識結果自体が残っていればvalidation確認対象から落とさない。
+
+人間が動画で確認するまでは `observed` を `expected` に昇格しない。
