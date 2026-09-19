@@ -135,6 +135,31 @@ assert.equal(d.accepted,false);
 assert.equal(d.known,false);
 assert.equal(d.reason,'board-attack-pattern-conflict');
 
+
+// Real 30.227s failure shape: looking forward mixes the requested 2-damage state
+// with later action/transition frames and must remain unresolved.
+d=S.decideBoardSamples([
+  sample([1,1],['attackable','attackable'],0),
+  sample([1],['attackable'],.25,{layoutKey:'43:52'}),
+  sample([1,1],['not-attackable','not-attackable'],.50),
+  sample([1,1],['not-attackable','not-attackable'],.75,{ocrIndependent:false}),
+  sample([1,1],['not-attackable','not-attackable'],1.00,{ocrIndependent:false})
+],{nearOwnStart:false});
+assert.equal(d.accepted,false,'future action frames must not be allowed to redefine the requested current board state');
+
+// clean-13.25+ direct mode uses a tight backward window around the requested instant.
+// Two independent reads establish [1,1], while propagated reads only stabilize attackability.
+d=S.decideBoardSamples([
+  sample([1,1],['attackable','attackable'],0),
+  sample([1,1],['attackable','attackable'],-.04),
+  sample([1,1],['attackable','attackable'],-.08,{ocrIndependent:false}),
+  sample([1,1],['attackable','attackable'],-.12,{ocrIndependent:false})
+],{nearOwnStart:false});
+assert.equal(d.accepted,true);
+assert.equal(d.value,2);
+assert.equal(d.reason,'board-attackable-total-confirmed');
+assert.equal(d.followers.every(x=>x.attackable===true),true);
+
 assert.equal(S.parseAttack('1'),1);
 assert.equal(S.parseAttack(' 9\n'),9);
 assert.equal(S.parseAttack('30'),30);
