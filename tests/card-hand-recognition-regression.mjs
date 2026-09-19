@@ -311,6 +311,7 @@ assert.equal(H.selectCostScopedMatch(costScopeFixture,{accepted:false,value:null
 assert.equal(DB.costRecognitionProfiles,undefined,'card DB must not own displayed-cost digit templates');
 assert.equal(WB.DisplayedCostRecognition.meta.cardIndependent,true);
 assert.deepEqual(WB.DisplayedCostRecognition.meta.templateValues,[1,7]);
+assert.deepEqual(WB.DisplayedCostRecognition.meta.centerDx,[-2,-1,0,1,2]);
 const cost1Profiles=H.displayedCostProfiles(1);
 assert.equal(cost1Profiles.length,5);
 for(const p of cost1Profiles){
@@ -392,7 +393,7 @@ assert.ok(barbarosFanFixture.best>=.93,`real-video Barbaros fan-position fixture
 const barbarosHardNegative=H.matchFeature(realVideoFixtureDecode({"scale":800.8372672539656,"data":"+f/+Bwj99vTy+QIVLS76wcDF6QceBxL65NvX4Of/BCcAzMfC7/sCFSYX9+XoAhcr6RQQ2tTI7PgFRmRaHOvqLUEY5AIKzczE7PoILkA/AvDuWzD85QMHwsDA6hUUNEUyLgr0Dvnu5w0Hwb++IA7qFh9HRyT///YF8wsOwL++GTwDJlktCN30Dh4LABQSv76++QIHBgADDAoB6fLg3+LTy8fBNUb7EhcQCgsDCgsB9PPdu77FVFYXIhYREBYMCg4QCQHetbm/a1AzKP/6AhUTERcTBwXovr3DQ0cwIBYMDRQL+gwQChT4y8rKJS0JAv0GGRshFg8IAjcSysnL8fbl59nk4eENOiggFlAYysrR+vPq8NXmx8f2/ggeN2Mn19HPMikgFQ8LCwsRLzx5f2IwERgS3evy6Nvj8vXy+/UAQV04JBsbyNje2NPd7vLq7d7F4ic6JhwdwdLY0crW5+ri3d7U7ik6Ix4c0Nrh28vR5Ofc3+rj8iQyJRoa59TzFATbyuDV2ePo7/IRFwcJ+PwaQ08zCggF7Obh3N8CEgkK3+z0DjJISigRFwbs2dHyBQcN"})).find(x=>x.cardId==='barbaros');
 assert.ok(barbarosHardNegative.best<.90,`real-video cost-7 hard negative must stay below .90 candidate gate: ${barbarosHardNegative.best}`);
 
-assert.equal(H.version,'hand-clean-1.13');
+assert.equal(H.version,'hand-clean-1.14');
 const qbRecognition=DB.recognitionCards().find(x=>x.id==='quickBlader');
 assert.equal(H.temporalProbeFloor(qbRecognition),.89);
 const temporalCandidate=(cardId,score,index,{detected=null,validated=null,ocrAccepted=false,matched=false,templateValue=null,templateScore=null,templateThreshold=null}={})=>({index,best:{cardId,imageScore:score,imageCandidate:false,imageConfirmed:false,imageSource:'anchor',titleScore:score-.05,anchorScore:score,temporalProbe:true,temporalProbeFloor:.88,expectedCost:cardId==='quickBlader'?1:7,acceptedCosts:cardId==='quickBlader'?[1]:[7],detectedCost:detected,validatedCost:validated,ocrCostAccepted:ocrAccepted,costAccepted:ocrAccepted,costMatched:matched,costSource:matched?'ocr':null,costTemplateValue:templateValue,costTemplateScore:templateScore,costTemplateThreshold:templateThreshold,matched:false,decision:'temporal-probe-only'}});
@@ -408,7 +409,7 @@ const temporalTwoFrames=[.893,.892].map((score,i)=>({sampleTime:i,counts:{},scor
 assert.equal(H.decideHandSamples(temporalTwoFrames).recognized.quickBlader,undefined);
 
 
-assert.equal(H.version,'hand-clean-1.13');
+assert.equal(H.version,'hand-clean-1.14');
 WB.turnTimeline=[
  {side:'bottom',turn:6,time:74.41},
  {side:'top',turn:7,time:81.863},
@@ -459,5 +460,20 @@ const wrongTemplateVotes=[.927,.9248,.9155,.9158].map((score,i)=>({sampleTime:i,
  {detected:2,ocrAccepted:true,matched:false,templateValue:1,templateScore:.99,templateThreshold:.98}
 )]}));
 assert.equal(H.decideHandSamples(wrongTemplateVotes).recognized.barbaros,undefined,'wrong-cost template votes must not rescue Barbaros');
+
+
+const costCenterShiftFixtures=[{"t":81.806,"base":{"scale":500.65161395452606,"data":"xeUSHh8M/+POu+opX05HIjQnA8JlSiMOCPbd5O8PVvMKC/Do59vc1REDIAz7NjL6/N3jDB0VBDwyCRHr1woZGQM7NwgU8dQHFBf8NzkIGf3s9w8N/0FDFyYNC+IEAgk6Ph4d/xD18vL8FR4G8/mFxvDy9PTx9xH6gcO3184G/vDWCajo4L+11vsPJRjWDOSvt9P+BSMd/hXdtLbdDxIgFQ=="},"shiftDx":1,"shift":{"scale":587.276715245865,"data":"0gEjKRUF5smsrBdmaF4wNjgYvap/NhsJAdzW5hoJ8v0Z+N7jydW1AwMYHf4oUvL+2tgCIh8OMVX8GPXB+iAiESxZ/Br8z/kZIAwkWvwdCtfnCxYFM2UVKyPdyvgFBjpWMCIk8v/p7vUSJRX13wWV4vTt8u/lDfr6i77LxvcL8NgBHL/uuKG56womJxoM+Jucse38IDAfL+yborUDCyclFg=="}},{"t":81.846,"base":{"scale":518.3335414089036,"data":"1vMVIR8J99bBtO8uYlBJIzcj9rZnSR8MCfbe4ukMWfYPDe3l59bd2hMEHg36ODP6/NjoDB4VBUA1CRHv4AkbGwdBOwkV9dwGFBoEPz4IGvzm9wwPBUlLFyYODOMFAgo9Qx8eAAzw7vD9FBkH9vqDxPDx7vf18wr4gcW73ckI9ebJCqXn3r2y1fkHHBrWC+WqsM79BB0c+hfXs7fnGBYiFw=="},"shiftDx":2,"shift":{"scale":611.4006733364242,"data":"9SAtHALivJ+holh0ZEcpPiLKlak7HgcE49La+QoG7hcD3uHOzsPh/AwhAg9mGP7nv8oeIRYccB8bBN3RHiAiHXUjGQrkxBkbIRh1JRgU6cwIEg8gfzojKv7l6wT+I2FEGiTX4Nrm7QUhFwDmEPrS7eTs9er1APQa2bjT1hzq1N0TJATCnqrb/g4pFyMQt4md1PoNKBslBq+drf4XJSoQIQ=="}},{"t":81.886,"base":{"scale":516.9083197073279,"data":"1vUUIB4J99S8se8tYE9KJDcj9rVnRxwJCPbf4+oNV/QLCe3l59bd2hH/Ggn+PDL5+9fpDiEZB0A4CRHw4QsgHQhAPQgU89sGGBoFQD8IGvzm9g8PBkpKFCQNDOQFAgk8PxcV+wzy7e/8FBcG9fmDx+/w7/f07wT3gcO84ckI9ObKDKXq37211/sJHxvWC+WusswACSUa/hXesrXrGhInGA=="},"shiftDx":2,"shift":{"scale":602.1996123035507,"data":"9x0uGgTiuJ2cnVVwY0YqPSLKl6o3GAUE5NTc/AkG7RD/3uHQzcjd/Acb/hZnFv3mwMsgJR0ccCAaBN/SHCUmHHQjGQAnhwhUeIhl1JRgT7M8DEw8hfzcgJ/7m7AT9IV88DxnX4Nzl7AQgFP/kEfvX6+Ts9Onu+fYb2b3Y1xvq1N8VJAjCnqrb/g4pFyMQuJWe1f0YKRwlA7SfrggWICsVIQ=="}},{"t":81.926,"base":{"scale":520.3812353149418,"data":"0fAQHRwH9tO7sO4uYlBKIzci9LVnSx4KCPTd4ekMUvYNCuzl5tTb2Q79IQT6QTb1+dfnDCMYA0U9BQ7v3AwjIAlCPAYV89kIHB8KQDwIHPvj+BESCkpIFSUNCeYHAQU6PhsS/gnz7+75EBQJ8vuBy+3v7fby7wH2gcW24coK+OvODqXo3MG11/sIIB7XDOawtM0DDCUfABffs7bsHBMmGw=="},"shiftDx":2,"shift":{"scale":617.4676071376745,"data":"8RgrGAHhtpqakFhzZEYoPSHHmaQ9GwYC4dHa+ggJ7xIA3OHOy8Tb/g0d9RVxFvjiwc0hJxgbfCEUAODUHikpHnghFwnfvxgjKR11IxkV58oEFhQkfzciKfri7gb5HVw9FxrX4d3n6AAcEwXkE/3Y6ePq8+fu9/Ma1rjY1x/w2uUUJQLDoKjb/Q0qHSYRuZWe1gEcKiUiBbSerggXIiscHA=="}}];
+for(const row of costCenterShiftFixtures){
+  const base=decodeCostFixture(row.base),shift=decodeCostFixture(row.shift);
+  const baseMatch=H.matchDisplayedCostFeature(base).find(x=>x.value===1);
+  const searched=H.matchDisplayedCostFeatures([{dx:0,feature:base},{dx:row.shiftDx,feature:shift}]).find(x=>x.value===1);
+  assert.ok(baseMatch.score<.98,'actual '+row.t+' QB base-center cost crop should reproduce the fragile pre-fix condition');
+  assert.ok(searched.score>=.98,'actual '+row.t+' QB cost 1 must recover with bounded center search');
+  assert.equal(searched.centerDx,row.shiftDx);
+}
+const centerSearchWrongCost=H.matchDisplayedCostFeatures([
+  {dx:-2,feature:cost6Negative},{dx:0,feature:cost6Negative},{dx:2,feature:cost6Negative}
+]).find(x=>x.value===1);
+assert.ok(centerSearchWrongCost.score<.98,'bounded center search must not turn visible cost 6 into cost 1');
 
 console.log('CARD DB + HAND RECOGNITION REGRESSION PASS');
