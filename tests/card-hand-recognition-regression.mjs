@@ -494,6 +494,8 @@ const bb816Decision=H.decideHandSamples(bb816);
 assert.equal(bb816Decision.recognized.barbaros?.decision,'temporal-image-cost-hypothesis-consensus','actual v4.13.16 Barbaros sequence must recover from weak displayed-cost crops');
 const qbOnlyTwoProbe=[.8169,.82,.9118,.8957].map((score,i)=>({sampleTime:i,counts:{},scores:{},candidates:[imageConsensusCandidate('quickBlader',score,2,{templateValue:i?1:null,templateScore:.8})]}));
 assert.equal(H.decideHandSamples(qbOnlyTwoProbe).recognized.quickBlader,undefined,'two probe-range frames must not pass image-primary temporal consensus');
+const qbOnlyTwoTemplateVotes=[.8169,.8962,.9118,.8957].map((score,i)=>({sampleTime:i,counts:{},scores:{},candidates:[imageConsensusCandidate('quickBlader',score,2,{templateValue:i===1||i===2?1:null,templateScore:.8})]}));
+assert.equal(H.decideHandSamples(qbOnlyTwoTemplateVotes).recognized.quickBlader,undefined,'fewer than three of four matching cost-template hypotheses must not pass image-primary temporal consensus');
 const qbUnstableCore=[.8169,.89,.915,.94].map((score,i)=>({sampleTime:i,counts:{},scores:{},candidates:[imageConsensusCandidate('quickBlader',score,2,{templateValue:i?1:null,templateScore:.8})]}));
 assert.equal(H.decideHandSamples(qbUnstableCore).recognized.quickBlader,undefined,'unstable top-three image scores must not pass image-primary temporal consensus');
 const qbWrongStrongTemplate=[.8169,.8962,.9118,.8957].map((score,i)=>({sampleTime:i,counts:{},scores:{},candidates:[imageConsensusCandidate('quickBlader',score,2,i===0?{}:{templateValue:i===2?7:1,templateScore:i===2?.995:.80,templateAccepted:i===2})]}));
