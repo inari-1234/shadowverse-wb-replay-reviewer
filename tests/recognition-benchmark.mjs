@@ -35,6 +35,9 @@ function candidate(row,card){
     templateCenterDx:0,
     templateAccepted:template.accepted===true
   };
+  const allowedCost=v=>card.acceptedCosts.includes(Number(v));
+  const validatedCost=displayedCost.accepted&&allowedCost(displayedCost.value)?Number(displayedCost.value):null;
+  const costMatched=validatedCost!=null;
   return {
     index:row.slot,
     imageBest:{
@@ -58,12 +61,12 @@ function candidate(row,card){
       rescueThreshold:card.rescueThreshold,
       temporalProbe,temporalProbeFloor:probeFloor,
       expectedCost:card.expectedCost,acceptedCosts:card.acceptedCosts,
-      detectedCost:ocr.value??null,validatedCost:null,
+      detectedCost:ocr.value??null,validatedCost,
       ocrCostAccepted:ocr.accepted===true,costAccepted:displayedCost.accepted,
-      costMatched:false,costSource:null,
+      costMatched,costSource:costMatched?displayedCost.source:null,
       costTemplateValue:template.value??null,costTemplateScore:template.score??null,
       costTemplateThreshold:template.threshold??null,costTemplateCenterDx:0,
-      matched:false,decision:temporalProbe?'temporal-probe-only':'image-below-candidate'
+      matched:false,decision:costMatched?'image-below-confirm':(temporalProbe?'temporal-probe-only':'image-below-candidate')
     }
   };
 }
@@ -105,6 +108,17 @@ const coverage=Object.fromEntries(cardsWithReal.map(id=>{
   const rows=realCases.filter(x=>x.cardId===id);
   return [id,{positive:rows.filter(x=>x.expected.recognized).length,negative:rows.filter(x=>!x.expected.recognized).length,total:rows.length}];
 }));
+const metrics=Object.fromEntries(Object.entries(byCard).map(([id,v])=>{
+  const precision=(v.TP+v.FP)?v.TP/(v.TP+v.FP):null;
+  const recall=(v.TP+v.FN)?v.TP/(v.TP+v.FN):null;
+  const specificity=(v.TN+v.FP)?v.TN/(v.TN+v.FP):null;
+  return [id,{
+    precision:precision==null?null:+precision.toFixed(4),
+    recall:recall==null?null:+recall.toFixed(4),
+    specificity:specificity==null?null:+specificity.toFixed(4),
+    support:v.total
+  }];
+}));
 const validationCount=fixture.cases.filter(x=>x.split==='validation').length;
 const falsePositives=results.filter(x=>x.outcome==='FP');
 const falseNegatives=results.filter(x=>x.outcome==='FN');
@@ -116,7 +130,7 @@ const missingPolarity=fixture.policy.requirePositiveAndNegativePerTunedCard
 console.log(JSON.stringify({
   benchmark:fixture.version,
   cases:results.length,
-  byCard,bySplit,coverage,
+  byCard,metrics,bySplit,coverage,
   validation:{cases:validationCount,ready:validationCount>0},
   failures:{falsePositives,falseNegatives,decisionMismatches,missingPolarity}
 },null,2));
