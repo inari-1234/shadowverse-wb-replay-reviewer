@@ -45,7 +45,26 @@ function cardIdsForSnapshot(snapshot){
 
 function summarizeCard(snapshot,cardId){
   const rows=strongestRows(snapshot,cardId);
-  if(!rows.length)return null;
+  const recognized=Object.prototype.hasOwnProperty.call(snapshot.recognized||{},cardId);
+  const recognizedRow=recognized?(snapshot.recognized||{})[cardId]||{}:null;
+  const unresolved=Object.prototype.hasOwnProperty.call(snapshot.unresolved||{},cardId);
+  if(!rows.length){
+    if(!recognized)return null;
+    const confidence=Number.isFinite(Number(recognizedRow?.confidence))?Number(recognizedRow.confidence):null;
+    return {
+      cardId,recognized:true,unresolved,
+      recognizedDecision:recognizedRow?.decision??null,
+      recognizedConfidence:confidence==null?null:round4(confidence),
+      frames:Number.isFinite(Number(recognizedRow?.positiveFrames))?Number(recognizedRow.positiveFrames):0,
+      sampleTimes:[],slot:null,sameSlot:false,stable:false,sourceMode:null,
+      minScore:confidence==null?null:round4(confidence),
+      maxScore:confidence==null?null:round4(confidence),
+      medianScore:confidence==null?null:round4(confidence),
+      scoreRange:null,candidateThreshold:.90,probeFloor:.89,
+      costConflictFrames:0,ocrZeroFrames:0,templateSupportFrames:0,anchorFrames:0,
+      priority:0,reasons:['recognized-without-candidate-detail']
+    };
+  }
   const scores=rows.map(({row})=>Number((row.imageBest||row.best||{}).imageScore)).filter(Number.isFinite);
   const slots=rows.map(({row})=>Number(row.index)).filter(Number.isFinite);
   const sources=rows.map(({row})=>(row.imageBest||row.best||{}).imageSource).filter(Boolean);
@@ -74,10 +93,6 @@ function summarizeCard(snapshot,cardId){
   const maxScore=Math.max(...scores);
   const minScore=Math.min(...scores);
   const nearFloor=maxScore>=candidateThreshold-.05;
-  const recognized=Object.prototype.hasOwnProperty.call(snapshot.recognized||{},cardId);
-  const recognizedRow=recognized?(snapshot.recognized||{})[cardId]||{}:null;
-  const unresolved=Object.prototype.hasOwnProperty.call(snapshot.unresolved||{},cardId);
-
   let priority=0;
   const reasons=[];
   if(!recognized){
