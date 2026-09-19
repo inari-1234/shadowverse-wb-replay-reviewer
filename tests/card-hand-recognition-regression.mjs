@@ -461,7 +461,7 @@ assert.ok(barbarosFanFixture.best>=.93,`real-video Barbaros fan-position fixture
 const barbarosHardNegative=H.matchFeature(realVideoFixtureDecode({"scale":800.8372672539656,"data":"+f/+Bwj99vTy+QIVLS76wcDF6QceBxL65NvX4Of/BCcAzMfC7/sCFSYX9+XoAhcr6RQQ2tTI7PgFRmRaHOvqLUEY5AIKzczE7PoILkA/AvDuWzD85QMHwsDA6hUUNEUyLgr0Dvnu5w0Hwb++IA7qFh9HRyT///YF8wsOwL++GTwDJlktCN30Dh4LABQSv76++QIHBgADDAoB6fLg3+LTy8fBNUb7EhcQCgsDCgsB9PPdu77FVFYXIhYREBYMCg4QCQHetbm/a1AzKP/6AhUTERcTBwXovr3DQ0cwIBYMDRQL+gwQChT4y8rKJS0JAv0GGRshFg8IAjcSysnL8fbl59nk4eENOiggFlAYysrR+vPq8NXmx8f2/ggeN2Mn19HPMikgFQ8LCwsRLzx5f2IwERgS3evy6Nvj8vXy+/UAQV04JBsbyNje2NPd7vLq7d7F4ic6JhwdwdLY0crW5+ri3d7U7ik6Ix4c0Nrh28vR5Ofc3+rj8iQyJRoa59TzFATbyuDV2ePo7/IRFwcJ+PwaQ08zCggF7Obh3N8CEgkK3+z0DjJISigRFwbs2dHyBQcN"})).find(x=>x.cardId==='barbaros');
 assert.ok(barbarosHardNegative.best<.90,`real-video cost-7 hard negative must stay below .90 candidate gate: ${barbarosHardNegative.best}`);
 
-assert.equal(H.version,'hand-clean-1.16');
+assert.equal(H.version,'hand-clean-1.17');
 const qbRecognition=DB.recognitionCards().find(x=>x.id==='quickBlader');
 assert.equal(H.temporalProbeFloor(qbRecognition),.89);
 const temporalCandidate=(cardId,score,index,{detected=null,validated=null,ocrAccepted=false,matched=false,templateValue=null,templateScore=null,templateThreshold=null}={})=>({index,best:{cardId,imageScore:score,imageCandidate:false,imageConfirmed:false,imageSource:'anchor',titleScore:score-.05,anchorScore:score,temporalProbe:true,temporalProbeFloor:.88,expectedCost:cardId==='quickBlader'?1:7,acceptedCosts:cardId==='quickBlader'?[1]:[7],detectedCost:detected,validatedCost:validated,ocrCostAccepted:ocrAccepted,costAccepted:ocrAccepted,costMatched:matched,costSource:matched?'ocr':null,costTemplateValue:templateValue,costTemplateScore:templateScore,costTemplateThreshold:templateThreshold,matched:false,decision:'temporal-probe-only'}});
@@ -560,6 +560,18 @@ assert.equal(qb816Decision.recognized.quickBlader?.decision,'temporal-image-cost
 const bb816=[.9288,.9362,.9248,.9155].map((score,i)=>({sampleTime:[81.455,81.495,81.535,81.575][i],counts:{},scores:{},candidates:[imageConsensusCandidate('barbaros',score,1,{templateValue:7,templateScore:[.751,.8785,.9572,.9656][i],ocrValue:i===3?2:null,ocrAccepted:i===3})]}));
 const bb816Decision=H.decideHandSamples(bb816);
 assert.equal(bb816Decision.recognized.barbaros?.decision,'temporal-image-cost-hypothesis-consensus','actual v4.13.16 Barbaros sequence must recover from weak displayed-cost crops');
+const qb817BoundaryScores=[.8908,.8915,.8907,.8914],qb817TemplateScores=[.9268,.9461,.9449,.943];
+const qb817Boundary=qb817BoundaryScores.map((score,i)=>({sampleTime:[81.757,81.797,81.837,81.877][i],counts:{},scores:{},candidates:[imageConsensusCandidate('quickBlader',score,2,{templateValue:1,templateScore:qb817TemplateScores[i],templateThreshold:.98,ocrValue:i>=2?0:null,ocrAccepted:i>=2})]}));
+const qb817BoundaryDecision=H.decideHandSamples(qb817Boundary);
+assert.equal(qb817BoundaryDecision.recognized.quickBlader?.decision,'temporal-image-cost-ultrastable-consensus','actual 81.877s turn-boundary QB sequence must recover without lowering normal thresholds');
+assert.equal(qb817BoundaryDecision.recognized.quickBlader?.imageTemporal?.groups?.[0]?.ultraStableRescue,true,'turn-boundary rescue must be explicitly diagnosed');
+
+const qb817WeakTemplate=qb817BoundaryScores.map((score,i)=>({sampleTime:i,counts:{},scores:{},candidates:[imageConsensusCandidate('quickBlader',score,2,{templateValue:1,templateScore:[.91,.92,.92,.91][i],templateThreshold:.98})]}));
+assert.equal(H.decideHandSamples(qb817WeakTemplate).recognized.quickBlader,undefined,'ultrastable image alone must not bypass weak cost-template evidence');
+
+const qb817Drift=[.8908,.8915,.8942,.8909].map((score,i)=>({sampleTime:i,counts:{},scores:{},candidates:[imageConsensusCandidate('quickBlader',score,2,{templateValue:1,templateScore:.945,templateThreshold:.98})]}));
+assert.equal(H.decideHandSamples(qb817Drift).recognized.quickBlader,undefined,'ultrastable rescue must reject image drift above 0.002');
+
 const qbOnlyTwoProbe=[.8169,.82,.9118,.8957].map((score,i)=>({sampleTime:i,counts:{},scores:{},candidates:[imageConsensusCandidate('quickBlader',score,2,{templateValue:i?1:null,templateScore:.8})]}));
 assert.equal(H.decideHandSamples(qbOnlyTwoProbe).recognized.quickBlader,undefined,'two probe-range frames must not pass image-primary temporal consensus');
 const qbOnlyTwoTemplateVotes=[.8169,.8962,.9118,.8957].map((score,i)=>({sampleTime:i,counts:{},scores:{},candidates:[imageConsensusCandidate('quickBlader',score,2,{templateValue:i===1||i===2?1:null,templateScore:.8})]}));
