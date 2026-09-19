@@ -461,7 +461,7 @@ assert.ok(barbarosFanFixture.best>=.93,`real-video Barbaros fan-position fixture
 const barbarosHardNegative=H.matchFeature(realVideoFixtureDecode({"scale":800.8372672539656,"data":"+f/+Bwj99vTy+QIVLS76wcDF6QceBxL65NvX4Of/BCcAzMfC7/sCFSYX9+XoAhcr6RQQ2tTI7PgFRmRaHOvqLUEY5AIKzczE7PoILkA/AvDuWzD85QMHwsDA6hUUNEUyLgr0Dvnu5w0Hwb++IA7qFh9HRyT///YF8wsOwL++GTwDJlktCN30Dh4LABQSv76++QIHBgADDAoB6fLg3+LTy8fBNUb7EhcQCgsDCgsB9PPdu77FVFYXIhYREBYMCg4QCQHetbm/a1AzKP/6AhUTERcTBwXovr3DQ0cwIBYMDRQL+gwQChT4y8rKJS0JAv0GGRshFg8IAjcSysnL8fbl59nk4eENOiggFlAYysrR+vPq8NXmx8f2/ggeN2Mn19HPMikgFQ8LCwsRLzx5f2IwERgS3evy6Nvj8vXy+/UAQV04JBsbyNje2NPd7vLq7d7F4ic6JhwdwdLY0crW5+ri3d7U7ik6Ix4c0Nrh28vR5Ofc3+rj8iQyJRoa59TzFATbyuDV2ePo7/IRFwcJ+PwaQ08zCggF7Obh3N8CEgkK3+z0DjJISigRFwbs2dHyBQcN"})).find(x=>x.cardId==='barbaros');
 assert.ok(barbarosHardNegative.best<.90,`real-video cost-7 hard negative must stay below .90 candidate gate: ${barbarosHardNegative.best}`);
 
-assert.equal(H.version,'hand-clean-1.18');
+assert.equal(H.version,'hand-clean-1.19');
 const qbRecognition=DB.recognitionCards().find(x=>x.id==='quickBlader');
 assert.equal(H.temporalProbeFloor(qbRecognition),.89);
 const temporalCandidate=(cardId,score,index,{detected=null,validated=null,ocrAccepted=false,matched=false,templateValue=null,templateScore=null,templateThreshold=null}={})=>({index,best:{cardId,imageScore:score,imageCandidate:false,imageConfirmed:false,imageSource:'anchor',titleScore:score-.05,anchorScore:score,temporalProbe:true,temporalProbeFloor:.88,expectedCost:cardId==='quickBlader'?1:7,acceptedCosts:cardId==='quickBlader'?[1]:[7],detectedCost:detected,validatedCost:validated,ocrCostAccepted:ocrAccepted,costAccepted:ocrAccepted,costMatched:matched,costSource:matched?'ocr':null,costTemplateValue:templateValue,costTemplateScore:templateScore,costTemplateThreshold:templateThreshold,matched:false,decision:'temporal-probe-only'}});
@@ -477,7 +477,7 @@ const temporalTwoFrames=[.893,.892].map((score,i)=>({sampleTime:i,counts:{},scor
 assert.equal(H.decideHandSamples(temporalTwoFrames).recognized.quickBlader,undefined);
 
 
-assert.equal(H.version,'hand-clean-1.18');
+assert.equal(H.version,'hand-clean-1.19');
 WB.turnTimeline=[
  {side:'bottom',turn:6,time:74.41},
  {side:'top',turn:7,time:81.863},
@@ -605,5 +605,25 @@ assert.equal(H.decideHandSamples(qbWrongStrongTemplate).recognized.quickBlader,u
 const qbMissingLeader=[.8962,.9118,.8957].map((score,i)=>({sampleTime:i,counts:{},scores:{},candidates:[imageConsensusCandidate('quickBlader',score,2,{templateValue:1,templateScore:.8})]}));
 qbMissingLeader.push({sampleTime:4,counts:{},scores:{},candidates:[imageConsensusCandidate('barbaros',.91,2,{templateValue:7,templateScore:.8})]});
 assert.equal(H.decideHandSamples(qbMissingLeader).recognized.quickBlader,undefined,'same image leader must persist through the whole stable window');
+
+
+const zetaDrawSettling=[.3945,.765,.8578,.8642].map((score,i)=>({sampleTime:[36.627,36.667,36.707,36.747][i],candidates:[{best:{cardId:'zetaBeatrix',imageScore:score}}]}));
+const zetaTrend=H.settlingRecognitionTrend(zetaDrawSettling);
+assert.equal(zetaTrend?.cardId,'zetaBeatrix','rising Zeta draw animation must trigger a guarded forward-settle retry');
+assert.ok(zetaTrend?.latest>=.864&&zetaTrend?.gain>.4,'Zeta settling trend must preserve observed score rise');
+const flatSettling=[.85,.848,.852,.849].map((score,i)=>({sampleTime:i,candidates:[{best:{cardId:'zetaBeatrix',imageScore:score}}]}));
+assert.equal(H.settlingRecognitionTrend(flatSettling),null,'flat sub-threshold similarity must not trigger forward-settle retry');
+const fallingSettling=[.88,.87,.85,.84].map((score,i)=>({sampleTime:i,candidates:[{best:{cardId:'zetaBeatrix',imageScore:score}}]}));
+assert.equal(H.settlingRecognitionTrend(fallingSettling),null,'falling similarity must not trigger forward-settle retry');
+const settleCurrent={known:true,recognized:{barbaros:{cardId:'barbaros',label:'バルバロス',known:true,count:1,confidence:.92}},unresolved:{zetaBeatrix:{cardId:'zetaBeatrix',known:false,count:null}},samples:[]};
+const settleRetry={known:true,recognized:{zetaBeatrix:{cardId:'zetaBeatrix',label:'ゼタ＆ベアトリクス',known:true,count:1,confidence:.94,decision:'stable-consensus'}},unresolved:{barbaros:{cardId:'barbaros',known:false,count:null}},samples:[]};
+const settleMerged=H.mergeForwardSettleRecognition(settleCurrent,settleRetry,'zetaBeatrix',{windowStart:36.792,windowEnd:36.912,candidateCount:5});
+assert.equal(settleMerged.applied,true,'ordinary retry recognition should be mergeable into current hand');
+assert.equal(settleMerged.decision.recognized.barbaros?.count,1,'existing current-hand positives must survive draw-settle retry');
+assert.equal(settleMerged.decision.recognized.zetaBeatrix?.count,1,'newly settled Zeta must be promoted only after ordinary recognition passes');
+assert.equal(settleMerged.decision.recognized.zetaBeatrix?.settle?.mode,'own-turn-draw-settle');
+assert.equal(settleMerged.decision.unresolved.zetaBeatrix,undefined);
+const settleNoPass=H.mergeForwardSettleRecognition(settleCurrent,{known:false,recognized:{},unresolved:{zetaBeatrix:{known:false,count:null}},samples:[]},'zetaBeatrix',{});
+assert.equal(settleNoPass.applied,false,'forward-settle retry must not lower thresholds or promote unresolved cards');
 
 console.log('CARD DB + HAND RECOGNITION REGRESSION PASS');
