@@ -260,6 +260,135 @@
       ]
     },
     {
+      "id": "real-barbaros-stable-82.395",
+      "split": "calibration",
+      "origin": "real-diagnostic",
+      "source": {
+        "diagnostic": "shadowverse-wb-diagnostic-v4.13.23-2026-09-19T1230.json",
+        "build": "4.13.23-20260919-clean-13-23",
+        "video": "ScreenRecording_09-14-2026 21-17-26_1.mp4",
+        "window": [
+          81.835,
+          81.955
+        ]
+      },
+      "cardId": "barbaros",
+      "expected": {
+        "recognized": true,
+        "decision": "temporal-slot-consensus"
+      },
+      "samples": [
+        {
+          "time": 81.835,
+          "slot": 1,
+          "score": 0.9137,
+          "source": "title",
+          "template": {
+            "value": 7,
+            "score": 0.9655,
+            "threshold": 0.98,
+            "accepted": false
+          },
+          "ocr": {
+            "value": 2,
+            "accepted": true
+          }
+        },
+        {
+          "time": 81.875,
+          "slot": 1,
+          "score": 0.914,
+          "source": "title",
+          "template": {
+            "value": 7,
+            "score": 0.9653,
+            "threshold": 0.98,
+            "accepted": false
+          },
+          "ocr": {
+            "value": 2,
+            "accepted": true
+          }
+        },
+        {
+          "time": 81.915,
+          "slot": 1,
+          "score": 0.9135,
+          "source": "title",
+          "template": {
+            "value": 7,
+            "score": 0.9634,
+            "threshold": 0.98,
+            "accepted": false
+          },
+          "ocr": {
+            "value": 2,
+            "accepted": true
+          }
+        },
+        {
+          "time": 81.955,
+          "slot": 1,
+          "score": 0.914,
+          "source": "title",
+          "template": {
+            "value": 7,
+            "score": 0.965,
+            "threshold": 0.98,
+            "accepted": false
+          },
+          "ocr": {
+            "value": 7,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "real-barbaros-weak-title-lookalike",
+      "split": "calibration",
+      "origin": "real-diagnostic",
+      "source": {
+        "diagnostic": "shadowverse-wb-diagnostic-v4.13.23-2026-09-19T1230.json",
+        "build": "4.13.23-20260919-clean-13-23",
+        "video": "ScreenRecording_09-14-2026 21-17-26_1.mp4",
+        "window": [
+          81.835,
+          81.955
+        ]
+      },
+      "cardId": "barbaros",
+      "expected": {
+        "recognized": false
+      },
+      "samples": [
+        {
+          "time": 81.835,
+          "slot": 3,
+          "score": 0.6145,
+          "source": "title"
+        },
+        {
+          "time": 81.875,
+          "slot": 3,
+          "score": 0.6145,
+          "source": "title"
+        },
+        {
+          "time": 81.915,
+          "slot": 3,
+          "score": 0.615,
+          "source": "title"
+        },
+        {
+          "time": 81.955,
+          "slot": 3,
+          "score": 0.6179,
+          "source": "title"
+        }
+      ]
+    },
+    {
       "id": "safety-qb-strong-wrong-cost",
       "split": "safety",
       "origin": "synthetic-safety",
