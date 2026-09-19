@@ -8,6 +8,7 @@ const tests=[
   'tests/turn-prefix-regression.mjs',
   'tests/ward-tristate-regression.mjs',
   'tests/runtime-invariants.mjs',
+  'tests/diagnostic-scenario-importer-regression.mjs',
   'tests/recognition-benchmark.mjs'
 ];
 
