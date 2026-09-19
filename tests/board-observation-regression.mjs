@@ -11,6 +11,7 @@ const sandbox={window:{WB},document:{createElement(){return {getContext(){return
 vm.createContext(sandbox);
 new vm.Script(fs.readFileSync(new URL('../state-recognition.js',import.meta.url),'utf8')).runInContext(sandbox);
 const S=WB.StateRecognition;
+assert.deepEqual(Array.from(S.config.board.directOffsets),[0,-.04,-.08,-.12],'direct board capture must look backward from the requested state, never into future actions');
 
 assert.equal(S.classifyAttackableRingStats({frac:.18,sectors:[.25,.22,.10,.08]}).state,'attackable');
 assert.equal(S.classifyAttackableRingStats({frac:.11,sectors:[.20,.15,.02,.01]}).state,'unknown');
