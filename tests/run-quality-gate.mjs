@@ -1,5 +1,8 @@
 import {spawnSync} from 'node:child_process';
 
+const GATE_VERSION='recognition-quality-gate-v10';
+console.log(`QUALITY GATE ${GATE_VERSION}`);
+
 const tests=[
   'tests/board-observation-regression.mjs',
   'tests/card-hand-recognition-regression.mjs',
