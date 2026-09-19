@@ -160,6 +160,14 @@ const metrics=Object.fromEntries(Object.entries(byCard).map(([id,v])=>{
   }];
 }));
 const validationCount=fixture.cases.filter(x=>x.split==='validation').length+(fixture.scenarios||[]).filter(x=>x.split==='validation').length;
+const validationCoverage=Object.fromEntries(Object.keys(cards).map(id=>{
+  const caseRows=fixture.cases.filter(x=>x.split==='validation'&&x.cardId===id);
+  const scenarioRows=(fixture.scenarios||[]).filter(x=>x.split==='validation'&&Array.isArray(x.expected?.recognized));
+  const positive=caseRows.filter(x=>x.expected?.recognized===true).length+scenarioRows.filter(x=>x.expected.recognized.includes(id)).length;
+  const negative=caseRows.filter(x=>x.expected?.recognized===false).length+scenarioRows.filter(x=>!x.expected.recognized.includes(id)).length;
+  return[id,{positive,negative,total:positive+negative}];
+}));
+const validationReady=validationCount>0&&Object.values(validationCoverage).every(v=>v.positive>=1&&v.negative>=1);
 const scenarioFailures=scenarioResults.filter(x=>!x.exact||x.decisionMismatches.length);
 const scenarioCoverage=Object.fromEntries(Object.keys(cards).map(id=>{
   const positive=(fixture.scenarios||[]).filter(x=>x.origin==='real-diagnostic'&&(x.expected?.recognized||[]).includes(id)).length;
@@ -182,7 +190,7 @@ console.log(JSON.stringify({
   cases:results.length,
   scenarios:scenarioResults,
   byCard,metrics,bySplit,coverage,scenarioCoverage,
-  validation:{cases:validationCount,ready:validationCount>0},
+  validation:{cases:validationCount,ready:validationReady,coverage:validationCoverage},
   failures:{falsePositives,falseNegatives,decisionMismatches,missingPolarity,scenarioFailures,missingScenarioCoverage}
 },null,2));
 
@@ -193,7 +201,7 @@ assert.equal(missingPolarity.length,0,'each tuned card needs at least one real p
 assert.equal(scenarioFailures.length,0,'full-frame benchmark must recognize exactly the expected card set and decision paths');
 assert.equal(missingScenarioCoverage.length,0,'each recognition card needs positive and negative full-frame real-device scenario coverage');
 
-if(fixture.policy.validationRequiredForGeneralizationClaim&&validationCount===0){
-  console.log('RECOGNITION BENCHMARK NOTE: validation split is empty; calibration PASS does not prove cross-video generalization.');
+if(fixture.policy.validationRequiredForGeneralizationClaim&&!validationReady){
+  console.log('RECOGNITION BENCHMARK NOTE: validation coverage is incomplete; PASS does not prove cross-video generalization.');
 }
 console.log('RECOGNITION BENCHMARK PASS');
