@@ -1,0 +1,369 @@
+{
+  "version": "recognition-benchmark-v1",
+  "description": "Curated hand-recognition cases extracted from real iPhone diagnostics plus explicit synthetic safety negatives. Real cases are calibration-only until independent validation videos are added.",
+  "policy": {
+    "zeroFalsePositives": true,
+    "zeroFalseNegatives": true,
+    "requirePositiveAndNegativePerTunedCard": true,
+    "validationRequiredForGeneralizationClaim": true
+  },
+  "cases": [
+    {
+      "id": "real-zeta-stable-own-turn-37.105",
+      "split": "calibration",
+      "origin": "real-diagnostic",
+      "source": {
+        "diagnostic": "shadowverse-wb-diagnostic-v4.13.23-2026-09-19T1230.json",
+        "build": "4.13.23-20260919-clean-13-23",
+        "video": "ScreenRecording_09-14-2026 21-17-26_1.mp4",
+        "window": [
+          36.985,
+          37.105
+        ]
+      },
+      "cardId": "zetaBeatrix",
+      "expected": {
+        "recognized": true,
+        "decision": "temporal-stable-leader-rescue"
+      },
+      "samples": [
+        {
+          "time": 36.985,
+          "slot": 4,
+          "score": 0.8594,
+          "source": "anchor"
+        },
+        {
+          "time": 37.025,
+          "slot": 4,
+          "score": 0.8581,
+          "source": "anchor"
+        },
+        {
+          "time": 37.065,
+          "slot": 4,
+          "score": 0.8581,
+          "source": "anchor"
+        },
+        {
+          "time": 37.105,
+          "slot": 4,
+          "score": 0.8581,
+          "source": "anchor"
+        }
+      ]
+    },
+    {
+      "id": "real-zeta-weak-title-lookalike",
+      "split": "calibration",
+      "origin": "real-diagnostic",
+      "source": {
+        "diagnostic": "shadowverse-wb-diagnostic-v4.13.23-2026-09-19T1230.json",
+        "build": "4.13.23-20260919-clean-13-23",
+        "video": "ScreenRecording_09-14-2026 21-17-26_1.mp4",
+        "window": [
+          81.835,
+          81.955
+        ]
+      },
+      "cardId": "zetaBeatrix",
+      "expected": {
+        "recognized": false
+      },
+      "samples": [
+        {
+          "time": 81.835,
+          "slot": 0,
+          "score": 0.6659,
+          "source": "title"
+        },
+        {
+          "time": 81.875,
+          "slot": 0,
+          "score": 0.6661,
+          "source": "title"
+        },
+        {
+          "time": 81.915,
+          "slot": 0,
+          "score": 0.6673,
+          "source": "title"
+        },
+        {
+          "time": 81.955,
+          "slot": 0,
+          "score": 0.67,
+          "source": "title"
+        }
+      ]
+    },
+    {
+      "id": "real-qb-ocr-zero-82.395",
+      "split": "calibration",
+      "origin": "real-diagnostic",
+      "source": {
+        "diagnostic": "shadowverse-wb-diagnostic-v4.13.23-2026-09-19T1230.json",
+        "build": "4.13.23-20260919-clean-13-23",
+        "video": "ScreenRecording_09-14-2026 21-17-26_1.mp4",
+        "window": [
+          81.835,
+          81.955
+        ]
+      },
+      "cardId": "quickBlader",
+      "expected": {
+        "recognized": true,
+        "decision": "temporal-stable-leader-rescue"
+      },
+      "samples": [
+        {
+          "time": 81.835,
+          "slot": 2,
+          "score": 0.8907,
+          "source": "anchor",
+          "template": {
+            "value": 1,
+            "score": 0.9449,
+            "threshold": 0.98,
+            "accepted": false
+          },
+          "ocr": {
+            "value": 0,
+            "accepted": true
+          }
+        },
+        {
+          "time": 81.875,
+          "slot": 2,
+          "score": 0.8914,
+          "source": "anchor",
+          "template": {
+            "value": 1,
+            "score": 0.943,
+            "threshold": 0.98,
+            "accepted": false
+          },
+          "ocr": {
+            "value": 0,
+            "accepted": true
+          }
+        },
+        {
+          "time": 81.915,
+          "slot": 2,
+          "score": 0.891,
+          "source": "anchor",
+          "template": {
+            "value": 1,
+            "score": 0.9423,
+            "threshold": 0.98,
+            "accepted": false
+          },
+          "ocr": {
+            "value": 0,
+            "accepted": true
+          }
+        },
+        {
+          "time": 81.955,
+          "slot": 2,
+          "score": 0.894,
+          "source": "anchor",
+          "template": {
+            "value": 1,
+            "score": 0.9456,
+            "threshold": 0.98,
+            "accepted": false
+          },
+          "ocr": {
+            "value": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "historic-qb-turn-boundary-before-continuity",
+      "split": "calibration",
+      "origin": "real-diagnostic-derived",
+      "source": {
+        "diagnostic": "historical clean-13.21 turn-boundary regression",
+        "build": "4.13.21",
+        "video": "ScreenRecording_09-14-2026 21-17-26_1.mp4",
+        "window": [
+          81.757,
+          81.877
+        ]
+      },
+      "cardId": "quickBlader",
+      "expected": {
+        "recognized": false,
+        "reason": "must remain unresolved before turn-boundary continuity proof"
+      },
+      "samples": [
+        {
+          "time": 81.757,
+          "slot": 2,
+          "score": 0.8908,
+          "source": "anchor",
+          "template": {
+            "value": 1,
+            "score": 0.9268,
+            "threshold": 0.98,
+            "accepted": false
+          }
+        },
+        {
+          "time": 81.797,
+          "slot": 2,
+          "score": 0.8915,
+          "source": "anchor",
+          "template": {
+            "value": 1,
+            "score": 0.9461,
+            "threshold": 0.98,
+            "accepted": false
+          }
+        },
+        {
+          "time": 81.837,
+          "slot": 2,
+          "score": 0.8907,
+          "source": "anchor",
+          "template": {
+            "value": 1,
+            "score": 0.9449,
+            "threshold": 0.98,
+            "accepted": false
+          },
+          "ocr": {
+            "value": 0,
+            "accepted": true
+          }
+        },
+        {
+          "time": 81.877,
+          "slot": 2,
+          "score": 0.8914,
+          "source": "anchor",
+          "template": {
+            "value": 1,
+            "score": 0.943,
+            "threshold": 0.98,
+            "accepted": false
+          },
+          "ocr": {
+            "value": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "safety-qb-strong-wrong-cost",
+      "split": "safety",
+      "origin": "synthetic-safety",
+      "cardId": "quickBlader",
+      "expected": {
+        "recognized": false,
+        "reason": "strong wrong-cost evidence must veto rescue"
+      },
+      "samples": [
+        {
+          "time": 0,
+          "slot": 1,
+          "score": 0.889,
+          "source": "anchor",
+          "template": {
+            "value": 7,
+            "score": 0.99,
+            "threshold": 0.98,
+            "accepted": true
+          },
+          "ocr": {
+            "value": 7,
+            "accepted": true
+          }
+        },
+        {
+          "time": 1,
+          "slot": 1,
+          "score": 0.889,
+          "source": "anchor",
+          "template": {
+            "value": 7,
+            "score": 0.99,
+            "threshold": 0.98,
+            "accepted": true
+          },
+          "ocr": {
+            "value": 7,
+            "accepted": true
+          }
+        },
+        {
+          "time": 2,
+          "slot": 1,
+          "score": 0.889,
+          "source": "anchor",
+          "template": {
+            "value": 7,
+            "score": 0.99,
+            "threshold": 0.98,
+            "accepted": true
+          },
+          "ocr": {
+            "value": 7,
+            "accepted": true
+          }
+        },
+        {
+          "time": 3,
+          "slot": 1,
+          "score": 0.889,
+          "source": "anchor",
+          "template": {
+            "value": 7,
+            "score": 0.99,
+            "threshold": 0.98,
+            "accepted": true
+          },
+          "ocr": {
+            "value": 7,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "safety-zeta-three-frames-only",
+      "split": "safety",
+      "origin": "synthetic-safety",
+      "cardId": "zetaBeatrix",
+      "expected": {
+        "recognized": false,
+        "reason": "stable-leader rescue requires four frames"
+      },
+      "samples": [
+        {
+          "time": 0,
+          "slot": 4,
+          "score": 0.858,
+          "source": "anchor"
+        },
+        {
+          "time": 0.04,
+          "slot": 4,
+          "score": 0.859,
+          "source": "anchor"
+        },
+        {
+          "time": 0.08,
+          "slot": 4,
+          "score": 0.8585,
+          "source": "anchor"
+        }
+      ]
+    }
+  ]
+}
