@@ -461,7 +461,7 @@ assert.ok(barbarosFanFixture.best>=.93,`real-video Barbaros fan-position fixture
 const barbarosHardNegative=H.matchFeature(realVideoFixtureDecode({"scale":800.8372672539656,"data":"+f/+Bwj99vTy+QIVLS76wcDF6QceBxL65NvX4Of/BCcAzMfC7/sCFSYX9+XoAhcr6RQQ2tTI7PgFRmRaHOvqLUEY5AIKzczE7PoILkA/AvDuWzD85QMHwsDA6hUUNEUyLgr0Dvnu5w0Hwb++IA7qFh9HRyT///YF8wsOwL++GTwDJlktCN30Dh4LABQSv76++QIHBgADDAoB6fLg3+LTy8fBNUb7EhcQCgsDCgsB9PPdu77FVFYXIhYREBYMCg4QCQHetbm/a1AzKP/6AhUTERcTBwXovr3DQ0cwIBYMDRQL+gwQChT4y8rKJS0JAv0GGRshFg8IAjcSysnL8fbl59nk4eENOiggFlAYysrR+vPq8NXmx8f2/ggeN2Mn19HPMikgFQ8LCwsRLzx5f2IwERgS3evy6Nvj8vXy+/UAQV04JBsbyNje2NPd7vLq7d7F4ic6JhwdwdLY0crW5+ri3d7U7ik6Ix4c0Nrh28vR5Ofc3+rj8iQyJRoa59TzFATbyuDV2ePo7/IRFwcJ+PwaQ08zCggF7Obh3N8CEgkK3+z0DjJISigRFwbs2dHyBQcN"})).find(x=>x.cardId==='barbaros');
 assert.ok(barbarosHardNegative.best<.90,`real-video cost-7 hard negative must stay below .90 candidate gate: ${barbarosHardNegative.best}`);
 
-assert.equal(H.version,'hand-clean-1.32');
+assert.equal(H.version,'hand-clean-1.33');
 const qbRecognition=DB.recognitionCards().find(x=>x.id==='quickBlader');
 assert.equal(H.temporalProbeFloor(qbRecognition),.88,'Quick Blader alone may probe down to the guarded .88 floor');
 const zetaRecognition=DB.recognitionCards().find(x=>x.id==='zetaBeatrix');
@@ -481,7 +481,7 @@ const temporalTwoFrames=[.893,.892].map((score,i)=>({sampleTime:i,counts:{},scor
 assert.equal(H.decideHandSamples(temporalTwoFrames).recognized.quickBlader,undefined);
 
 
-assert.equal(H.version,'hand-clean-1.32');
+assert.equal(H.version,'hand-clean-1.33');
 WB.turnTimeline=[
  {side:'bottom',turn:6,time:74.41},
  {side:'top',turn:7,time:81.863},
@@ -699,8 +699,10 @@ WB.turnTimeline=savedTimeline;
 
 
 
-const maskDemo=new Uint8Array([1,1,0,0]);
-assert.ok(H.maskedSpatialCosine(new Float32Array([1,1,9,9]),new Float32Array([1,1,-9,-9]),maskDemo)>.99,'masked cosine must ignore contaminated tail cells');
+const maskDemo=new Uint8Array([1,1,1,0,0]);
+const maskA=new Float32Array([1,2,3,100,100]),maskB=new Float32Array([11,12,13,-100,-100]);
+assert.ok(H.maskedSpatialCorrelation(maskA,maskB,maskDemo)>.9999,'visible-cell correlation must re-center the retained cells and ignore contaminated tail normalization');
+assert.ok(H.maskedSpatialCorrelation(maskA,maskB,maskDemo)>H.maskedSpatialCosine(maskA,maskB,maskDemo),'visible-cell re-normalization must improve over post-normalization masking for affine-shifted visible evidence');
 const visDemo=H.anchorVisibilityMask({cx:916},{cx:959},0,-2,6);
 assert.equal(visDemo.rightGap,43);
 assert.ok(visDemo.supportRatio>=.45&&visDemo.supportRatio<1,'crowded hand must expose only part of the fixed anchor patch');
@@ -711,6 +713,10 @@ const syntheticAnchorFeatures=Array.from({length:H.anchorCenterShifts.length*H.a
 const shadowDemo=H.shadowMaskedAnchorMatch('quickBlader',syntheticAnchorFeatures,{cx:916},{cx:959});
 assert.ok(shadowDemo&&shadowDemo.score>.99,'shadow masked anchor must compare only visible cells against the same profile');
 assert.ok(shadowDemo.supportRatio>=H.config.shadowAnchorMinSupport);
+assert.equal(shadowDemo.normalization,'visible-cells-per-channel');
+const shadowMatrix=H.shadowMaskedAnchorScores(syntheticAnchorFeatures,{cx:916},{cx:959});
+for(const card of DB.recognitionCards())assert.ok(shadowMatrix[card.id],`shadow evidence matrix must include ${card.id} even when it is not imageBest`);
+assert.ok(shadowMatrix.quickBlader.score>.99);
 const shadowOnly=Array.from({length:4},(_,i)=>({sampleTime:i,candidateCount:7,counts:{},scores:{},candidates:[{...stableLeaderCandidate('quickBlader',.50,5,{titleScore:.10}),imageBest:{...stableLeaderCandidate('quickBlader',.50,5,{titleScore:.10}).imageBest,shadowMaskedAnchor:{score:.99,supportRatio:.6}}}]}));
 assert.equal(H.decideHandSamples(shadowOnly).recognized.quickBlader,undefined,'shadow masked score must remain diagnostic-only and never alter current recognition decisions');
 
