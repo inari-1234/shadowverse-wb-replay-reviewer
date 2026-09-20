@@ -461,7 +461,7 @@ assert.ok(barbarosFanFixture.best>=.93,`real-video Barbaros fan-position fixture
 const barbarosHardNegative=H.matchFeature(realVideoFixtureDecode({"scale":800.8372672539656,"data":"+f/+Bwj99vTy+QIVLS76wcDF6QceBxL65NvX4Of/BCcAzMfC7/sCFSYX9+XoAhcr6RQQ2tTI7PgFRmRaHOvqLUEY5AIKzczE7PoILkA/AvDuWzD85QMHwsDA6hUUNEUyLgr0Dvnu5w0Hwb++IA7qFh9HRyT///YF8wsOwL++GTwDJlktCN30Dh4LABQSv76++QIHBgADDAoB6fLg3+LTy8fBNUb7EhcQCgsDCgsB9PPdu77FVFYXIhYREBYMCg4QCQHetbm/a1AzKP/6AhUTERcTBwXovr3DQ0cwIBYMDRQL+gwQChT4y8rKJS0JAv0GGRshFg8IAjcSysnL8fbl59nk4eENOiggFlAYysrR+vPq8NXmx8f2/ggeN2Mn19HPMikgFQ8LCwsRLzx5f2IwERgS3evy6Nvj8vXy+/UAQV04JBsbyNje2NPd7vLq7d7F4ic6JhwdwdLY0crW5+ri3d7U7ik6Ix4c0Nrh28vR5Ofc3+rj8iQyJRoa59TzFATbyuDV2ePo7/IRFwcJ+PwaQ08zCggF7Obh3N8CEgkK3+z0DjJISigRFwbs2dHyBQcN"})).find(x=>x.cardId==='barbaros');
 assert.ok(barbarosHardNegative.best<.90,`real-video cost-7 hard negative must stay below .90 candidate gate: ${barbarosHardNegative.best}`);
 
-assert.equal(H.version,'hand-clean-1.30');
+assert.equal(H.version,'hand-clean-1.31');
 const qbRecognition=DB.recognitionCards().find(x=>x.id==='quickBlader');
 assert.equal(H.temporalProbeFloor(qbRecognition),.88,'Quick Blader alone may probe down to the guarded .88 floor');
 const zetaRecognition=DB.recognitionCards().find(x=>x.id==='zetaBeatrix');
@@ -481,7 +481,7 @@ const temporalTwoFrames=[.893,.892].map((score,i)=>({sampleTime:i,counts:{},scor
 assert.equal(H.decideHandSamples(temporalTwoFrames).recognized.quickBlader,undefined);
 
 
-assert.equal(H.version,'hand-clean-1.30');
+assert.equal(H.version,'hand-clean-1.31');
 WB.turnTimeline=[
  {side:'bottom',turn:6,time:74.41},
  {side:'top',turn:7,time:81.863},
@@ -723,6 +723,17 @@ const qbSevenNearTieDecision=H.decideHandSamples(qbSevenNearTie);
 assert.equal(qbSevenNearTieDecision.recognized.quickBlader,undefined,'seven-card Quick rescue must reject another same-card slot within .30 of the leader');
 const qbSevenNearTieGroup=qbSevenNearTieDecision.unresolved.quickBlader?.stableLeader?.groups?.find(x=>x.tier==='seven-card-fan-stable'&&x.slot===5);
 assert.equal(qbSevenNearTieGroup?.sameCardLeaderMarginOk,false);
+const qbSevenHiddenRunner=realQbSevenScores.map((score,i)=>{
+  const hidden=stableLeaderCandidate('zetaBeatrix',score-.10,2,{titleScore:.52});
+  hidden.matchScores={quickBlader:{imageScore:score-.20,imageSource:'anchor',titleScore:.31,anchorScore:score-.20,imageCandidate:false,imageConfirmed:false},zetaBeatrix:{imageScore:score-.10,imageSource:'anchor',titleScore:.52,anchorScore:score-.10,imageCandidate:false,imageConfirmed:false}};
+  return{sampleTime:i,candidateCount:7,counts:{},scores:{},candidates:[hidden,stableLeaderCandidate('quickBlader',score,5,{titleScore:realQbSevenTitles[i]})]};
+});
+const qbSevenHiddenRunnerDecision=H.decideHandSamples(qbSevenHiddenRunner);
+assert.equal(qbSevenHiddenRunnerDecision.recognized.quickBlader,undefined,'same-card runner margin must include Quick scores even when another card is imageBest in that slot');
+const qbSevenHiddenRunnerGroup=qbSevenHiddenRunnerDecision.unresolved.quickBlader?.stableLeader?.groups?.find(x=>x.tier==='seven-card-fan-stable'&&x.slot===5);
+assert.equal(qbSevenHiddenRunnerGroup?.sameCardLeaderMarginOk,false);
+assert.equal(qbSevenHiddenRunnerGroup?.minObservedSameCardLeaderMargin,.2);
+
 
 const qbSevenWrong=realQbSevenScores.map((score,i)=>({sampleTime:i,candidateCount:7,counts:{},scores:{},candidates:[stableLeaderCandidate('quickBlader',score,5,{titleScore:realQbSevenTitles[i],ocrValue:i===2?0:null,ocrAccepted:i===2,ocrConfidence:i===2?70:null})]}));
 assert.equal(H.decideHandSamples(qbSevenWrong).recognized.quickBlader,undefined,'high-confidence wrong cost must veto seven-card Quick rescue');
