@@ -461,7 +461,7 @@ assert.ok(barbarosFanFixture.best>=.93,`real-video Barbaros fan-position fixture
 const barbarosHardNegative=H.matchFeature(realVideoFixtureDecode({"scale":800.8372672539656,"data":"+f/+Bwj99vTy+QIVLS76wcDF6QceBxL65NvX4Of/BCcAzMfC7/sCFSYX9+XoAhcr6RQQ2tTI7PgFRmRaHOvqLUEY5AIKzczE7PoILkA/AvDuWzD85QMHwsDA6hUUNEUyLgr0Dvnu5w0Hwb++IA7qFh9HRyT///YF8wsOwL++GTwDJlktCN30Dh4LABQSv76++QIHBgADDAoB6fLg3+LTy8fBNUb7EhcQCgsDCgsB9PPdu77FVFYXIhYREBYMCg4QCQHetbm/a1AzKP/6AhUTERcTBwXovr3DQ0cwIBYMDRQL+gwQChT4y8rKJS0JAv0GGRshFg8IAjcSysnL8fbl59nk4eENOiggFlAYysrR+vPq8NXmx8f2/ggeN2Mn19HPMikgFQ8LCwsRLzx5f2IwERgS3evy6Nvj8vXy+/UAQV04JBsbyNje2NPd7vLq7d7F4ic6JhwdwdLY0crW5+ri3d7U7ik6Ix4c0Nrh28vR5Ofc3+rj8iQyJRoa59TzFATbyuDV2ePo7/IRFwcJ+PwaQ08zCggF7Obh3N8CEgkK3+z0DjJISigRFwbs2dHyBQcN"})).find(x=>x.cardId==='barbaros');
 assert.ok(barbarosHardNegative.best<.90,`real-video cost-7 hard negative must stay below .90 candidate gate: ${barbarosHardNegative.best}`);
 
-assert.equal(H.version,'hand-clean-1.33');
+assert.equal(H.version,'hand-clean-1.34');
 const qbRecognition=DB.recognitionCards().find(x=>x.id==='quickBlader');
 assert.equal(H.temporalProbeFloor(qbRecognition),.88,'Quick Blader alone may probe down to the guarded .88 floor');
 const zetaRecognition=DB.recognitionCards().find(x=>x.id==='zetaBeatrix');
@@ -481,7 +481,7 @@ const temporalTwoFrames=[.893,.892].map((score,i)=>({sampleTime:i,counts:{},scor
 assert.equal(H.decideHandSamples(temporalTwoFrames).recognized.quickBlader,undefined);
 
 
-assert.equal(H.version,'hand-clean-1.33');
+assert.equal(H.version,'hand-clean-1.34');
 WB.turnTimeline=[
  {side:'bottom',turn:6,time:74.41},
  {side:'top',turn:7,time:81.863},
@@ -717,6 +717,20 @@ assert.equal(shadowDemo.normalization,'visible-cells-per-channel');
 const shadowMatrix=H.shadowMaskedAnchorScores(syntheticAnchorFeatures,{cx:916},{cx:959});
 for(const card of DB.recognitionCards())assert.ok(shadowMatrix[card.id],`shadow evidence matrix must include ${card.id} even when it is not imageBest`);
 assert.ok(shadowMatrix.quickBlader.score>.99);
+const qbAnchorProfile=DB.anchorRecognitionProfiles('quickBlader')[0];
+const poseVariants=Array.from({length:H.anchorCenterShifts.length*H.anchorAngles.length},()=>new Float32Array(qbAnchorProfile.length));
+const poseDxIndex=H.anchorCenterShifts.indexOf(0),poseAngleIndex=H.anchorAngles.indexOf(5),poseIndex=poseDxIndex*H.anchorAngles.length+poseAngleIndex;
+poseVariants[poseIndex]=new Float32Array(qbAnchorProfile);
+const poseMatrix=H.anchorVariantDiagnosticScores(poseVariants);
+assert.ok(poseMatrix.quickBlader.score>.9999,'anchor pose diagnostics must recover the matching profile');
+assert.equal(poseMatrix.quickBlader.dx,0);
+assert.equal(poseMatrix.quickBlader.angle,5);
+assert.equal(poseMatrix.quickBlader.atDxBoundary,false);
+assert.equal(poseMatrix.quickBlader.atAngleBoundary,false);
+assert.equal(poseMatrix.quickBlader.variantCount,poseVariants.length);
+assert.equal(Object.keys(H.shadowMaskedAnchorScores(poseVariants,{cx:959},null)).length,0,'rightmost card has no right-neighbor shadow evidence');
+const poseOnly=Array.from({length:4},(_,i)=>({sampleTime:i,candidateCount:8,counts:{},scores:{},candidates:[{...stableLeaderCandidate('zetaBeatrix',.50,7,{titleScore:.10}),anchorVariantScores:{zetaBeatrix:{score:.99,dx:4,angle:10,atDxBoundary:true,atAngleBoundary:true}}}]}));
+assert.equal(H.decideHandSamples(poseOnly).recognized.zetaBeatrix,undefined,'anchor pose diagnostics must remain diagnostic-only and never alter recognition decisions');
 const shadowOnly=Array.from({length:4},(_,i)=>({sampleTime:i,candidateCount:7,counts:{},scores:{},candidates:[{...stableLeaderCandidate('quickBlader',.50,5,{titleScore:.10}),imageBest:{...stableLeaderCandidate('quickBlader',.50,5,{titleScore:.10}).imageBest,shadowMaskedAnchor:{score:.99,supportRatio:.6}}}]}));
 assert.equal(H.decideHandSamples(shadowOnly).recognized.quickBlader,undefined,'shadow masked score must remain diagnostic-only and never alter current recognition decisions');
 
