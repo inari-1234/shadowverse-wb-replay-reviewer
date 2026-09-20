@@ -461,7 +461,7 @@ assert.ok(barbarosFanFixture.best>=.93,`real-video Barbaros fan-position fixture
 const barbarosHardNegative=H.matchFeature(realVideoFixtureDecode({"scale":800.8372672539656,"data":"+f/+Bwj99vTy+QIVLS76wcDF6QceBxL65NvX4Of/BCcAzMfC7/sCFSYX9+XoAhcr6RQQ2tTI7PgFRmRaHOvqLUEY5AIKzczE7PoILkA/AvDuWzD85QMHwsDA6hUUNEUyLgr0Dvnu5w0Hwb++IA7qFh9HRyT///YF8wsOwL++GTwDJlktCN30Dh4LABQSv76++QIHBgADDAoB6fLg3+LTy8fBNUb7EhcQCgsDCgsB9PPdu77FVFYXIhYREBYMCg4QCQHetbm/a1AzKP/6AhUTERcTBwXovr3DQ0cwIBYMDRQL+gwQChT4y8rKJS0JAv0GGRshFg8IAjcSysnL8fbl59nk4eENOiggFlAYysrR+vPq8NXmx8f2/ggeN2Mn19HPMikgFQ8LCwsRLzx5f2IwERgS3evy6Nvj8vXy+/UAQV04JBsbyNje2NPd7vLq7d7F4ic6JhwdwdLY0crW5+ri3d7U7ik6Ix4c0Nrh28vR5Ofc3+rj8iQyJRoa59TzFATbyuDV2ePo7/IRFwcJ+PwaQ08zCggF7Obh3N8CEgkK3+z0DjJISigRFwbs2dHyBQcN"})).find(x=>x.cardId==='barbaros');
 assert.ok(barbarosHardNegative.best<.90,`real-video cost-7 hard negative must stay below .90 candidate gate: ${barbarosHardNegative.best}`);
 
-assert.equal(H.version,'hand-clean-1.28');
+assert.equal(H.version,'hand-clean-1.29');
 const qbRecognition=DB.recognitionCards().find(x=>x.id==='quickBlader');
 assert.equal(H.temporalProbeFloor(qbRecognition),.88,'Quick Blader alone may probe down to the guarded .88 floor');
 const zetaRecognition=DB.recognitionCards().find(x=>x.id==='zetaBeatrix');
@@ -481,7 +481,7 @@ const temporalTwoFrames=[.893,.892].map((score,i)=>({sampleTime:i,counts:{},scor
 assert.equal(H.decideHandSamples(temporalTwoFrames).recognized.quickBlader,undefined);
 
 
-assert.equal(H.version,'hand-clean-1.28');
+assert.equal(H.version,'hand-clean-1.29');
 WB.turnTimeline=[
  {side:'bottom',turn:6,time:74.41},
  {side:'top',turn:7,time:81.863},
@@ -696,6 +696,61 @@ WB.turnTimeline=savedTimeline;
 
 
 
+
+
+const realQbSevenScores=[.8492,.8476,.8469,.8476],realQbSevenTitles=[.3173,.3127,.3127,.3142];
+const realQbSeven=realQbSevenScores.map((score,i)=>({sampleTime:21.993+i*.04,candidateCount:7,counts:{},scores:{},candidates:[stableLeaderCandidate('quickBlader',score,5,{titleScore:realQbSevenTitles[i]})]}));
+const realQbSevenDecision=H.decideHandSamples(realQbSeven);
+assert.equal(realQbSevenDecision.recognized.quickBlader?.decision,'temporal-stable-leader-rescue','real 4.13.35 seven-card Quick Blader sequence must be rescued by its guarded fan tier');
+assert.equal(realQbSevenDecision.recognized.quickBlader?.stableLeader?.tier,'seven-card-fan-stable');
+assert.equal(realQbSevenDecision.recognized.quickBlader?.confidence,.8469);
+const qbSevenProbe=H.displayedCostProbeDecision({cardId:'quickBlader',best:.8476,imageSource:'anchor',titleScore:.3142,imageCandidate:false},7,22.113);
+assert.equal(qbSevenProbe.read,true,'real seven-card Quick Blader candidate must execute displayed-cost probing');
+assert.equal(qbSevenProbe.stableLeaderCostProbe.tier,'seven-card-fan-stable');
+assert.equal(H.displayedCostProbeDecision({cardId:'quickBlader',best:.8476,imageSource:'anchor',titleScore:.3142,imageCandidate:false},6,22.113).read,false,'seven-card Quick rescue must not probe outside the verified seven-card layout');
+assert.equal(H.decideHandSamples(realQbSeven.map(x=>({...x,candidateCount:6}))).recognized.quickBlader,undefined,'seven-card Quick rescue must not apply outside seven-card layout');
+const qbSevenLowTitle=realQbSevenScores.map((score,i)=>({sampleTime:i,candidateCount:7,counts:{},scores:{},candidates:[stableLeaderCandidate('quickBlader',score,5,{titleScore:i===1?.2999:realQbSevenTitles[i]})]}));
+assert.equal(H.decideHandSamples(qbSevenLowTitle).recognized.quickBlader,undefined,'seven-card Quick rescue must keep independent title support');
+const qbSevenLowAnchor=[.8449,.8470,.8472,.8471].map((score,i)=>({sampleTime:i,candidateCount:7,counts:{},scores:{},candidates:[stableLeaderCandidate('quickBlader',score,5,{titleScore:.313})]}));
+assert.equal(H.decideHandSamples(qbSevenLowAnchor).recognized.quickBlader,undefined,'seven-card Quick rescue must keep the .845 anchor floor');
+const qbSevenWide=[.845,.8481,.847,.8475].map((score,i)=>({sampleTime:i,candidateCount:7,counts:{},scores:{},candidates:[stableLeaderCandidate('quickBlader',score,5,{titleScore:.313})]}));
+assert.equal(H.decideHandSamples(qbSevenWide).recognized.quickBlader,undefined,'seven-card Quick rescue must reject anchor instability wider than .003');
+const qbSevenWrong=realQbSevenScores.map((score,i)=>({sampleTime:i,candidateCount:7,counts:{},scores:{},candidates:[stableLeaderCandidate('quickBlader',score,5,{titleScore:realQbSevenTitles[i],ocrValue:i===2?0:null,ocrAccepted:i===2,ocrConfidence:i===2?70:null})]}));
+assert.equal(H.decideHandSamples(qbSevenWrong).recognized.quickBlader,undefined,'high-confidence wrong cost must veto seven-card Quick rescue');
+const qbSevenWeakWrong=realQbSevenScores.map((score,i)=>({sampleTime:i,candidateCount:7,counts:{},scores:{},candidates:[stableLeaderCandidate('quickBlader',score,5,{titleScore:realQbSevenTitles[i],ocrValue:i===2?0:null,ocrAccepted:i===2,ocrConfidence:i===2?30:null})]}));
+assert.equal(H.decideHandSamples(qbSevenWeakWrong).recognized.quickBlader?.stableLeader?.tier,'seven-card-fan-stable','low-confidence OCR-zero artifact must not veto the tightly guarded seven-card Quick rescue');
+
+const realZetaEightScores=[.8647,.8641,.8899,.8905],realZetaEightTitles=[.4849,.5053,.5277,.5306];
+const realZetaEight=realZetaEightScores.map((score,i)=>({sampleTime:131.776+i*.04,candidateCount:8,counts:{},scores:{},candidates:[stableLeaderCandidate('zetaBeatrix',score,7,{titleScore:realZetaEightTitles[i],ocrValue:i===3?6:null,ocrAccepted:i===3,ocrConfidence:i===3?80:null})]}));
+const realZetaEightDecision=H.decideHandSamples(realZetaEight);
+assert.equal(realZetaEightDecision.recognized.zetaBeatrix?.decision,'temporal-stable-leader-rescue','real 4.13.35 eight-card Zeta sequence must be rescued only with positive high-confidence allowed-cost proof');
+assert.equal(realZetaEightDecision.recognized.zetaBeatrix?.stableLeader?.tier,'eight-card-fan-cost-confirmed');
+assert.equal(realZetaEightDecision.recognized.zetaBeatrix?.count,1);
+assert.equal(realZetaEightDecision.recognized.zetaBeatrix?.confidence,.8641);
+assert.equal(realZetaEightDecision.recognized.zetaBeatrix?.stableLeader?.groups?.[0]?.requiredAllowedOcrFrames,1);
+assert.equal(realZetaEightDecision.recognized.zetaBeatrix?.stableLeader?.groups?.[0]?.allowedOcrMinConfidence,60);
+assert.equal(realZetaEightDecision.recognized.zetaBeatrix?.stableLeader?.groups?.[0]?.allowedOcrFrames,1);
+assert.equal(realZetaEightDecision.recognized.zetaBeatrix?.stableLeader?.groups?.[0]?.allowedOcrOk,true);
+const zetaEightProbe=H.displayedCostProbeDecision({cardId:'zetaBeatrix',best:.8647,imageSource:'anchor',titleScore:.4849,imageCandidate:false},8,131.776);
+assert.equal(zetaEightProbe.read,true,'real eight-card Zeta sequence must probe displayed cost on all guarded frames');
+assert.equal(zetaEightProbe.stableLeaderCostProbe.tier,'eight-card-fan-cost-confirmed');
+assert.equal(zetaEightProbe.stableLeaderCostProbe.requiredAllowedOcrFrames,1);
+assert.equal(zetaEightProbe.stableLeaderCostProbe.allowedOcrMinConfidence,60);
+const zetaEightNoCost=realZetaEightScores.map((score,i)=>({sampleTime:i,candidateCount:8,counts:{},scores:{},candidates:[stableLeaderCandidate('zetaBeatrix',score,7,{titleScore:realZetaEightTitles[i]})]}));
+assert.equal(H.decideHandSamples(zetaEightNoCost).recognized.zetaBeatrix,undefined,'eight-card Zeta rescue must not rely on image evidence alone');
+const zetaEightWeakCost=realZetaEightScores.map((score,i)=>({sampleTime:i,candidateCount:8,counts:{},scores:{},candidates:[stableLeaderCandidate('zetaBeatrix',score,7,{titleScore:realZetaEightTitles[i],ocrValue:i===3?6:null,ocrAccepted:i===3,ocrConfidence:i===3?59:null})]}));
+assert.equal(H.decideHandSamples(zetaEightWeakCost).recognized.zetaBeatrix,undefined,'eight-card Zeta rescue requires high-confidence allowed-cost OCR');
+assert.equal(H.decideHandSamples(realZetaEight.map(x=>({...x,candidateCount:7}))).recognized.zetaBeatrix,undefined,'eight-card Zeta rescue must not apply outside eight-card layout');
+const zetaEightLowTitle=realZetaEightScores.map((score,i)=>({sampleTime:i,candidateCount:8,counts:{},scores:{},candidates:[stableLeaderCandidate('zetaBeatrix',score,7,{titleScore:i===0?.4799:realZetaEightTitles[i],ocrValue:i===3?6:null,ocrAccepted:i===3,ocrConfidence:i===3?80:null})]}));
+assert.equal(H.decideHandSamples(zetaEightLowTitle).recognized.zetaBeatrix,undefined,'eight-card Zeta rescue must keep the .48 title floor');
+const zetaEightLowAnchor=[.8599,.8641,.8899,.8905].map((score,i)=>({sampleTime:i,candidateCount:8,counts:{},scores:{},candidates:[stableLeaderCandidate('zetaBeatrix',score,7,{titleScore:.51,ocrValue:i===3?6:null,ocrAccepted:i===3,ocrConfidence:i===3?80:null})]}));
+assert.equal(H.decideHandSamples(zetaEightLowAnchor).recognized.zetaBeatrix,undefined,'eight-card Zeta rescue must keep the .86 anchor floor');
+const zetaEightWide=[.86,.891,.889,.890].map((score,i)=>({sampleTime:i,candidateCount:8,counts:{},scores:{},candidates:[stableLeaderCandidate('zetaBeatrix',score,7,{titleScore:.51,ocrValue:i===3?6:null,ocrAccepted:i===3,ocrConfidence:i===3?80:null})]}));
+assert.equal(H.decideHandSamples(zetaEightWide).recognized.zetaBeatrix,undefined,'eight-card Zeta rescue must reject score range wider than .03');
+const zetaEightWrong=realZetaEightScores.map((score,i)=>({sampleTime:i,candidateCount:8,counts:{},scores:{},candidates:[stableLeaderCandidate('zetaBeatrix',score,7,{titleScore:realZetaEightTitles[i],ocrValue:i===2?7:(i===3?6:null),ocrAccepted:i>=2,ocrConfidence:i===2?80:(i===3?80:null)})]}));
+assert.equal(H.decideHandSamples(zetaEightWrong).recognized.zetaBeatrix,undefined,'high-confidence wrong cost must veto eight-card Zeta rescue even when one allowed cost is present');
+const zetaEightWeakWrong=realZetaEightScores.map((score,i)=>({sampleTime:i,candidateCount:8,counts:{},scores:{},candidates:[stableLeaderCandidate('zetaBeatrix',score,7,{titleScore:realZetaEightTitles[i],ocrValue:i===2?0:(i===3?6:null),ocrAccepted:i>=2,ocrConfidence:i===2?30:(i===3?80:null)})]}));
+assert.equal(H.decideHandSamples(zetaEightWeakWrong).recognized.zetaBeatrix?.stableLeader?.tier,'eight-card-fan-cost-confirmed','low-confidence wrong OCR must not veto eight-card Zeta when strong allowed-cost proof exists');
 
 const realQbLate=[
  {score:.8907,template:.9449},
