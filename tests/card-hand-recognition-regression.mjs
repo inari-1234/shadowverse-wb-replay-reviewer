@@ -711,7 +711,7 @@ const syntheticAnchorFeatures=Array.from({length:H.anchorCenterShifts.length*H.a
 const shadowDemo=H.shadowMaskedAnchorMatch('quickBlader',syntheticAnchorFeatures,{cx:916},{cx:959});
 assert.ok(shadowDemo&&shadowDemo.score>.99,'shadow masked anchor must compare only visible cells against the same profile');
 assert.ok(shadowDemo.supportRatio>=H.config.shadowAnchorMinSupport);
-const shadowOnly=realQbSevenScores.map((score,i)=>({sampleTime:i,candidateCount:7,counts:{},scores:{},candidates:[{...stableLeaderCandidate('quickBlader',.50,5,{titleScore:.10}),imageBest:{...stableLeaderCandidate('quickBlader',.50,5,{titleScore:.10}).imageBest,shadowMaskedAnchor:{score:.99,supportRatio:.6}}}]}));
+const shadowOnly=Array.from({length:4},(_,i)=>({sampleTime:i,candidateCount:7,counts:{},scores:{},candidates:[{...stableLeaderCandidate('quickBlader',.50,5,{titleScore:.10}),imageBest:{...stableLeaderCandidate('quickBlader',.50,5,{titleScore:.10}).imageBest,shadowMaskedAnchor:{score:.99,supportRatio:.6}}}]}));
 assert.equal(H.decideHandSamples(shadowOnly).recognized.quickBlader,undefined,'shadow masked score must remain diagnostic-only and never alter current recognition decisions');
 
 const realQbSevenScores=[.8492,.8476,.8469,.8476],realQbSevenTitles=[.3173,.3127,.3127,.3142],realQbSevenRunner=[.4799,.4797,.4798,.4801];
