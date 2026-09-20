@@ -43,7 +43,7 @@ new vm.Script(fs.readFileSync(new URL('../state-recognition.js',import.meta.url)
 const SR=hpWB.StateRecognition;
 assert.equal(SR.version,'state-clean-1.8.8');
 assert.deepEqual([...SR.config.hp.directOffsets],[0,-.04,-.08,-.12],'direct HP confirmation must use current plus three past-only frames');
-const hpSingle=(value,offset,{accepted=false,votes=1}={})=>({offset,accepted,value:accepted?value:null,frameCandidate:value,frameVotes:votes});
+const hpSingle=(value,offset,{accepted=false,votes=1}={})=>({offset,accepted,reason:accepted?'ok':'ocr-insufficient-consensus',value:accepted?value:null,frameCandidate:value,frameVotes:votes});
 const hpRealLike=[hpSingle(9,0),hpSingle(9,-.04),hpSingle(9,-.08)];
 const hpRealDecision=SR.decideHpDirectStable(hpRealLike,9);
 assert.equal(hpRealDecision.accepted,true,'three temporally stable one-variant HP reads must be enough for guarded direct confirmation');
