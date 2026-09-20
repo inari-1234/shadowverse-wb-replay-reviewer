@@ -461,7 +461,7 @@ assert.ok(barbarosFanFixture.best>=.93,`real-video Barbaros fan-position fixture
 const barbarosHardNegative=H.matchFeature(realVideoFixtureDecode({"scale":800.8372672539656,"data":"+f/+Bwj99vTy+QIVLS76wcDF6QceBxL65NvX4Of/BCcAzMfC7/sCFSYX9+XoAhcr6RQQ2tTI7PgFRmRaHOvqLUEY5AIKzczE7PoILkA/AvDuWzD85QMHwsDA6hUUNEUyLgr0Dvnu5w0Hwb++IA7qFh9HRyT///YF8wsOwL++GTwDJlktCN30Dh4LABQSv76++QIHBgADDAoB6fLg3+LTy8fBNUb7EhcQCgsDCgsB9PPdu77FVFYXIhYREBYMCg4QCQHetbm/a1AzKP/6AhUTERcTBwXovr3DQ0cwIBYMDRQL+gwQChT4y8rKJS0JAv0GGRshFg8IAjcSysnL8fbl59nk4eENOiggFlAYysrR+vPq8NXmx8f2/ggeN2Mn19HPMikgFQ8LCwsRLzx5f2IwERgS3evy6Nvj8vXy+/UAQV04JBsbyNje2NPd7vLq7d7F4ic6JhwdwdLY0crW5+ri3d7U7ik6Ix4c0Nrh28vR5Ofc3+rj8iQyJRoa59TzFATbyuDV2ePo7/IRFwcJ+PwaQ08zCggF7Obh3N8CEgkK3+z0DjJISigRFwbs2dHyBQcN"})).find(x=>x.cardId==='barbaros');
 assert.ok(barbarosHardNegative.best<.90,`real-video cost-7 hard negative must stay below .90 candidate gate: ${barbarosHardNegative.best}`);
 
-assert.equal(H.version,'hand-clean-1.26');
+assert.equal(H.version,'hand-clean-1.27');
 const qbRecognition=DB.recognitionCards().find(x=>x.id==='quickBlader');
 assert.equal(H.temporalProbeFloor(qbRecognition),.88,'Quick Blader alone may probe down to the guarded .88 floor');
 const zetaRecognition=DB.recognitionCards().find(x=>x.id==='zetaBeatrix');
@@ -481,7 +481,7 @@ const temporalTwoFrames=[.893,.892].map((score,i)=>({sampleTime:i,counts:{},scor
 assert.equal(H.decideHandSamples(temporalTwoFrames).recognized.quickBlader,undefined);
 
 
-assert.equal(H.version,'hand-clean-1.26');
+assert.equal(H.version,'hand-clean-1.27');
 WB.turnTimeline=[
  {side:'bottom',turn:6,time:74.41},
  {side:'top',turn:7,time:81.863},
@@ -656,6 +656,33 @@ const zetaStrongZero=zetaSixCardScores.map((score,i)=>({sampleTime:i,candidateCo
 assert.equal(H.decideHandSamples(zetaStrongZero).recognized.zetaBeatrix,undefined,'a high-confidence wrong OCR value must still veto Zeta rescue');
 const zetaStrongWrong=zetaSixCardScores.map((score,i)=>({sampleTime:i,candidateCount:6,counts:{},scores:{},candidates:[stableLeaderCandidate('zetaBeatrix',score,3,{titleScore:zetaSixCardTitles[i],ocrValue:i===1?2:null,ocrAccepted:i===1,ocrConfidence:i===1?80:null})]}));
 assert.equal(H.decideHandSamples(zetaStrongWrong).recognized.zetaBeatrix,undefined,'high-confidence non-zero wrong cost must remain a hard conflict');
+const savedTimeline=WB.turnTimeline;
+WB.turnTimeline=[{side:'top',turn:3,time:31.43}];
+const zetaTurnEndTimes=[31.238,31.278,31.318,31.358],zetaTurnEndScores=[.8164,.8163,.8147,.8149],zetaTurnEndTitles=[.4681,.4659,.4639,.4634];
+const zetaTurnEnd=zetaTurnEndScores.map((score,i)=>({sampleTime:zetaTurnEndTimes[i],candidateCount:6,counts:{},scores:{},candidates:[stableLeaderCandidate('zetaBeatrix',score,3,{titleScore:zetaTurnEndTitles[i]})]}));
+const zetaTurnEndDecision=H.decideHandSamples(zetaTurnEnd);
+assert.equal(zetaTurnEndDecision.recognized.zetaBeatrix?.count,1,'real 4.13.31 turn-end Zeta sequence must be rescued only inside the guarded turn-end tier');
+assert.equal(zetaTurnEndDecision.recognized.zetaBeatrix?.stableLeader?.tier,'six-card-turn-end-ultra-stable');
+assert.equal(zetaTurnEndDecision.recognized.zetaBeatrix?.stableLeader?.groups?.[0]?.timeOk,true);
+assert.equal(zetaTurnEndDecision.recognized.zetaBeatrix?.stableLeader?.groups?.[0]?.minNextTurnDelta,.072);
+assert.equal(zetaTurnEndDecision.recognized.zetaBeatrix?.stableLeader?.groups?.[0]?.maxNextTurnDelta,.192);
+const turnEndProbe=H.displayedCostProbeDecision({cardId:'zetaBeatrix',best:.8149,imageSource:'anchor',titleScore:.4634,imageCandidate:false},6,31.358);
+assert.equal(turnEndProbe.read,true,'turn-end low-title Zeta candidate must still execute displayed-cost probing');
+assert.equal(turnEndProbe.stableLeaderCostProbe.tier,'six-card-turn-end-ultra-stable');
+assert.equal(turnEndProbe.stableLeaderCostProbe.nextTurnDelta,.072);
+assert.equal(H.displayedCostProbeDecision({cardId:'zetaBeatrix',best:.8149,imageSource:'anchor',titleScore:.4634,imageCandidate:false},6,31.10).read,false,'turn-end low-title rescue must not activate away from the turn boundary');
+const zetaTurnEndLowTitle=zetaTurnEndScores.map((score,i)=>({sampleTime:zetaTurnEndTimes[i],candidateCount:6,counts:{},scores:{},candidates:[stableLeaderCandidate('zetaBeatrix',score,3,{titleScore:i===3?.4599:zetaTurnEndTitles[i]})]}));
+assert.equal(H.decideHandSamples(zetaTurnEndLowTitle).recognized.zetaBeatrix,undefined,'turn-end rescue must keep the .46 independent-title floor');
+const zetaTurnEndLowAnchor=[.8099,.811,.8108,.8107].map((score,i)=>({sampleTime:zetaTurnEndTimes[i],candidateCount:6,counts:{},scores:{},candidates:[stableLeaderCandidate('zetaBeatrix',score,3,{titleScore:.47})]}));
+assert.equal(H.decideHandSamples(zetaTurnEndLowAnchor).recognized.zetaBeatrix,undefined,'turn-end rescue must keep the .81 anchor floor');
+const zetaTurnEndWide=[.8140,.8164,.8138,.8162].map((score,i)=>({sampleTime:zetaTurnEndTimes[i],candidateCount:6,counts:{},scores:{},candidates:[stableLeaderCandidate('zetaBeatrix',score,3,{titleScore:.47})]}));
+assert.equal(H.decideHandSamples(zetaTurnEndWide).recognized.zetaBeatrix,undefined,'turn-end rescue must reject anchor instability wider than .002');
+const zetaTurnEndWrongCost=zetaTurnEndScores.map((score,i)=>({sampleTime:zetaTurnEndTimes[i],candidateCount:6,counts:{},scores:{},candidates:[stableLeaderCandidate('zetaBeatrix',score,3,{titleScore:zetaTurnEndTitles[i],ocrValue:i===2?2:null,ocrAccepted:i===2,ocrConfidence:i===2?80:null})]}));
+assert.equal(H.decideHandSamples(zetaTurnEndWrongCost).recognized.zetaBeatrix,undefined,'turn-end rescue must still reject a strong wrong displayed cost');
+WB.turnTimeline=[{side:'top',turn:3,time:31.70}];
+assert.equal(H.decideHandSamples(zetaTurnEnd).recognized.zetaBeatrix,undefined,'the same low-title sequence must fail when it is not within .20s of the next turn');
+WB.turnTimeline=savedTimeline;
+
 
 
 
