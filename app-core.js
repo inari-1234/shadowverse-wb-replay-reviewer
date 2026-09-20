@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.39',build:'4.13.39-20260920-clean-13-39',revision:'clean-13-39',subtitle:'Build 2026.09.20-clean-13-39 / 手札重なり補正・シャドーanchor検証'};
+const APP={version:'4.13.40',build:'4.13.40-20260921-clean-13-40',revision:'clean-13-40',subtitle:'Build 2026.09.21-clean-13-40 / 手札可視領域・全カードshadow検証'};
 const WB=window.WB={APP,modules:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
 WB.$=s=>document.querySelector(s);
 WB.registerModule=(name,version)=>{const row={name,version};if(!WB.modules.some(x=>x.name===name))WB.modules.push(row);return row};
