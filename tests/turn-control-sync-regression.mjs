@@ -41,7 +41,7 @@ const hpSandbox={window:{WB:hpWB},document:{},console,Map,Float32Array,Uint8Clam
 vm.createContext(hpSandbox);
 new vm.Script(fs.readFileSync(new URL('../state-recognition.js',import.meta.url),'utf8'),{filename:'state-recognition.js'}).runInContext(hpSandbox);
 const SR=hpWB.StateRecognition;
-assert.equal(SR.version,'state-clean-1.8.7');
+assert.equal(SR.version,'state-clean-1.8.8');
 assert.deepEqual([...SR.config.hp.directOffsets],[0,-.04,-.08,-.12],'direct HP confirmation must use current plus three past-only frames');
 const hpSingle=(value,offset,{accepted=false,votes=1}={})=>({offset,accepted,value:accepted?value:null,frameCandidate:value,frameVotes:votes});
 const hpRealLike=[hpSingle(9,0),hpSingle(9,-.04),hpSingle(9,-.08)];
@@ -60,4 +60,14 @@ const hpConflict=[hpSingle(9,0),hpSingle(9,-.04),hpSingle(10,-.08,{accepted:true
 const hpConflictDecision=SR.decideHpDirectStable(hpConflict,9);
 assert.equal(hpConflictDecision.accepted,false,'strong conflicting historical HP evidence must remain unresolved');
 assert.equal(hpConflictDecision.reason,'direct-frame-conflict');
+const hpHistoricalConflict=[hpSingle(9,0),{offset:-.04,accepted:false,value:null,frameCandidate:9,frameVotes:2,reason:'ocr-conflict'},hpSingle(9,-.08)];
+const hpHistoricalConflictDecision=SR.decideHpDirectStable(hpHistoricalConflict,9);
+assert.equal(hpHistoricalConflictDecision.accepted,false,'an OCR-conflict frame must never strengthen a weak direct HP candidate');
+assert.equal(hpHistoricalConflictDecision.ignoredConflictFrames,1);
+const hpConflictPlusClean=[hpSingle(9,0),{offset:-.04,accepted:false,value:null,frameCandidate:9,frameVotes:2,reason:'ocr-conflict'},hpSingle(9,-.08),hpSingle(9,-.12)];
+const hpConflictPlusCleanDecision=SR.decideHpDirectStable(hpConflictPlusClean,9);
+assert.equal(hpConflictPlusCleanDecision.accepted,true,'three clean weak frames may still confirm HP even if one separate historical frame is conflicting');
+assert.equal(hpConflictPlusCleanDecision.value,9);
+assert.equal(hpConflictPlusCleanDecision.ignoredConflictFrames,1);
+
 console.log('TURN CONTROL SYNC REGRESSION PASS');
