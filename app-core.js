@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.37',build:'4.13.37-20260920-clean-13-37',revision:'clean-13-37',subtitle:'Build 2026.09.20-clean-13-37 / 7枚クイブレ同一カード首位差ガード'};
+const APP={version:'4.13.38',build:'4.13.38-20260920-clean-13-38',revision:'clean-13-38',subtitle:'Build 2026.09.20-clean-13-38 / 手札認識・全カード証拠行列と配置診断'};
 const WB=window.WB={APP,modules:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
 WB.$=s=>document.querySelector(s);
 WB.registerModule=(name,version)=>{const row={name,version};if(!WB.modules.some(x=>x.name===name))WB.modules.push(row);return row};
