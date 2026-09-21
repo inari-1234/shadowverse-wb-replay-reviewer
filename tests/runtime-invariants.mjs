@@ -139,6 +139,12 @@ assert.ok(handRecognition.includes('function counterfactualTargetEvidence(sample
 assert.ok(handRecognition.includes('targetEvidence:counterfactualTargetEvidence(retrySamples,nearThresholdSettleDiagnostic.cardId)'),'counterfactual diagnostics must retain frame-level target evidence from the diagnostic retry window');
 assert.ok(handRecognition.includes('targetEvidence:[]'),'counterfactual diagnostics must expose an explicit empty evidence list when no compatible forward window exists');
 assert.equal(handRecognition.includes('decision=targetEvidence'),false,'counterfactual target evidence must never replace or drive the live hand decision');
+assert.ok(handRecognition.includes('nearThresholdPhaseOffset:.012'),'near-threshold phase probe must retain the measured +12ms diagnostic offset');
+assert.ok(handRecognition.includes('function phaseShiftWindowCompatible(referenceFrames,shiftedFrames,width=CFG.maxW)'),'phase probe must require an explicit same-layout compatibility check');
+assert.ok(handRecognition.includes("mode:'near-threshold-phase-probe',diagnosticOnly:true,applied:false"),'phase probe must remain explicitly diagnostic-only');
+assert.ok(handRecognition.includes('targetEvidence:counterfactualTargetEvidence(phaseSamples,nearThresholdSettleDiagnostic.cardId)'),'phase probe must retain per-frame target evidence');
+assert.ok(handRecognition.includes('nearThresholdCounterfactual,nearThresholdPhaseProbe,continuityRescue'),'phase probe must be exported with hand diagnostics');
+assert.equal(handRecognition.includes('decision=phaseDecision'),false,'phase-probe decision must never replace the live hand decision');
 assert.ok(handRecognition.includes('nearThresholdSettleDiagnostic,nearThresholdCounterfactual,continuityRescue'),'counterfactual result must be exported with hand diagnostics');
 assert.equal(handRecognition.includes('decision=retryDecision'),false,'counterfactual retry decision must never replace the live hand decision');
 assert.ok(handRecognition.includes('minSepX:.018'),'cost-center minimum separation must retain the real-video-calibrated .018 ratio');
