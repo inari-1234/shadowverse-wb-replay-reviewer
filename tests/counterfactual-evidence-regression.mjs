@@ -27,7 +27,7 @@ const samples=[
   },
   {sampleTime:10.085,candidates:[{index:0,matchScores:{quickBlader:{imageScore:.8}}}]}
 ];
-const rows=fn(samples,'zetaBeatrix');
+const rows=JSON.parse(JSON.stringify(fn(samples,'zetaBeatrix')));
 assert.equal(rows.length,2);
 assert.equal(rows[0].sampleTime,10.045);
 assert.equal(rows[0].candidateCount,2);
