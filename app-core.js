@@ -1,9 +1,33 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.47',build:'4.13.47-20260921-clean-13-47',revision:'clean-13-47',subtitle:'Build 2026.09.21-clean-13-47 / 手札コスト円近接ピーク分離'};
-const WB=window.WB={APP,modules:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
+const APP={version:'4.13.48',build:'4.13.48-20260921-clean-13-48',revision:'clean-13-48',subtitle:'Build 2026.09.21-clean-13-48 / runtime module整合性検査'};
+const EXPECTED_MODULE_VERSIONS=Object.freeze({
+  'turn-recognition':'turn-clean-1.2',
+  'mulligan-class':'mulligan-class-clean-1.5',
+  'card-db':'card-db-clean-1.22',
+  'hand-recognition':'hand-clean-1.39',
+  'state-recognition':'state-clean-1.8.8',
+  'review-engine':'review-clean-1.5.1',
+  'diagnostics':'diagnostics-clean-1.48'
+});
+const WB=window.WB={APP,expectedModules:EXPECTED_MODULE_VERSIONS,modules:[],moduleRegistrations:[],moduleRegistrationDuplicates:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
 WB.$=s=>document.querySelector(s);
-WB.registerModule=(name,version)=>{const row={name,version};if(!WB.modules.some(x=>x.name===name))WB.modules.push(row);return row};
+WB.evaluateModuleIntegrity=(expected=WB.expectedModules,registrations=WB.moduleRegistrations)=>{
+  const expectedModules={...(expected||{})},rows=Array.isArray(registrations)?registrations.map(x=>({name:String(x?.name??''),version:String(x?.version??'')})):[],byName=new Map(),moduleVersionMismatches=[];
+  for(const row of rows){if(!byName.has(row.name))byName.set(row.name,[]);byName.get(row.name).push(row.version)}
+  for(const [name,versions] of byName){
+    if(!Object.prototype.hasOwnProperty.call(expectedModules,name))moduleVersionMismatches.push({type:'unexpected',name,expectedVersion:null,loadedVersions:versions.slice()});
+    if(versions.length>1)moduleVersionMismatches.push({type:'duplicate',name,expectedVersion:expectedModules[name]??null,loadedVersions:versions.slice()});
+  }
+  for(const [name,expectedVersion] of Object.entries(expectedModules)){
+    const versions=byName.get(name)||[];
+    if(!versions.length)moduleVersionMismatches.push({type:'missing',name,expectedVersion,loadedVersions:[]});
+    else if(!versions.every(version=>version===expectedVersion))moduleVersionMismatches.push({type:'version-mismatch',name,expectedVersion,loadedVersions:versions.slice()});
+  }
+  const loadedModules=[];for(const row of rows)if(!loadedModules.some(x=>x.name===row.name))loadedModules.push({...row});
+  return{ok:moduleVersionMismatches.length===0,expectedModules,loadedModules,moduleVersionMismatches};
+};
+WB.registerModule=(name,version)=>{const row={name:String(name??''),version:String(version??'')};WB.moduleRegistrations.push({...row});const existing=WB.modules.find(x=>x.name===row.name);if(existing){WB.moduleRegistrationDuplicates.push({name:row.name,firstVersion:existing.version,duplicateVersion:row.version});return existing}WB.modules.push(row);return row};
 WB.log=(type,data={})=>{const now=WB.video&&Number.isFinite(WB.video.currentTime)?+WB.video.currentTime.toFixed(3):null;WB.events.push({at:new Date().toISOString(),type,currentTime:now,...data});if(WB.events.length>2500)WB.events.shift()};
 window.log=WB.log;
 WB.recordError=(scope,err,data={})=>{const row={at:new Date().toISOString(),scope,message:err?.message||String(err),...data};WB.errors.push(row);if(WB.errors.length>120)WB.errors.shift();WB.log('error',{...row});return row};
