@@ -57,6 +57,11 @@ assert.ok(diagnostics.includes('shadowverse-wb-review-v${WB.APP.version}-clean')
 assert.ok(stateRecognition.includes('WB.stateCaptureHistory=history.slice(-5)'),'state recognition must retain the five most recent captures');
 assert.ok(stateRecognition.includes("WB.on('video-reset',()=>{WB.stateCaptureHistory=[]"),'state capture history must reset with the video');
 assert.ok(diagnostics.includes('stateCaptureHistory:clone(WB.stateCaptureHistory||[])'),'diagnostic/review exports must include recent state-capture history');
+assert.ok(index.includes('id="exportHandFixture"'),'diagnostics UI must expose explicit hand-fixture export');
+assert.ok(index.includes('通常の診断JSONには画像を含めません'),'UI must state that ordinary diagnostics remain image-free');
+assert.ok(diagnostics.includes("format:'shadowverse-wb-hand-fixture-v1'"),'hand fixture format must be versioned independently');
+assert.ok(diagnostics.includes('automatic:false'),'raw fixture capture must remain explicit and diagnostic-only');
+assert.ok(diagnostics.includes("WB.seekTo(original,'hand-fixture-restore')"),'fixture export must restore the original video position');
 
 const applyStart=review.indexOf('applyDetectedHand(result)');
 assert.ok(applyStart>=0,'applyDetectedHand must exist');
