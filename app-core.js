@@ -1,11 +1,11 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.50',build:'4.13.50-20260921-clean-13-50',revision:'clean-13-50',subtitle:'Build 2026.09.21-clean-13-50 / near-threshold位相診断'};
+const APP={version:'4.13.51',build:'4.13.51-20260921-clean-13-51',revision:'clean-13-51',subtitle:'Build 2026.09.21-clean-13-51 / phase証拠整合性診断'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'turn-recognition':'turn-clean-1.2',
   'mulligan-class':'mulligan-class-clean-1.5',
   'card-db':'card-db-clean-1.22',
-  'hand-recognition':'hand-clean-1.41',
+  'hand-recognition':'hand-clean-1.42',
   'state-recognition':'state-clean-1.8.8',
   'review-engine':'review-clean-1.5.1',
   'diagnostics':'diagnostics-clean-1.48'
