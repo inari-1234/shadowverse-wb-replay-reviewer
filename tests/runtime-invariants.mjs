@@ -145,7 +145,7 @@ assert.ok(handRecognition.includes("mode:'near-threshold-phase-probe',diagnostic
 assert.ok(handRecognition.includes('targetEvidence:counterfactualTargetEvidence(phaseSamples,nearThresholdSettleDiagnostic.cardId)'),'phase probe must retain per-frame target evidence');
 assert.ok(handRecognition.includes('nearThresholdCounterfactual,nearThresholdPhaseProbe,continuityRescue'),'phase probe must be exported with hand diagnostics');
 assert.equal(handRecognition.includes('decision=phaseDecision'),false,'phase-probe decision must never replace the live hand decision');
-assert.ok(handRecognition.includes('nearThresholdSettleDiagnostic,nearThresholdCounterfactual,continuityRescue'),'counterfactual result must be exported with hand diagnostics');
+assert.ok(handRecognition.includes('nearThresholdSettleDiagnostic,nearThresholdCounterfactual,nearThresholdPhaseProbe,continuityRescue'),'counterfactual and phase-probe results must be exported with hand diagnostics');
 assert.equal(handRecognition.includes('decision=retryDecision'),false,'counterfactual retry decision must never replace the live hand decision');
 assert.ok(handRecognition.includes('minSepX:.018'),'cost-center minimum separation must retain the real-video-calibrated .018 ratio');
 assert.ok(handRecognition.includes('function costCenterSeparated(kept,x,width=CFG.maxW)'),'cost-center peak separation must use the explicit cx-aware helper');
