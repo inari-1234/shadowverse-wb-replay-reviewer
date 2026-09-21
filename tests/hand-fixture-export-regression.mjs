@@ -20,7 +20,7 @@ const recognition={
   ]
 };
 const WB={
-  APP:{version:'4.13.45',build:'test-build',revision:'test-revision'},
+  APP:{version:'4.13.46',build:'test-build',revision:'test-revision'},
   modules:[],events:[],errors:[],scenes:[],
   videoMeta:{name:'fixture.mp4',size:123,type:'video/mp4',lastModified:1},
   video:{currentTime:10,duration:120,videoWidth:1920,videoHeight:1080},
@@ -49,7 +49,7 @@ const context={
 context.globalThis=context;
 vm.runInNewContext(source,context,{filename:'diagnostics.js'});
 
-assert.equal(WB.Diagnostics.version,'diagnostics-clean-1.45');
+assert.equal(WB.Diagnostics.version,'diagnostics-clean-1.46');
 assert.deepEqual(Array.from(WB.Diagnostics.fixtureSampleTimes(recognition,4)),[1,3,5,7],'seven samples should be evenly reduced to four');
 assert.deepEqual(Array.from(WB.Diagnostics.fixtureSampleTimes({samples:[{sampleTime:2},{sampleTime:2},{sampleTime:null},{sampleTime:4}]},4)),[2,4],'times must be unique and finite');
 

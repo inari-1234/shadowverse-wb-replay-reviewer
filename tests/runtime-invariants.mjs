@@ -66,6 +66,10 @@ assert.ok(diagnostics.includes("WB.seekTo(original,'hand-fixture-restore')"),'fi
 assert.ok(handRecognition.includes('nearThresholdSettleDiagnostic=ctx?.relativeSide'), 'near-threshold settling evidence must be exported diagnostically');
 assert.ok(handRecognition.includes('allowSettleRetry=!!settleTrend'), 'near-threshold diagnostic must not activate forward-settle retry');
 assert.equal(handRecognition.includes('allowSettleRetry=!!nearThresholdSettleDiagnostic'),false,'near-threshold diagnostic must never drive recognition decisions directly');
+assert.ok(handRecognition.includes("mode:'near-threshold-same-layout-counterfactual',diagnosticOnly:true,applied:false"),'near-threshold counterfactual must be explicitly diagnostic-only and never applied');
+assert.ok(handRecognition.includes('counterfactualRecognitionSummary(retryDecision,nearThresholdSettleDiagnostic.cardId)'),'counterfactual must evaluate the target with the ordinary decision engine output');
+assert.ok(handRecognition.includes('nearThresholdSettleDiagnostic,nearThresholdCounterfactual,continuityRescue'),'counterfactual result must be exported with hand diagnostics');
+assert.equal(handRecognition.includes('decision=retryDecision'),false,'counterfactual retry decision must never replace the live hand decision');
 
 const applyStart=review.indexOf('applyDetectedHand(result)');
 assert.ok(applyStart>=0,'applyDetectedHand must exist');
