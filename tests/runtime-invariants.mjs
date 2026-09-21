@@ -75,7 +75,15 @@ for(const id of ['quickBlader','zetaBeatrix','barbaros']){
   assert.ok(block.includes('candidateThreshold:.90'),`${id} candidate threshold must remain .90`);
 }
 const zetaStart=cardDb.indexOf('zetaBeatrix:Object.freeze');
-assert.ok(cardDb.slice(zetaStart,zetaStart+1800).includes('acceptedCosts:[4,6]'),'Zeta accepted costs must remain [4,6]');
+assert.ok(cardDb.slice(zetaStart,zetaStart+2200).includes('acceptedCosts:[4,6]'),'Zeta accepted costs must remain [4,6]');
+const quickStart=cardDb.indexOf('quickBlader:Object.freeze');
+const quickBlock=cardDb.slice(quickStart,quickStart+3200);
+assert.ok(quickBlock.includes('overlapMaskedRescue:{minFrames:4'),'Quick must retain the verified overlap-masked rescue config');
+assert.ok(quickBlock.includes('minMaskedAnchor:.94'),'Quick overlap rescue must retain the .94 masked-anchor floor');
+assert.ok(quickBlock.includes('minCrossCardLeaderMargin:.20'),'Quick overlap rescue must retain cross-card separation');
+assert.equal(cardDb.slice(zetaStart,zetaStart+2400).includes('overlapMaskedRescue:'),false,'Zeta must not inherit unvalidated overlap rescue');
+const barbarosStart=cardDb.indexOf('barbaros:Object.freeze');
+assert.equal(cardDb.slice(barbarosStart,barbarosStart+1800).includes('overlapMaskedRescue:'),false,'Barbaros must not inherit unvalidated overlap rescue');
 
 console.log(JSON.stringify({
   runtime:runtime.length,
@@ -85,6 +93,7 @@ console.log(JSON.stringify({
   cache:latest.cache,
   historyIsolation:true,
   candidateThresholds:{quickBlader:.90,zetaBeatrix:.90,barbaros:.90},
-  zetaAcceptedCosts:[4,6]
+  zetaAcceptedCosts:[4,6],
+  quickOverlapMaskedRescue:true
 },null,2));
 console.log('RUNTIME INVARIANTS PASS');
