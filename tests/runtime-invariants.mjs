@@ -151,6 +151,17 @@ assert.ok(handRecognition.includes("mode:'near-threshold-phase-probe',diagnostic
 assert.ok(handRecognition.includes('phaseTargetEvidence=counterfactualTargetEvidence(phaseSamples,nearThresholdSettleDiagnostic.cardId)'),'phase probe must compute per-frame target evidence after re-observation');
 assert.ok(handRecognition.includes('targetEvidence:phaseTargetEvidence'),'phase probe must export the computed per-frame target evidence');
 assert.ok(handRecognition.includes('anchorVariant:variant?{score:finite(variant.score),dx:finite(variant.dx,0)'),'counterfactual evidence must retain anchor variant boundary diagnostics');
+assert.ok(handRecognition.includes('anchorBoundaryProbeDx:6'),'anchor boundary extension must remain a diagnostic-only single-step +2px probe beyond the live ±4px range');
+assert.ok(handRecognition.includes('ANCHOR_DX=Object.freeze([-4,-2,0,2,4])'),'live anchor recognition search must remain limited to the verified ±4px range');
+assert.ok(handRecognition.includes('function anchorBoundaryExtensionDiagnostic(canvas,center,baseScores)'),'anchor boundary extension diagnostic helper must exist');
+assert.ok(handRecognition.includes('diagnosticOnly:true,applied:false,baseDx:+baseDx.toFixed(2),probeDx:+probeDx.toFixed(2)'),'anchor boundary extension results must be explicitly non-applied diagnostics');
+assert.ok(handRecognition.includes('anchorVariantDiagnosticScoresWithBoundaryProbe(canvas,center,anchorFeatures)'),'observations must attach diagnostic boundary probes without modifying anchorFeatures');
+assert.ok(handRecognition.includes('matches=matchCardFeatures(titleFeature,anchorFeatures),anchorVariantScores=anchorVariantDiagnosticScoresWithBoundaryProbe(canvas,center,anchorFeatures)'),'live card matching must run on the original 25 anchor variants before diagnostic boundary probing');
+assert.ok(handRecognition.includes('edgeProbe:variant.edgeProbe?{diagnosticOnly:variant.edgeProbe.diagnosticOnly===true'),'target evidence must export anchor boundary probe diagnostics');
+const decideStart=handRecognition.indexOf('function decideHandSamples');
+const decideEnd=handRecognition.indexOf('function latestTargetTurnStart',decideStart);
+assert.ok(decideStart>=0&&decideEnd>decideStart,'decideHandSamples body must be extractable for isolation checks');
+assert.equal(handRecognition.slice(decideStart,decideEnd).includes('edgeProbe'),false,'anchor boundary edgeProbe must never drive live hand decisions');
 assert.ok(handRecognition.includes('observationLayoutCompatible:phaseObservationCompatible'),'phase probe must revalidate the observed recognition frames, not only the layout scan');
 assert.ok(handRecognition.includes('validForComparison:phaseObservationCompatible'),'phase probe must expose whether phase evidence is safe to compare');
 assert.ok(handRecognition.includes("reason:phaseObservationCompatible?phaseDecision.reason:'phase-observation-layout-incompatible'"),'phase probe must reject interpretation when observed layouts diverge');
