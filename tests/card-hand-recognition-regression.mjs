@@ -894,6 +894,24 @@ const nearAlreadyCandidate=[.87,.88,.895,.905].map((score,i)=>({sampleTime:i,can
 assert.equal(H.nearThresholdSettlingTrend(nearAlreadyCandidate),null,'ordinary image candidates at or above candidate threshold do not need near-threshold diagnostic');
 const nearDrop=[.86,.892,.887,.890].map((score,i)=>({sampleTime:i,candidates:[{index:7,best:{cardId:'zetaBeatrix',imageScore:score,imageSource:'anchor',titleScore:.52,anchorScore:score}}]}));
 assert.equal(H.nearThresholdSettlingTrend(nearDrop),null,'a trailing drop larger than .003 must veto near-threshold diagnostic');
+const historicalNearThresholdCases=[
+  {label:'qb-unstable-81.575',cardId:'quickBlader',slot:2,scores:[.8169,.8962,.9118,.8957],expected:false},
+  {label:'qb-flat-82.395',cardId:'quickBlader',slot:2,scores:[.8907,.8914,.8910,.8940],expected:false},
+  {label:'qb-falling-81.619',cardId:'quickBlader',slot:2,scores:[.8960,.9118,.8957,.8937],expected:false},
+  {label:'qb-flat-81.877',cardId:'quickBlader',slot:2,scores:[.8908,.8915,.8907,.8914],expected:false},
+  {label:'qb-flat-81.906',cardId:'quickBlader',slot:2,scores:[.8909,.8907,.8914,.8911],expected:false},
+  {label:'qb-flat-81.926',cardId:'quickBlader',slot:2,scores:[.8915,.8907,.8911,.8910],expected:false},
+  {label:'qb-flat-81.916',cardId:'quickBlader',slot:2,scores:[.8909,.8907,.8914,.8910],expected:false},
+  {label:'qb-flat-81.790',cardId:'quickBlader',slot:2,scores:[.8948,.8919,.8908,.8909],expected:false},
+  {label:'qb-flat-81.816',cardId:'quickBlader',slot:2,scores:[.8919,.8923,.8909,.8907],expected:false},
+  {label:'zeta-rising-131.896',cardId:'zetaBeatrix',slot:7,scores:[.8647,.8641,.8899,.8905],expected:true}
+];
+for(const c of historicalNearThresholdCases){
+  const samples=c.scores.map((score,i)=>({sampleTime:i*.04,candidates:[{index:c.slot,best:{cardId:c.cardId,imageScore:score,imageSource:'anchor',titleScore:c.cardId==='zetaBeatrix'?[.4849,.5053,.5277,.5306][i]:.31,anchorScore:score}}]}));
+  const trend=H.nearThresholdSettlingTrend(samples);
+  assert.equal(!!trend,c.expected,`historical near-threshold case ${c.label}`);
+  if(c.expected){assert.equal(trend.cardId,c.cardId);assert.equal(trend.slot,c.slot)}
+}
 const flatSettling=[.85,.848,.852,.849].map((score,i)=>({sampleTime:i,candidates:[{index:4,best:{cardId:'zetaBeatrix',imageScore:score}}]}));
 assert.equal(H.settlingRecognitionTrend(flatSettling),null,'flat sub-threshold similarity must not trigger forward-settle retry');
 const fallingSettling=[.88,.87,.85,.84].map((score,i)=>({sampleTime:i,candidates:[{index:4,best:{cardId:'zetaBeatrix',imageScore:score}}]}));
