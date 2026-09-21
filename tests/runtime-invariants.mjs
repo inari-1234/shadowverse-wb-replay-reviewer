@@ -7,6 +7,7 @@ const index=read('index.html');
 const app=read('app-core.js');
 const sw=read('sw.js');
 const review=read('review-engine.js');
+const handRecognition=read('hand-recognition.js');
 const stateRecognition=read('state-recognition.js');
 const diagnostics=read('diagnostics.js');
 const cardDb=read('card-db.js');
@@ -62,6 +63,9 @@ assert.ok(index.includes('通常の診断JSONには画像を含めません'),'U
 assert.ok(diagnostics.includes("format:'shadowverse-wb-hand-fixture-v1'"),'hand fixture format must be versioned independently');
 assert.ok(diagnostics.includes('automatic:false'),'raw fixture capture must remain explicit and diagnostic-only');
 assert.ok(diagnostics.includes("WB.seekTo(original,'hand-fixture-restore')"),'fixture export must restore the original video position');
+assert.ok(handRecognition.includes('nearThresholdSettleDiagnostic=ctx?.relativeSide'), 'near-threshold settling evidence must be exported diagnostically');
+assert.ok(handRecognition.includes('allowSettleRetry=!!settleTrend'), 'near-threshold diagnostic must not activate forward-settle retry');
+assert.equal(handRecognition.includes('allowSettleRetry=!!nearThresholdSettleDiagnostic'),false,'near-threshold diagnostic must never drive recognition decisions directly');
 
 const applyStart=review.indexOf('applyDetectedHand(result)');
 assert.ok(applyStart>=0,'applyDetectedHand must exist');

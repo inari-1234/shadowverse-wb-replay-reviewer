@@ -468,7 +468,7 @@ assert.ok(barbarosFanFixture.best>=.93,`real-video Barbaros fan-position fixture
 const barbarosHardNegative=H.matchFeature(realVideoFixtureDecode({"scale":800.8372672539656,"data":"+f/+Bwj99vTy+QIVLS76wcDF6QceBxL65NvX4Of/BCcAzMfC7/sCFSYX9+XoAhcr6RQQ2tTI7PgFRmRaHOvqLUEY5AIKzczE7PoILkA/AvDuWzD85QMHwsDA6hUUNEUyLgr0Dvnu5w0Hwb++IA7qFh9HRyT///YF8wsOwL++GTwDJlktCN30Dh4LABQSv76++QIHBgADDAoB6fLg3+LTy8fBNUb7EhcQCgsDCgsB9PPdu77FVFYXIhYREBYMCg4QCQHetbm/a1AzKP/6AhUTERcTBwXovr3DQ0cwIBYMDRQL+gwQChT4y8rKJS0JAv0GGRshFg8IAjcSysnL8fbl59nk4eENOiggFlAYysrR+vPq8NXmx8f2/ggeN2Mn19HPMikgFQ8LCwsRLzx5f2IwERgS3evy6Nvj8vXy+/UAQV04JBsbyNje2NPd7vLq7d7F4ic6JhwdwdLY0crW5+ri3d7U7ik6Ix4c0Nrh28vR5Ofc3+rj8iQyJRoa59TzFATbyuDV2ePo7/IRFwcJ+PwaQ08zCggF7Obh3N8CEgkK3+z0DjJISigRFwbs2dHyBQcN"})).find(x=>x.cardId==='barbaros');
 assert.ok(barbarosHardNegative.best<.90,`real-video cost-7 hard negative must stay below .90 candidate gate: ${barbarosHardNegative.best}`);
 
-assert.equal(H.version,'hand-clean-1.36');
+assert.equal(H.version,'hand-clean-1.37');
 const qbRecognition=DB.recognitionCards().find(x=>x.id==='quickBlader');
 assert.equal(H.temporalProbeFloor(qbRecognition),.88,'Quick Blader alone may probe down to the guarded .88 floor');
 const zetaRecognition=DB.recognitionCards().find(x=>x.id==='zetaBeatrix');
@@ -488,7 +488,7 @@ const temporalTwoFrames=[.893,.892].map((score,i)=>({sampleTime:i,counts:{},scor
 assert.equal(H.decideHandSamples(temporalTwoFrames).recognized.quickBlader,undefined);
 
 
-assert.equal(H.version,'hand-clean-1.36');
+assert.equal(H.version,'hand-clean-1.37');
 WB.turnTimeline=[
  {side:'bottom',turn:6,time:74.41},
  {side:'top',turn:7,time:81.863},
@@ -876,6 +876,24 @@ const zetaTrend=H.settlingRecognitionTrend(zetaDrawSettling);
 assert.equal(zetaTrend?.cardId,'zetaBeatrix','rising Zeta draw animation must trigger a guarded forward-settle retry');
 assert.equal(zetaTrend?.slot,4,'draw-settle trend must stay bound to the same hand slot');
 assert.ok(zetaTrend?.latest>=.864&&zetaTrend?.gain>.4,'Zeta settling trend must preserve observed score rise');
+const zetaNearThreshold=realZetaEightScores.map((score,i)=>({sampleTime:131.776+i*.04,candidates:[{index:7,best:{cardId:'zetaBeatrix',imageScore:score,imageSource:'anchor',titleScore:realZetaEightTitles[i],anchorScore:score}}]}));
+const zetaNearThresholdTrend=H.nearThresholdSettlingTrend(zetaNearThreshold);
+assert.equal(zetaNearThresholdTrend?.cardId,'zetaBeatrix','real eight-card Zeta near-threshold sequence must be visible to diagnostic settling analysis');
+assert.equal(zetaNearThresholdTrend?.slot,7);
+assert.equal(zetaNearThresholdTrend?.latest,.8905);
+assert.equal(zetaNearThresholdTrend?.gap,.0095);
+assert.equal(zetaNearThresholdTrend?.gain,.0264);
+assert.equal(zetaNearThresholdTrend?.anchorLed,true);
+const nearFlat=[.886,.887,.8875,.888].map((score,i)=>({sampleTime:i,candidates:[{index:7,best:{cardId:'zetaBeatrix',imageScore:score,imageSource:'anchor',titleScore:.51,anchorScore:score}}]}));
+assert.equal(H.nearThresholdSettlingTrend(nearFlat),null,'flat near-threshold evidence must not trigger diagnostic settling');
+const nearTooLow=[.84,.85,.87,.8849].map((score,i)=>({sampleTime:i,candidates:[{index:7,best:{cardId:'zetaBeatrix',imageScore:score,imageSource:'anchor',titleScore:.51,anchorScore:score}}]}));
+assert.equal(H.nearThresholdSettlingTrend(nearTooLow),null,'scores below candidateThreshold-.015 must not trigger near-threshold diagnostic');
+const nearTitleLed=[.864,.872,.886,.890].map((score,i)=>({sampleTime:i,candidates:[{index:7,best:{cardId:'zetaBeatrix',imageScore:score,imageSource:'title',titleScore:score,anchorScore:.82}}]}));
+assert.equal(H.nearThresholdSettlingTrend(nearTitleLed),null,'near-threshold diagnostic must require anchor-led trailing evidence');
+const nearAlreadyCandidate=[.87,.88,.895,.905].map((score,i)=>({sampleTime:i,candidates:[{index:7,best:{cardId:'zetaBeatrix',imageScore:score,imageSource:'anchor',titleScore:.52,anchorScore:score}}]}));
+assert.equal(H.nearThresholdSettlingTrend(nearAlreadyCandidate),null,'ordinary image candidates at or above candidate threshold do not need near-threshold diagnostic');
+const nearDrop=[.86,.892,.887,.890].map((score,i)=>({sampleTime:i,candidates:[{index:7,best:{cardId:'zetaBeatrix',imageScore:score,imageSource:'anchor',titleScore:.52,anchorScore:score}}]}));
+assert.equal(H.nearThresholdSettlingTrend(nearDrop),null,'a trailing drop larger than .003 must veto near-threshold diagnostic');
 const flatSettling=[.85,.848,.852,.849].map((score,i)=>({sampleTime:i,candidates:[{index:4,best:{cardId:'zetaBeatrix',imageScore:score}}]}));
 assert.equal(H.settlingRecognitionTrend(flatSettling),null,'flat sub-threshold similarity must not trigger forward-settle retry');
 const fallingSettling=[.88,.87,.85,.84].map((score,i)=>({sampleTime:i,candidates:[{index:4,best:{cardId:'zetaBeatrix',imageScore:score}}]}));
