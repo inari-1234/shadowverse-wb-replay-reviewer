@@ -467,7 +467,7 @@ assert.ok(barbarosFanFixture.best>=.93,`real-video Barbaros fan-position fixture
 const barbarosHardNegative=H.matchFeature(realVideoFixtureDecode({"scale":800.8372672539656,"data":"+f/+Bwj99vTy+QIVLS76wcDF6QceBxL65NvX4Of/BCcAzMfC7/sCFSYX9+XoAhcr6RQQ2tTI7PgFRmRaHOvqLUEY5AIKzczE7PoILkA/AvDuWzD85QMHwsDA6hUUNEUyLgr0Dvnu5w0Hwb++IA7qFh9HRyT///YF8wsOwL++GTwDJlktCN30Dh4LABQSv76++QIHBgADDAoB6fLg3+LTy8fBNUb7EhcQCgsDCgsB9PPdu77FVFYXIhYREBYMCg4QCQHetbm/a1AzKP/6AhUTERcTBwXovr3DQ0cwIBYMDRQL+gwQChT4y8rKJS0JAv0GGRshFg8IAjcSysnL8fbl59nk4eENOiggFlAYysrR+vPq8NXmx8f2/ggeN2Mn19HPMikgFQ8LCwsRLzx5f2IwERgS3evy6Nvj8vXy+/UAQV04JBsbyNje2NPd7vLq7d7F4ic6JhwdwdLY0crW5+ri3d7U7ik6Ix4c0Nrh28vR5Ofc3+rj8iQyJRoa59TzFATbyuDV2ePo7/IRFwcJ+PwaQ08zCggF7Obh3N8CEgkK3+z0DjJISigRFwbs2dHyBQcN"})).find(x=>x.cardId==='barbaros');
 assert.ok(barbarosHardNegative.best<.90,`real-video cost-7 hard negative must stay below .90 candidate gate: ${barbarosHardNegative.best}`);
 
-assert.equal(H.version,'hand-clean-1.34');
+assert.equal(H.version,'hand-clean-1.35');
 const qbRecognition=DB.recognitionCards().find(x=>x.id==='quickBlader');
 assert.equal(H.temporalProbeFloor(qbRecognition),.88,'Quick Blader alone may probe down to the guarded .88 floor');
 const zetaRecognition=DB.recognitionCards().find(x=>x.id==='zetaBeatrix');
@@ -487,7 +487,7 @@ const temporalTwoFrames=[.893,.892].map((score,i)=>({sampleTime:i,counts:{},scor
 assert.equal(H.decideHandSamples(temporalTwoFrames).recognized.quickBlader,undefined);
 
 
-assert.equal(H.version,'hand-clean-1.34');
+assert.equal(H.version,'hand-clean-1.35');
 WB.turnTimeline=[
  {side:'bottom',turn:6,time:74.41},
  {side:'top',turn:7,time:81.863},
@@ -745,7 +745,7 @@ const qbOverlap=qbOverlapScores.map((masked,i)=>{const row=overlapCandidate(qbOv
 const qbOverlapDecision=H.decideHandSamples(qbOverlap);
 assert.equal(qbOverlapDecision.recognized.quickBlader?.decision,'overlap-masked-anchor-consensus','real-video-derived crowded Quick evidence must use geometry rescue without a hand-count exception');
 assert.equal(qbOverlapDecision.recognized.quickBlader?.confidence,.9618);
-assert.equal(qbOverlapDecision.recognized.quickBlader?.overlapMasked?.groups?.[0]?.minObservedGain,.1126);
+assert.equal(qbOverlapDecision.recognized.quickBlader?.overlapMasked?.groups?.[0]?.minObservedGain,.1129);
 assert.equal(qbOverlapDecision.recognized.quickBlader?.overlapMasked?.groups?.[0]?.minObservedSameCardLeaderMargin,.3618);
 assert.ok(qbOverlapDecision.recognized.quickBlader?.overlapMasked?.groups?.[0]?.minObservedCrossCardLeaderMargin>=.49);
 const overlapProbe=H.overlapMaskedCostProbeDecision({cardId:'quickBlader',anchorScore:.8476,titleScore:.3142},{score:.9623,supportRatio:.70,rightGap:43},43);
