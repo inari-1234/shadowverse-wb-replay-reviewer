@@ -1,11 +1,14 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
+import vm from 'node:vm';
 
 const root=new URL('../',import.meta.url);
 const read=name=>fs.readFileSync(new URL(name,root),'utf8');
 const index=read('index.html');
 const app=read('app-core.js');
 const sw=read('sw.js');
+const turnRecognition=read('turn-recognition.js');
+const mulliganClass=read('mulligan-class.js');
 const review=read('review-engine.js');
 const handRecognition=read('hand-recognition.js');
 const stateRecognition=read('state-recognition.js');
@@ -34,6 +37,66 @@ assert.equal(appVersion,latest.version,'app-core version must match latest.json'
 assert.equal(appBuild,latest.build,'app-core build must match latest.json');
 assert.equal(appRevision,latest.revision,'app-core revision must match latest.json');
 
+const manifestBlock=app.match(/const EXPECTED_MODULE_VERSIONS=Object\.freeze\(\{([\s\S]*?)\}\);/);
+assert.ok(manifestBlock,'app-core expected module manifest must be parseable');
+const expectedModuleVersions=Object.fromEntries([...manifestBlock[1].matchAll(/'([^']+)'\s*:\s*'([^']+)'/g)].map(m=>[m[1],m[2]]));
+const moduleSources={
+  'turn-recognition':turnRecognition,
+  'mulligan-class':mulliganClass,
+  'card-db':cardDb,
+  'hand-recognition':handRecognition,
+  'state-recognition':stateRecognition,
+  'review-engine':review,
+  'diagnostics':diagnostics
+};
+assert.deepEqual(Object.keys(expectedModuleVersions),Object.keys(moduleSources),'expected module manifest must list exactly all registered runtime modules');
+for(const [name,source] of Object.entries(moduleSources)){
+  const sourceVersion=source.match(/const (?:VERSION|V)='([^']+)'/)?.[1];
+  assert.ok(sourceVersion,`${name} module version must be parseable`);
+  assert.equal(sourceVersion,expectedModuleVersions[name],`${name} source version must match app-core expected manifest`);
+}
+
+const sandbox={
+  window:{addEventListener(){},dispatchEvent(){}},
+  document:{addEventListener(){},querySelector(){return null}},
+  console,
+  URL,
+  Blob,
+  File:class File{},
+  CustomEvent:class CustomEvent{},
+  Promise,
+  setTimeout,
+  clearTimeout
+};
+vm.createContext(sandbox);
+vm.runInContext(app,sandbox,{filename:'app-core.js'});
+const testWB=sandbox.window.WB;
+assert.equal(typeof testWB.evaluateModuleIntegrity,'function','app-core must expose module integrity evaluator');
+const exactRegistrations=Object.entries(expectedModuleVersions).map(([name,version])=>({name,version}));
+const exactIntegrity=testWB.evaluateModuleIntegrity(expectedModuleVersions,exactRegistrations);
+assert.equal(exactIntegrity.ok,true,'exact module versions must pass integrity evaluation');
+const staleHand=exactRegistrations.map(x=>x.name==='hand-recognition'?{...x,version:'hand-clean-1.38'}:x);
+const staleHandIntegrity=testWB.evaluateModuleIntegrity(expectedModuleVersions,staleHand);
+assert.equal(staleHandIntegrity.ok,false,'one-generation-old hand module must fail integrity evaluation');
+assert.ok(staleHandIntegrity.moduleVersionMismatches.some(x=>x.type==='version-mismatch'&&x.name==='hand-recognition'),'stale hand mismatch must identify hand-recognition');
+const staleDiagnostics=exactRegistrations.map(x=>x.name==='diagnostics'?{...x,version:'diagnostics-clean-1.47'}:x);
+const staleDiagnosticsIntegrity=testWB.evaluateModuleIntegrity(expectedModuleVersions,staleDiagnostics);
+assert.equal(staleDiagnosticsIntegrity.ok,false,'stale diagnostics module must fail integrity evaluation');
+assert.ok(staleDiagnosticsIntegrity.moduleVersionMismatches.some(x=>x.type==='version-mismatch'&&x.name==='diagnostics'),'stale diagnostics mismatch must identify diagnostics');
+const missingModule=exactRegistrations.filter(x=>x.name!=='state-recognition');
+const missingIntegrity=testWB.evaluateModuleIntegrity(expectedModuleVersions,missingModule);
+assert.equal(missingIntegrity.ok,false,'missing module must fail integrity evaluation');
+assert.ok(missingIntegrity.moduleVersionMismatches.some(x=>x.type==='missing'&&x.name==='state-recognition'),'missing module mismatch must identify the missing module');
+const duplicateModule=[...exactRegistrations,{...exactRegistrations.find(x=>x.name==='hand-recognition')}];
+const duplicateIntegrity=testWB.evaluateModuleIntegrity(expectedModuleVersions,duplicateModule);
+assert.equal(duplicateIntegrity.ok,false,'duplicate module registration must fail integrity evaluation');
+assert.ok(duplicateIntegrity.moduleVersionMismatches.some(x=>x.type==='duplicate'&&x.name==='hand-recognition'),'duplicate module mismatch must identify the duplicate module');
+testWB.modules=[];testWB.moduleRegistrations=[];testWB.moduleRegistrationDuplicates=[];
+testWB.registerModule('hand-recognition',expectedModuleVersions['hand-recognition']);
+testWB.registerModule('hand-recognition',expectedModuleVersions['hand-recognition']);
+assert.equal(testWB.moduleRegistrations.length,2,'registerModule must retain all registration attempts for duplicate detection');
+assert.equal(testWB.moduleRegistrationDuplicates.length,1,'registerModule must record duplicate registration attempts');
+
 const shellTitleVersion=index.match(/<title>シャドバWB リプレイ診断 v([^<]+)<\/title>/)?.[1];
 const shellHeader=index.match(/<header><h1>シャドバWB リプレイ診断 v([^<]+)<\/h1><p>([^<]+)<\/p><\/header>/);
 assert.equal(shellTitleVersion,latest.version,'static document title must match latest.json version');
@@ -58,6 +121,10 @@ assert.ok(diagnostics.includes('shadowverse-wb-review-v${WB.APP.version}-clean')
 assert.ok(stateRecognition.includes('WB.stateCaptureHistory=history.slice(-5)'),'state recognition must retain the five most recent captures');
 assert.ok(stateRecognition.includes("WB.on('video-reset',()=>{WB.stateCaptureHistory=[]"),'state capture history must reset with the video');
 assert.ok(diagnostics.includes('stateCaptureHistory:clone(WB.stateCaptureHistory||[])'),'diagnostic/review exports must include recent state-capture history');
+assert.ok(diagnostics.includes('expectedModules:clone(inv.expectedModules)'),'diagnostic export must include expected module versions');
+assert.ok(diagnostics.includes('loadedModules:clone(inv.loadedModules)'),'diagnostic export must include loaded module versions');
+assert.ok(diagnostics.includes('moduleVersionMismatches:clone(inv.moduleVersionMismatches)'),'diagnostic export must include module version mismatches');
+assert.ok(diagnostics.includes('moduleVersionsOk:moduleIntegrity.ok'),'runtime invariant must expose module version integrity status');
 assert.ok(index.includes('id="exportHandFixture"'),'diagnostics UI must expose explicit hand-fixture export');
 assert.ok(index.includes('通常の診断JSONには画像を含めません'),'UI must state that ordinary diagnostics remain image-free');
 assert.ok(diagnostics.includes("format:'shadowverse-wb-hand-fixture-v1'"),'hand fixture format must be versioned independently');
@@ -106,6 +173,7 @@ console.log(JSON.stringify({
   build:latest.build,
   cache:latest.cache,
   historyIsolation:true,
+  moduleVersionIntegrity:true,
   candidateThresholds:{quickBlader:.90,zetaBeatrix:.90,barbaros:.90},
   zetaAcceptedCosts:[4,6],
   quickOverlapMaskedRescue:true
