@@ -1,6 +1,6 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v14';
+const GATE_VERSION='recognition-quality-gate-v15';
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
 const tests=[
