@@ -137,6 +137,10 @@ assert.ok(diagnostics.includes('replayCenters=typeof WB.HandRecognition?.findCos
 assert.ok(diagnostics.includes('replay:{centers:clone(replayCenters),geometry:replayGeometry}'),'fixture frames must retain replay centers and geometry comparison');
 assert.ok(diagnostics.includes('function fixtureReplayGeometry(sampleCenters,replayCenters,width=1200)'),'fixture export must expose a deterministic geometry replay summary');
 assert.ok(handRecognition.includes('nearThresholdSettleDiagnostic=ctx?.relativeSide'), 'near-threshold settling evidence must be exported diagnostically');
+assert.ok(handRecognition.includes('function nearThresholdOscillationTrend(samples)'),'near-threshold oscillation diagnostic helper must exist');
+assert.ok(handRecognition.includes("nearThresholdSettlingTrend(samples)||nearThresholdOscillationTrend(samples)"),'phase diagnostics must fall back from settling to oscillation evidence');
+assert.ok(handRecognition.includes("mode:'oscillation'"),'oscillation diagnostics must identify their mode explicitly');
+assert.equal(handRecognition.includes('allowSettleRetry=!!nearThresholdOscillationTrend'),false,'oscillation diagnostics must never drive forward-settle recognition');
 assert.ok(handRecognition.includes('allowSettleRetry=!!settleTrend'), 'near-threshold diagnostic must not activate forward-settle retry');
 assert.equal(handRecognition.includes('allowSettleRetry=!!nearThresholdSettleDiagnostic'),false,'near-threshold diagnostic must never drive recognition decisions directly');
 assert.ok(handRecognition.includes("mode:'near-threshold-same-layout-counterfactual',diagnosticOnly:true,applied:false"),'near-threshold counterfactual must be explicitly diagnostic-only and never applied');
