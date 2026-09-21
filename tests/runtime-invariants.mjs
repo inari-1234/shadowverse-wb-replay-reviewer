@@ -142,7 +142,8 @@ assert.equal(handRecognition.includes('decision=targetEvidence'),false,'counterf
 assert.ok(handRecognition.includes('nearThresholdPhaseOffset:.012'),'near-threshold phase probe must retain the measured +12ms diagnostic offset');
 assert.ok(handRecognition.includes('function phaseShiftWindowCompatible(referenceFrames,shiftedFrames,width=CFG.maxW)'),'phase probe must require an explicit same-layout compatibility check');
 assert.ok(handRecognition.includes("mode:'near-threshold-phase-probe',diagnosticOnly:true,applied:false"),'phase probe must remain explicitly diagnostic-only');
-assert.ok(handRecognition.includes('targetEvidence:counterfactualTargetEvidence(phaseSamples,nearThresholdSettleDiagnostic.cardId)'),'phase probe must retain per-frame target evidence');
+assert.ok(handRecognition.includes('phaseTargetEvidence=counterfactualTargetEvidence(phaseSamples,nearThresholdSettleDiagnostic.cardId)'),'phase probe must compute per-frame target evidence after re-observation');
+assert.ok(handRecognition.includes('targetEvidence:phaseTargetEvidence'),'phase probe must export the computed per-frame target evidence');
 assert.ok(handRecognition.includes('anchorVariant:variant?{score:finite(variant.score),dx:finite(variant.dx,0)'),'counterfactual evidence must retain anchor variant boundary diagnostics');
 assert.ok(handRecognition.includes('observationLayoutCompatible:phaseObservationCompatible'),'phase probe must revalidate the observed recognition frames, not only the layout scan');
 assert.ok(handRecognition.includes('validForComparison:phaseObservationCompatible'),'phase probe must expose whether phase evidence is safe to compare');
