@@ -14,13 +14,13 @@ const recognition={
   recognized:{},
   unresolved:{quickBlader:{reason:'temporal-evidence-insufficient'}},
   samples:[
-    {sampleTime:1,candidates:[{index:0}]},
-    {sampleTime:2,candidates:[{index:0}]},
-    {sampleTime:3,candidates:[{index:0}]},
-    {sampleTime:4,candidates:[{index:0}]},
-    {sampleTime:5,candidates:[{index:0}]},
-    {sampleTime:6,candidates:[{index:0}]},
-    {sampleTime:7,candidates:[{index:0}]}
+    {sampleTime:1,centers:[{cx:100,cy:500,score:14,greenFraction:.4}],candidates:[{index:0}]},
+    {sampleTime:2,centers:[{cx:200,cy:500,score:14,greenFraction:.4}],candidates:[{index:0}]},
+    {sampleTime:3,centers:[{cx:300,cy:500,score:14,greenFraction:.4}],candidates:[{index:0}]},
+    {sampleTime:4,centers:[{cx:400,cy:500,score:14,greenFraction:.4}],candidates:[{index:0}]},
+    {sampleTime:5,centers:[{cx:500,cy:500,score:14,greenFraction:.4}],candidates:[{index:0}]},
+    {sampleTime:6,centers:[{cx:600,cy:500,score:14,greenFraction:.4}],candidates:[{index:0}]},
+    {sampleTime:7,centers:[{cx:700,cy:500,score:14,greenFraction:.4}],candidates:[{index:0}]}
   ]
 };
 const WB={
@@ -31,6 +31,10 @@ const WB={
   tacticalHandRecognition:recognition,
   DisplayedCostRecognition:{meta:{version:'cost-test'}},
   CardDB:{meta:{version:'card-test'}},
+  HandRecognition:{
+    findCostCenters(){const x=Math.round(WB.video.currentTime*100);return[{cx:x,cy:500,score:14,greenFraction:.4}]},
+    layoutsCompatible(a,b){const aa=a?.centers||[],bb=b?.centers||[];return aa.length===bb.length&&aa.every((x,i)=>Math.abs(Number(x.cx)-Number(bb[i]?.cx))<=18)}
+  },
   cancelRequested:false,
   registerModule(){},
   onReady(){},
@@ -39,7 +43,7 @@ const WB={
   videoKey(){return'fixture-key'},
   async seekTo(t){seeks.push(t);this.video.currentTime=t;return t},
   frameCanvas(maxW){assert.equal(maxW,1200);return{width:1200,height:675}},
-  async canvasBlob(){return new Blob([Uint8Array.from([1,2,3])],{type:'image/jpeg'})}
+  async canvasBlob(_canvas,_quality,type){assert.equal(type,'image/png','fixture capture must request lossless PNG');return new Blob([Uint8Array.from([1,2,3])],{type:'image/png'})}
 };
 const context={
   window:{WB,__wbDecisionInputV1:{marker:'decision'}},
@@ -62,16 +66,40 @@ assert.equal(bundle.format,'shadowverse-wb-hand-fixture-v1');
 assert.equal(bundle.capturePolicy.automatic,false);
 assert.equal(bundle.capturePolicy.fullFrame,true);
 assert.equal(bundle.capturePolicy.selectedFrames,2);
+assert.equal(bundle.capturePolicy.lossless,true);
+assert.equal(bundle.capturePolicy.imageMime,'image/png');
+assert.equal(bundle.capturePolicy.replayGeometryCheck,true);
+assert.equal(bundle.capturePolicy.jpegQuality,null);
 assert.deepEqual(Array.from(bundle.frames,x=>x.sampleTime),[1,7]);
 assert.equal(bundle.frames[0].width,1200);
 assert.equal(bundle.frames[0].height,675);
 assert.equal(bundle.frames[0].image.encoding,'base64');
 assert.equal(bundle.frames[0].image.data,'AQID');
 assert.equal(bundle.frames[0].image.byteLength,3);
+assert.equal(bundle.frames[0].image.mime,'image/png');
+assert.deepEqual(Array.from(bundle.frames[0].replay.centers,x=>x.cx),[100]);
+assert.equal(bundle.frames[0].replay.geometry.countMatch,true);
+assert.equal(bundle.frames[0].replay.geometry.exactCenterMatch,true);
+assert.equal(bundle.frames[0].replay.geometry.maxCenterDeltaPx,0);
+assert.equal(bundle.frames[0].replay.geometry.layoutCompatible,true);
 assert.equal(bundle.frames[0].sample.sampleTime,1);
 assert.equal(bundle.recognition.windowMode,'stable-backscan');
 assert.equal(bundle.decisionInputV1.marker,'decision');
 assert.equal(WB.video.currentTime,10,'fixture capture must restore the original video position');
 assert.deepEqual(seeks,[1,7,10],'capture should seek only selected fixture frames and restore once');
+
+const geometry=WB.Diagnostics.fixtureReplayGeometry(
+  [{cx:100,cy:500,score:14,greenFraction:.4},{cx:200,cy:500,score:15,greenFraction:.5}],
+  [{cx:102,cy:500,score:13.5,greenFraction:.39},{cx:205,cy:500,score:15.1,greenFraction:.48}],
+  1200
+);
+assert.equal(geometry.available,true);
+assert.equal(geometry.countMatch,true);
+assert.equal(geometry.exactCenterMatch,false);
+assert.equal(geometry.maxCenterDeltaPx,5);
+assert.equal(geometry.meanCenterDeltaPx,3.5);
+assert.equal(geometry.maxScoreDelta,.5);
+assert.equal(geometry.maxGreenFractionDelta,.02);
+assert.equal(geometry.layoutCompatible,true);
 
 console.log('HAND FIXTURE EXPORT REGRESSION PASS');
