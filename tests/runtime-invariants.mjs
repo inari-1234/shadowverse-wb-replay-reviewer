@@ -70,6 +70,11 @@ assert.ok(handRecognition.includes("mode:'near-threshold-same-layout-counterfact
 assert.ok(handRecognition.includes('counterfactualRecognitionSummary(retryDecision,nearThresholdSettleDiagnostic.cardId)'),'counterfactual must evaluate the target with the ordinary decision engine output');
 assert.ok(handRecognition.includes('nearThresholdSettleDiagnostic,nearThresholdCounterfactual,continuityRescue'),'counterfactual result must be exported with hand diagnostics');
 assert.equal(handRecognition.includes('decision=retryDecision'),false,'counterfactual retry decision must never replace the live hand decision');
+assert.ok(handRecognition.includes('minSepX:.018'),'cost-center minimum separation must retain the real-video-calibrated .018 ratio');
+assert.ok(handRecognition.includes('function costCenterSeparated(kept,x,width=CFG.maxW)'),'cost-center peak separation must use the explicit cx-aware helper');
+assert.ok(handRecognition.includes('costCenterSeparated(kept,p.x,w)'),'findCostCenters must apply calibrated separation before accepting a peak');
+assert.equal(handRecognition.includes('Math.abs(q.x-p.x)<minSep'),false,'legacy q.x/cx mismatch must never return');
+
 
 const applyStart=review.indexOf('applyDetectedHand(result)');
 assert.ok(applyStart>=0,'applyDetectedHand must exist');

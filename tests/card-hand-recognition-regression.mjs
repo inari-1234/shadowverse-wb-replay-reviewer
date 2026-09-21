@@ -48,6 +48,14 @@ assert.equal(zeta.recognition.anchorThreshold,.92);
 assert.equal(barbaros.recognition.anchorThreshold,.92);
 assert.deepEqual([...H.anchorAngles],[-10,-5,0,5,10]);
 assert.deepEqual([...H.anchorCenterShifts],[-4,-2,0,2,4]);
+assert.equal(H.config.minSepX,.018,'cost-center peak separation must preserve dense 8/9-card hand layouts');
+const separatedCenters=(xs,width=1200)=>{const kept=[];for(const x of xs)if(H.costCenterSeparated(kept,x,width))kept.push({cx:x});return kept.map(x=>x.cx).sort((a,b)=>a-b)};
+assert.deepEqual(separatedCenters([701,882,774,740,738,844,847,815,923,960,757]),[701,740,774,815,844,882,923,960],'real-video-derived Zeta peak order must collapse duplicate/midpoint peaks to eight cost centers');
+assert.deepEqual(separatedCenters([701,735,763,796,824,857,899,930,951]),[701,735,763,796,824,857,899,930,951],'verified nine-card layout must survive the calibrated 21px-equivalent separation');
+assert.deepEqual(separatedCenters([709,749,791,833,878,917,960]),[709,749,791,833,878,917,960],'crowded seven-card Quick layout must remain intact');
+assert.equal(H.costCenterSeparated([{cx:740},{cx:774}],757,1200),false,'false midpoint peak between adjacent real cost circles must be rejected');
+assert.equal(H.costCenterSeparated([{cx:930}],951,1200),true,'an exact 21px gap at 1200px must remain valid for a real nine-card hand');
+
 
 const anchorProfiles={
   quickBlader:DB.anchorRecognitionProfiles('quickBlader'),
@@ -468,7 +476,7 @@ assert.ok(barbarosFanFixture.best>=.93,`real-video Barbaros fan-position fixture
 const barbarosHardNegative=H.matchFeature(realVideoFixtureDecode({"scale":800.8372672539656,"data":"+f/+Bwj99vTy+QIVLS76wcDF6QceBxL65NvX4Of/BCcAzMfC7/sCFSYX9+XoAhcr6RQQ2tTI7PgFRmRaHOvqLUEY5AIKzczE7PoILkA/AvDuWzD85QMHwsDA6hUUNEUyLgr0Dvnu5w0Hwb++IA7qFh9HRyT///YF8wsOwL++GTwDJlktCN30Dh4LABQSv76++QIHBgADDAoB6fLg3+LTy8fBNUb7EhcQCgsDCgsB9PPdu77FVFYXIhYREBYMCg4QCQHetbm/a1AzKP/6AhUTERcTBwXovr3DQ0cwIBYMDRQL+gwQChT4y8rKJS0JAv0GGRshFg8IAjcSysnL8fbl59nk4eENOiggFlAYysrR+vPq8NXmx8f2/ggeN2Mn19HPMikgFQ8LCwsRLzx5f2IwERgS3evy6Nvj8vXy+/UAQV04JBsbyNje2NPd7vLq7d7F4ic6JhwdwdLY0crW5+ri3d7U7ik6Ix4c0Nrh28vR5Ofc3+rj8iQyJRoa59TzFATbyuDV2ePo7/IRFwcJ+PwaQ08zCggF7Obh3N8CEgkK3+z0DjJISigRFwbs2dHyBQcN"})).find(x=>x.cardId==='barbaros');
 assert.ok(barbarosHardNegative.best<.90,`real-video cost-7 hard negative must stay below .90 candidate gate: ${barbarosHardNegative.best}`);
 
-assert.equal(H.version,'hand-clean-1.38');
+assert.equal(H.version,'hand-clean-1.39');
 const qbRecognition=DB.recognitionCards().find(x=>x.id==='quickBlader');
 assert.equal(H.temporalProbeFloor(qbRecognition),.88,'Quick Blader alone may probe down to the guarded .88 floor');
 const zetaRecognition=DB.recognitionCards().find(x=>x.id==='zetaBeatrix');
@@ -488,7 +496,7 @@ const temporalTwoFrames=[.893,.892].map((score,i)=>({sampleTime:i,counts:{},scor
 assert.equal(H.decideHandSamples(temporalTwoFrames).recognized.quickBlader,undefined);
 
 
-assert.equal(H.version,'hand-clean-1.38');
+assert.equal(H.version,'hand-clean-1.39');
 WB.turnTimeline=[
  {side:'bottom',turn:6,time:74.41},
  {side:'top',turn:7,time:81.863},
