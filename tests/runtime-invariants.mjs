@@ -135,6 +135,10 @@ assert.ok(handRecognition.includes('allowSettleRetry=!!settleTrend'), 'near-thre
 assert.equal(handRecognition.includes('allowSettleRetry=!!nearThresholdSettleDiagnostic'),false,'near-threshold diagnostic must never drive recognition decisions directly');
 assert.ok(handRecognition.includes("mode:'near-threshold-same-layout-counterfactual',diagnosticOnly:true,applied:false"),'near-threshold counterfactual must be explicitly diagnostic-only and never applied');
 assert.ok(handRecognition.includes('counterfactualRecognitionSummary(retryDecision,nearThresholdSettleDiagnostic.cardId)'),'counterfactual must evaluate the target with the ordinary decision engine output');
+assert.ok(handRecognition.includes('function counterfactualTargetEvidence(samples,cardId)'),'counterfactual diagnostics must expose a frame-level target-evidence summarizer');
+assert.ok(handRecognition.includes('targetEvidence:counterfactualTargetEvidence(retrySamples,nearThresholdSettleDiagnostic.cardId)'),'counterfactual diagnostics must retain frame-level target evidence from the diagnostic retry window');
+assert.ok(handRecognition.includes('targetEvidence:[]'),'counterfactual diagnostics must expose an explicit empty evidence list when no compatible forward window exists');
+assert.equal(handRecognition.includes('decision=targetEvidence'),false,'counterfactual target evidence must never replace or drive the live hand decision');
 assert.ok(handRecognition.includes('nearThresholdSettleDiagnostic,nearThresholdCounterfactual,continuityRescue'),'counterfactual result must be exported with hand diagnostics');
 assert.equal(handRecognition.includes('decision=retryDecision'),false,'counterfactual retry decision must never replace the live hand decision');
 assert.ok(handRecognition.includes('minSepX:.018'),'cost-center minimum separation must retain the real-video-calibrated .018 ratio');
