@@ -130,6 +130,12 @@ assert.ok(index.includes('通常の診断JSONには画像を含めません'),'U
 assert.ok(diagnostics.includes("format:'shadowverse-wb-hand-fixture-v1'"),'hand fixture format must be versioned independently');
 assert.ok(diagnostics.includes('automatic:false'),'raw fixture capture must remain explicit and diagnostic-only');
 assert.ok(diagnostics.includes("WB.seekTo(original,'hand-fixture-restore')"),'fixture export must restore the original video position');
+assert.ok(app.includes("WB.canvasBlob=(c,q=.82,type='image/jpeg')"),'canvas blob helper must preserve JPEG as the default while allowing an explicit lossless fixture type');
+assert.ok(diagnostics.includes("fixtureImagePayload(canvas,quality=.9,mime='image/png')"),'hand fixture images must default to lossless PNG');
+assert.ok(diagnostics.includes("imageMime:'image/png',lossless:true,replayGeometryCheck:true,jpegQuality:null"),'fixture capture policy must declare lossless PNG and geometry replay verification');
+assert.ok(diagnostics.includes('replayCenters=typeof WB.HandRecognition?.findCostCenters'),'fixture capture must rerun cost-center detection on the exact canvas being exported');
+assert.ok(diagnostics.includes('replay:{centers:clone(replayCenters),geometry:replayGeometry}'),'fixture frames must retain replay centers and geometry comparison');
+assert.ok(diagnostics.includes('function fixtureReplayGeometry(sampleCenters,replayCenters,width=1200)'),'fixture export must expose a deterministic geometry replay summary');
 assert.ok(handRecognition.includes('nearThresholdSettleDiagnostic=ctx?.relativeSide'), 'near-threshold settling evidence must be exported diagnostically');
 assert.ok(handRecognition.includes('allowSettleRetry=!!settleTrend'), 'near-threshold diagnostic must not activate forward-settle retry');
 assert.equal(handRecognition.includes('allowSettleRetry=!!nearThresholdSettleDiagnostic'),false,'near-threshold diagnostic must never drive recognition decisions directly');
