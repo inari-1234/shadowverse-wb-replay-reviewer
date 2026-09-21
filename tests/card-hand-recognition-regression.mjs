@@ -987,6 +987,22 @@ const settleAnchor={sampleTime:36.747,centers:[{cx:708},{cx:766},{cx:829},{cx:89
 const sameLayoutForward=[36.792,36.832,36.872,36.912].map(t=>({sampleTime:t,centers:[{cx:708},{cx:766},{cx:829},{cx:893},{cx:959}]}));
 const sameLayoutWindow=H.chooseSameLayoutForwardSettleHandWindow(sameLayoutForward,settleAnchor,4,1200);
 assert.ok(sameLayoutWindow&&sameLayoutWindow.candidateCount===5,'draw-settle retry must accept only a stable same-count hand layout');
+const zetaCounterfactualAnchor1112=mkLayout(131.896,[650,683,718,755,781,818,855,889]);
+const zetaCounterfactualForward1112=[
+  mkLayout(131.941,[650,687,720,756,781,818,889]),
+  mkLayout(131.981,[650,683,718,756,781,818,855,889]),
+  mkLayout(132.021,[650,683,719,756,782,818,856,889]),
+  mkLayout(132.061,[650,687,720,756,782,818,856,889]),
+  mkLayout(132.101,[650,686,720,755,786,818,856,888])
+];
+assert.equal(H.layoutsCompatible(zetaCounterfactualAnchor1112,zetaCounterfactualForward1112[0],1112),false,'first +45ms compressed-video frame is a transient seven-center layout and must not anchor the counterfactual');
+const zetaCounterfactualWindow1112=H.chooseSameLayoutForwardSettleHandWindow(zetaCounterfactualForward1112,zetaCounterfactualAnchor1112,4,1112);
+assert.ok(zetaCounterfactualWindow1112,'counterfactual scan must recover a later stable window after the transient first frame');
+assert.equal(zetaCounterfactualWindow1112.candidateCount,8,'real-video-derived Zeta counterfactual must retain the eight-card hand');
+assert.equal(zetaCounterfactualWindow1112.frames.length,4);
+assert.ok(zetaCounterfactualWindow1112.frames.every(x=>(x.centers||[]).length===8),'selected counterfactual frames must all be the stable eight-card layout');
+assert.ok(zetaCounterfactualWindow1112.frames.every(x=>H.layoutsCompatible(zetaCounterfactualAnchor1112,x,1112)),'selected future frames must remain geometrically compatible with the 131.896 anchor hand');
+
 const extraCardForward=[36.792,36.832,36.872,36.912].map(t=>({sampleTime:t,centers:[{cx:680},{cx:735},{cx:790},{cx:845},{cx:900},{cx:955}]}));
 assert.equal(H.chooseSameLayoutForwardSettleHandWindow(extraCardForward,settleAnchor,4,1200),null,'draw-settle retry must reject a forward window where hand count changed');
 
