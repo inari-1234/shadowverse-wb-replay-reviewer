@@ -2,6 +2,10 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
 
+const appCore=fs.readFileSync(new URL('../app-core.js',import.meta.url),'utf8');
+const expectedHandVersion=appCore.match(/'hand-recognition'\s*:\s*'([^']+)'/)?.[1];
+assert.ok(expectedHandVersion,'app-core expected hand-recognition version must be parseable');
+
 const WB={registerModule(){},log(){},turnTimeline:[]};
 const sandbox={
   window:{WB},console,Float32Array,Uint8ClampedArray,Map,
@@ -12,7 +16,7 @@ vm.createContext(sandbox);
 new vm.Script(fs.readFileSync(new URL('../hand-recognition.js',import.meta.url),'utf8')).runInContext(sandbox);
 
 const H=WB.HandRecognition;
-assert.equal(H.version,'hand-clean-1.41');
+assert.equal(H.version,expectedHandVersion,'hand-recognition runtime version must match app-core expected module manifest');
 assert.equal(H.config.nearThresholdPhaseOffset,.012);
 assert.equal(typeof H.phaseShiftWindowCompatible,'function');
 
