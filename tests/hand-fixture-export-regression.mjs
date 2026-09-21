@@ -3,6 +3,10 @@ import vm from 'node:vm';
 import assert from 'node:assert/strict';
 
 const source=fs.readFileSync(new URL('../diagnostics.js',import.meta.url),'utf8');
+const appSource=fs.readFileSync(new URL('../app-core.js',import.meta.url),'utf8');
+const latest=JSON.parse(fs.readFileSync(new URL('../latest.json',import.meta.url),'utf8'));
+const expectedDiagnosticsVersion=appSource.match(/'diagnostics'\s*:\s*'([^']+)'/)?.[1];
+assert.ok(expectedDiagnosticsVersion,'expected diagnostics module version must be parseable from app-core manifest');
 const seeks=[];
 const recognition={
   base:22.113,
@@ -20,7 +24,7 @@ const recognition={
   ]
 };
 const WB={
-  APP:{version:'4.13.47',build:'test-build',revision:'test-revision'},
+  APP:{version:latest.version,build:latest.build,revision:latest.revision},
   modules:[],events:[],errors:[],scenes:[],
   videoMeta:{name:'fixture.mp4',size:123,type:'video/mp4',lastModified:1},
   video:{currentTime:10,duration:120,videoWidth:1920,videoHeight:1080},
@@ -49,7 +53,7 @@ const context={
 context.globalThis=context;
 vm.runInNewContext(source,context,{filename:'diagnostics.js'});
 
-assert.equal(WB.Diagnostics.version,'diagnostics-clean-1.47');
+assert.equal(WB.Diagnostics.version,expectedDiagnosticsVersion);
 assert.deepEqual(Array.from(WB.Diagnostics.fixtureSampleTimes(recognition,4)),[1,3,5,7],'seven samples should be evenly reduced to four');
 assert.deepEqual(Array.from(WB.Diagnostics.fixtureSampleTimes({samples:[{sampleTime:2},{sampleTime:2},{sampleTime:null},{sampleTime:4}]},4)),[2,4],'times must be unique and finite');
 
