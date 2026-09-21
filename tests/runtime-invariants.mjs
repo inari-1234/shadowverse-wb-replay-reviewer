@@ -159,7 +159,7 @@ assert.ok(handRecognition.includes('anchorVariantDiagnosticScoresWithBoundaryPro
 assert.ok(handRecognition.includes('matches=matchCardFeatures(titleFeature,anchorFeatures),anchorVariantScores=anchorVariantDiagnosticScoresWithBoundaryProbe(canvas,center,anchorFeatures)'),'live card matching must run on the original 25 anchor variants before diagnostic boundary probing');
 assert.ok(handRecognition.includes('edgeProbe:variant.edgeProbe?{diagnosticOnly:variant.edgeProbe.diagnosticOnly===true'),'target evidence must export anchor boundary probe diagnostics');
 const decideStart=handRecognition.indexOf('function decideHandSamples');
-const decideEnd=handRecognition.indexOf('function latestTargetTurnStart',decideStart);
+const decideEnd=handRecognition.indexOf('function settlingRecognitionTrend',decideStart);
 assert.ok(decideStart>=0&&decideEnd>decideStart,'decideHandSamples body must be extractable for isolation checks');
 assert.equal(handRecognition.slice(decideStart,decideEnd).includes('edgeProbe'),false,'anchor boundary edgeProbe must never drive live hand decisions');
 assert.ok(handRecognition.includes('observationLayoutCompatible:phaseObservationCompatible'),'phase probe must revalidate the observed recognition frames, not only the layout scan');
