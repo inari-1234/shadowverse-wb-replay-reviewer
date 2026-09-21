@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.51',build:'4.13.51-20260921-clean-13-51',revision:'clean-13-51',subtitle:'Build 2026.09.21-clean-13-51 / phase証拠整合性診断'};
+const APP={version:'4.13.52',build:'4.13.52-20260921-clean-13-52',revision:'clean-13-52',subtitle:'Build 2026.09.21-clean-13-52 / lossless fixture整合性診断'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'turn-recognition':'turn-clean-1.2',
   'mulligan-class':'mulligan-class-clean-1.5',
@@ -8,7 +8,7 @@ const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'hand-recognition':'hand-clean-1.42',
   'state-recognition':'state-clean-1.8.8',
   'review-engine':'review-clean-1.5.1',
-  'diagnostics':'diagnostics-clean-1.48'
+  'diagnostics':'diagnostics-clean-1.49'
 });
 const WB=window.WB={APP,expectedModules:EXPECTED_MODULE_VERSIONS,modules:[],moduleRegistrations:[],moduleRegistrationDuplicates:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
 WB.$=s=>document.querySelector(s);
@@ -41,7 +41,7 @@ WB.playOrder=()=>WB.$('#playOrder')?.value==='先攻'?'先攻':'後攻';
 WB.videoKey=()=>WB.videoMeta?`${WB.videoMeta.name}|${WB.videoMeta.size}|${WB.videoMeta.lastModified}`:String(WB.video?.currentSrc||WB.video?.src||'no-video');
 WB.currentTurnContext=()=>{const t=Number(WB.video?.currentTime),rows=WB.turnTimeline||[];let row=null;if(Number.isFinite(t))for(const r of rows){if(Number(r.time)<=t&&(!row||Number(r.time)>Number(row.time)))row=r}const reviewed=WB.targetSide(),side=row?.side==='top'||row?.side==='bottom'?row.side:null;return{time:Number.isFinite(t)?+t.toFixed(3):null,row,turn:Number(row?.turn)||null,absoluteSide:side,targetSide:reviewed,relativeSide:side?(side===reviewed?'自分':'相手'):null,playOrder:WB.playOrder(),videoKey:WB.videoKey()}};
 WB.frameCanvas=(maxW=1200)=>{const v=WB.video;if(!v?.videoWidth||!v?.videoHeight)return null;const scale=Math.min(1,maxW/v.videoWidth),c=document.createElement('canvas');c.width=Math.max(1,Math.round(v.videoWidth*scale));c.height=Math.max(1,Math.round(v.videoHeight*scale));c.getContext('2d',{willReadFrequently:true}).drawImage(v,0,0,c.width,c.height);return c};
-WB.canvasBlob=(c,q=.82)=>new Promise((res,rej)=>c.toBlob(b=>b?res(b):rej(new Error('画像化失敗')),'image/jpeg',q));
+WB.canvasBlob=(c,q=.82,type='image/jpeg')=>new Promise((res,rej)=>{const mime=String(type||'image/jpeg');c.toBlob(b=>b?res(b):rej(new Error('画像化失敗')),mime,mime==='image/jpeg'?q:undefined)});
 WB.downloadJSON=(obj,name)=>{const b=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1500)};
 WB.shareJsonFile=async(obj,name)=>{const file=new File([JSON.stringify(obj,null,2)],name,{type:'application/json',lastModified:Date.now()});if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]}))){try{await navigator.share({files:[file]});return}catch(e){if(e?.name==='AbortError')return}}WB.downloadJSON(obj,name)};
 
