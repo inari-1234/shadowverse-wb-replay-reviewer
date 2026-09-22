@@ -144,8 +144,8 @@ assert.equal(handRecognition.includes('allowSettleRetry=!!nearThresholdOscillati
 assert.ok(handRecognition.includes("const DISPLAYED_COST_DIAGNOSTIC_VERSION='displayed-cost-diagnostic-1.0'"),'displayed-cost 6 diagnostics must have an explicit version');
 assert.ok(handRecognition.includes("DISPLAYED_COST_DIAGNOSTIC_TEMPLATES=Object.freeze({6:Object.freeze"),'diagnostic-only displayed-cost value 6 template must exist');
 assert.ok(handRecognition.includes("diagnosticOnly:true,applied:false,value:Number(def.value)"),'displayed-cost 6 probe must be explicitly diagnostic-only');
-assert.ok(handRecognition.includes("diagnostic6Probe=matchDisplayedCostDiagnosticFeatures(variants,6)"),'displayed-cost reads must attach a diagnostic 6 score');
-assert.ok(handRecognition.includes("return{...resolveDisplayedCost(ocr,template),diagnostic6Probe}"),'diagnostic 6 score must be attached only after the live resolver result is computed');
+assert.ok(handRecognition.includes("probe=diagnostic6Probe||matchDisplayedCostDiagnosticFeatures(rows,6)"),'displayed-cost reads must reuse or compute a diagnostic 6 score');
+assert.ok(handRecognition.includes("return{...resolveDisplayedCost(ocr,template),diagnostic6Probe:probe}"),'diagnostic 6 score must be attached only after the live resolver result is computed');
 assert.ok(handRecognition.includes("diagnosticCostVariants=displayedCostFeatureVariants(canvas,center),diagnostic6Probe=matchDisplayedCostDiagnosticFeatures(diagnosticCostVariants,6)"),'all detected hand slots must receive the diagnostic-only cost6 probe');
 assert.ok(handRecognition.includes("if(shouldReadCost)displayedCost=await readDisplayedCost(canvas,center,worker,diagnosticCostVariants,diagnostic6Probe)"),'live OCR must remain gated while reusing all-slot diagnostic features');
 const liveCostTemplateStart=handRecognition.indexOf('const DISPLAYED_COST_TEMPLATES=Object.freeze(');
