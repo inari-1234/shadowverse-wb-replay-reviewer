@@ -128,6 +128,14 @@ A v5 component can influence live recognition only when all are true:
 - This specifically guards against narrow-strip false positives where the same card pattern appears plausible in several slots.
 - No uniqueness metric is connected to production recognition; it is evidence for deciding whether common-strip features are safe enough to promote later.
 
+## Zeta eight-card raw-fixture cross-slot check
+
+- The known-positive Zeta fixture at 131.769-131.889 seconds was recomputed directly from the stored frame pixels and the existing Zeta anchor profiles.
+- For both fixed strips, slot 7 wins all four frames across all eight slots.
+- left40 top-score median is 0.9215 with minimum cross-slot margin 0.4040.
+- left50 top-score median is 0.92355 with minimum cross-slot margin 0.4668.
+- This strengthens the evidence that fixed common-strip features are not Barbaros-specific, but it remains calibration evidence rather than proof of cross-video generalization.
+
 ## Immediate next milestones
 
 1. Export lossless fixtures from multiple videos and create dataset manifests.
