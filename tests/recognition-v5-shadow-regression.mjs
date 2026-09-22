@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {aggregateClassScores,aggregateCostEvidence,aggregateCostSlots,aggregateVisibilityCardEvidence,distinctFrames,median,shadowComparison,V5_SHADOW_VERSION} from '../experiments/recognition-v5-shadow.mjs';
 
-assert.equal(V5_SHADOW_VERSION,'recognition-v5-shadow-0.3');
+assert.equal(V5_SHADOW_VERSION,'recognition-v5-shadow-0.4');
 assert.equal(median([1,4,2,3]),2.5);
 assert.deepEqual(distinctFrames([
   {frameKey:'a',sampleTime:1},{frameKey:'a',sampleTime:1.01},{frameKey:'b',sampleTime:2}
@@ -73,6 +73,21 @@ assert.equal(visible.masked.top.id,'barbaros');
 assert.ok(visible.masked.top.margin>.25);
 assert.ok(visible.recovery.gain>.35);
 assert.equal(visible.applied,false);
+assert.equal(visible.confidence.rankAgreement,true);
+assert.equal(visible.confidence.rankPreservingRecovery,true);
+assert.equal(visible.confidence.rankConflict,false);
+assert.equal(visible.confidence.normalTopConsistency,1);
+assert.equal(visible.confidence.maskedTopConsistency,1);
+assert.ok(visible.confidence.marginGain>0);
+
+
+const visibilityConflict=aggregateVisibilityCardEvidence([
+  {frameKey:'c1',candidateCount:9,cardScores:{barbaros:.39,quick:.24},maskedCardScores:{barbaros:.29,quick:.33},maskedCardMeta:{barbaros:{supportRatio:.46},quick:{supportRatio:.56}},visibility:{rightGap:28,anchorRightSpanPx:46,rightVisibleRatio:28/46,rightOcclusionRatio:1-28/46}},
+  {frameKey:'c2',candidateCount:9,cardScores:{barbaros:.38,quick:.25},maskedCardScores:{barbaros:.28,quick:.32},maskedCardMeta:{barbaros:{supportRatio:.46},quick:{supportRatio:.56}},visibility:{rightGap:28,anchorRightSpanPx:46,rightVisibleRatio:28/46,rightOcclusionRatio:1-28/46}}
+]);
+assert.equal(visibilityConflict.confidence.rankAgreement,false);
+assert.equal(visibilityConflict.confidence.rankConflict,true);
+assert.equal(visibilityConflict.confidence.rankPreservingRecovery,false);
 
 const full=shadowComparison({legacy:{recognized:false},costRows:[{frameKey:'a',diagnostic6Score:.99,diagnostic6Threshold:.98}],cardRows:[{frameKey:'a',cardScores:{zeta:.9,quick:.3}}]});
 assert.equal(full.mode,'shadow');
