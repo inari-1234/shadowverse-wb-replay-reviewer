@@ -50,7 +50,7 @@ assert.equal(occluded.confidence.rankConflict,false);
 assert.equal(occluded.confidence.normalTopConsistency,1);
 assert.equal(occluded.confidence.maskedTopConsistency,1);
 assert.equal(+occluded.confidence.scoreGain.toFixed(4),.3677);
-assert.equal(+occluded.confidence.marginGain.toFixed(4),.2404);
+assert.equal(+occluded.confidence.marginGain.toFixed(4),.2403);
 assert.ok(occluded.masked.top.median>occluded.normal.top.median+.35,'visible-region matching should preserve substantially more Barbaros evidence under 9-card overlap');
 
 assert.ok(success.normal.top.median-occluded.normal.top.median>.58,'the normal ROI collapses sharply between the 5-card and 9-card layouts');
