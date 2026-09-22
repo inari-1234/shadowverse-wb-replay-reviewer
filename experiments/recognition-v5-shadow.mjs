@@ -1,4 +1,4 @@
-export const V5_SHADOW_VERSION='recognition-v5-shadow-0.5';
+export const V5_SHADOW_VERSION='recognition-v5-shadow-0.6';
 
 const finite=v=>Number.isFinite(Number(v))?Number(v):null;
 export function median(values){
@@ -252,6 +252,66 @@ export function aggregateVisibilityCardSlots(records){
   }));
 }
 
+function commonStripFrameSlotScores(records,scoreField){
+  const frames=new Map();
+  for(const row of records||[]){
+    const videoKey=String(row?.videoKey??'unknown'),frameKey=String(row?.frameKey??row?.sampleTime??'unknown'),slot=finite(row?.slot);
+    if(slot==null)continue;
+    const scores=row?.[scoreField]||{},key=videoKey+'|'+frameKey;
+    if(!frames.has(key))frames.set(key,{videoKey,frameKey,rows:[]});
+    frames.get(key).rows.push({slot:Number(slot),scores});
+  }
+  return [...frames.values()];
+}
+export function aggregateCommonStripUniqueness(records,{scoreField='commonStrip40Scores'}={}){
+  const frames=commonStripFrameSlotScores(records,scoreField),groups=new Map();
+  for(const frame of frames){
+    const cardIds=new Set();
+    for(const row of frame.rows)for(const id of Object.keys(row.scores||{}))cardIds.add(String(id));
+    for(const id of cardIds){
+      const ranked=frame.rows.map(row=>({slot:row.slot,score:finite(row?.scores?.[id])})).filter(x=>x.score!=null).sort((a,b)=>b.score-a.score||a.slot-b.slot);
+      if(!ranked.length)continue;
+      const top=ranked[0],next=ranked[1]||null,key=frame.videoKey+'|'+id;
+      if(!groups.has(key))groups.set(key,{videoKey:frame.videoKey,cardId:id,frames:[]});
+      groups.get(key).frames.push({
+        frameKey:frame.frameKey,
+        topSlot:top.slot,
+        topScore:top.score,
+        runnerUpSlot:next?.slot??null,
+        runnerUpScore:next?.score??null,
+        slotMargin:next?top.score-next.score:null
+      });
+    }
+  }
+  return [...groups.values()].sort((a,b)=>a.videoKey.localeCompare(b.videoKey)||a.cardId.localeCompare(b.cardId)).map(group=>{
+    const winnerCounts=new Map();
+    for(const row of group.frames)winnerCounts.set(row.topSlot,(winnerCounts.get(row.topSlot)||0)+1);
+    const winners=[...winnerCounts.entries()].sort((a,b)=>b[1]-a[1]||a[0]-b[0]);
+    const dominantSlot=winners[0]?.[0]??null,dominantFrames=winners[0]?.[1]??0,total=group.frames.length;
+    const dominantRows=group.frames.filter(x=>x.topSlot===dominantSlot),margins=dominantRows.map(x=>finite(x.slotMargin)).filter(x=>x!=null),scores=dominantRows.map(x=>finite(x.topScore)).filter(x=>x!=null);
+    return{
+      videoKey:group.videoKey,
+      cardId:group.cardId,
+      scoreField,
+      distinctFrames:total,
+      dominantSlot,
+      dominantFrameRatio:total?dominantFrames/total:null,
+      topScoreMedian:median(scores),
+      topScoreMin:scores.length?Math.min(...scores):null,
+      slotMarginMedian:median(margins),
+      slotMarginMin:margins.length?Math.min(...margins):null,
+      slotWinnerCounts:Object.fromEntries(winners.map(([slot,count])=>[String(slot),count])),
+      frames:group.frames
+    };
+  });
+}
+export function aggregateCommonStripComparisons(records){
+  return{
+    left40:aggregateCommonStripUniqueness(records,{scoreField:'commonStrip40Scores'}),
+    left50:aggregateCommonStripUniqueness(records,{scoreField:'commonStrip50Scores'})
+  };
+}
+
 export function aggregateCardSlots(records){
   const groups=new Map();
   for(const row of records||[]){
@@ -284,6 +344,7 @@ export function shadowComparisonFromRecords(records,{legacy=null}={}){
     legacy,
     costSlots:aggregateCostSlots(records),
     cardSlots:aggregateCardSlots(records),
-    visibilityCardSlots:aggregateVisibilityCardSlots(records)
+    visibilityCardSlots:aggregateVisibilityCardSlots(records),
+    commonStripUniqueness:aggregateCommonStripComparisons(records)
   };
 }
