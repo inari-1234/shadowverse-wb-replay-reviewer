@@ -1,6 +1,6 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v28';
+const GATE_VERSION='recognition-quality-gate-v29';
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
 const tests=[
@@ -16,6 +16,7 @@ const tests=[
   'tests/near-threshold-oscillation-regression.mjs',
   'tests/anchor-boundary-probe-regression.mjs',
   'tests/displayed-cost6-diagnostic-regression.mjs',
+  'tests/displayed-cost6-all-slot-diagnostic-regression.mjs',
   'tests/counterfactual-evidence-regression.mjs',
   'tests/hand-fixture-export-regression.mjs',
   'tests/diagnostic-scenario-importer-regression.mjs',
