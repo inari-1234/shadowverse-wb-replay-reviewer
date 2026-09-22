@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
-import {aggregateClassScores,aggregateCostEvidence,aggregateCostSlots,distinctFrames,median,shadowComparison,V5_SHADOW_VERSION} from '../experiments/recognition-v5-shadow.mjs';
+import {aggregateClassScores,aggregateCostEvidence,aggregateCostSlots,aggregateVisibilityCardEvidence,distinctFrames,median,shadowComparison,V5_SHADOW_VERSION} from '../experiments/recognition-v5-shadow.mjs';
 
-assert.equal(V5_SHADOW_VERSION,'recognition-v5-shadow-0.2');
+assert.equal(V5_SHADOW_VERSION,'recognition-v5-shadow-0.3');
 assert.equal(median([1,4,2,3]),2.5);
 assert.deepEqual(distinctFrames([
   {frameKey:'a',sampleTime:1},{frameKey:'a',sampleTime:1.01},{frameKey:'b',sampleTime:2}
@@ -19,8 +19,8 @@ assert.ok(ranked.top.margin>.5);
 
 const cost=aggregateCostEvidence([
   {frameKey:'a',templateScores:{7:.67},diagnostic6Score:.9815,diagnostic6Threshold:.98,ocrValue:3,ocrConfidence:62},
-  {frameKey:'b',templateScores:{7:.66},diagnostic6Score:.984,diagnostic6Threshold:.988,diagnostic6Threshold:.98,ocrValue:6,ocrConfidence:37},
-  {frameKey:'c',templateScores:{7:.65},diagnostic6Score:.985,diagnostic6Threshold:.985,diagnostic6Threshold:.98,ocrValue:6,ocrConfidence:43}
+  {frameKey:'b',templateScores:{7:.66},diagnostic6Score:.9848,diagnostic6Threshold:.98,ocrValue:6,ocrConfidence:37},
+  {frameKey:'c',templateScores:{7:.65},diagnostic6Score:.9855,diagnostic6Threshold:.98,ocrValue:6,ocrConfidence:43}
 ]);
 assert.equal(cost.mode,'shadow');
 assert.equal(cost.applied,false);
@@ -61,6 +61,18 @@ assert.equal(canonicalSlots.length,2);
 assert.equal(canonicalSlots[0].evidence.visual.thresholdDecision.accepted,false);
 assert.equal(canonicalSlots[1].evidence.visual.thresholdDecision.classId,'6');
 assert.equal(canonicalSlots[1].evidence.disagreement,true);
+
+
+const visible=aggregateVisibilityCardEvidence([
+  {frameKey:'f1',candidateCount:9,cardScores:{barbaros:.36,quick:.30},maskedCardScores:{barbaros:.72,quick:.43},maskedCardMeta:{barbaros:{supportRatio:.5},quick:{supportRatio:.6}},visibility:{rightGap:33,anchorRightSpanPx:46,rightVisibleRatio:33/46,rightOcclusionRatio:1-33/46}},
+  {frameKey:'f2',candidateCount:9,cardScores:{barbaros:.35,quick:.31},maskedCardScores:{barbaros:.73,quick:.42},maskedCardMeta:{barbaros:{supportRatio:.5},quick:{supportRatio:.6}},visibility:{rightGap:33,anchorRightSpanPx:46,rightVisibleRatio:33/46,rightOcclusionRatio:1-33/46}}
+]);
+assert.equal(visible.visibility.geometryLimited,true);
+assert.ok(visible.visibility.rightVisibleRatioMedian<1);
+assert.equal(visible.masked.top.id,'barbaros');
+assert.ok(visible.masked.top.margin>.25);
+assert.ok(visible.recovery.gain>.35);
+assert.equal(visible.applied,false);
 
 const full=shadowComparison({legacy:{recognized:false},costRows:[{frameKey:'a',diagnostic6Score:.99,diagnostic6Threshold:.98}],cardRows:[{frameKey:'a',cardScores:{zeta:.9,quick:.3}}]});
 assert.equal(full.mode,'shadow');
