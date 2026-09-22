@@ -146,6 +146,8 @@ assert.ok(handRecognition.includes("DISPLAYED_COST_DIAGNOSTIC_TEMPLATES=Object.f
 assert.ok(handRecognition.includes("diagnosticOnly:true,applied:false,value:Number(def.value)"),'displayed-cost 6 probe must be explicitly diagnostic-only');
 assert.ok(handRecognition.includes("diagnostic6Probe=matchDisplayedCostDiagnosticFeatures(variants,6)"),'displayed-cost reads must attach a diagnostic 6 score');
 assert.ok(handRecognition.includes("return{...resolveDisplayedCost(ocr,template),diagnostic6Probe}"),'diagnostic 6 score must be attached only after the live resolver result is computed');
+assert.ok(handRecognition.includes("diagnosticCostVariants=displayedCostFeatureVariants(canvas,center),diagnostic6Probe=matchDisplayedCostDiagnosticFeatures(diagnosticCostVariants,6)"),'all detected hand slots must receive the diagnostic-only cost6 probe');
+assert.ok(handRecognition.includes("if(shouldReadCost)displayedCost=await readDisplayedCost(canvas,center,worker,diagnosticCostVariants,diagnostic6Probe)"),'live OCR must remain gated while reusing all-slot diagnostic features');
 const liveCostTemplateStart=handRecognition.indexOf('const DISPLAYED_COST_TEMPLATES=Object.freeze(');
 const liveCostTemplateEnd=handRecognition.indexOf('const DISPLAYED_COST_DIAGNOSTIC_VERSION',liveCostTemplateStart);
 assert.ok(liveCostTemplateStart>=0&&liveCostTemplateEnd>liveCostTemplateStart,'live displayed-cost template block must be extractable');
