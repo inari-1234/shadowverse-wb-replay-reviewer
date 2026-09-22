@@ -89,6 +89,14 @@ A v5 component can influence live recognition only when all are true:
 - shadow output and production output can be compared on the same observations;
 - rollback is possible without changing stored data.
 
+## Shadow 0.2 integration
+
+- The canonical dataset record shape is now consumed directly by the shadow evaluator.
+- Cost evidence supports one-vs-rest thresholds and explicit abstention.
+- Temporal median can accept a class even when an individual frame falls below threshold.
+- Diagnostic JSON without image hashes is marked as time-fallback frame identity; lossless fixtures remain the preferred source for decoded-frame deduplication.
+- The 2026-09-22 v4.13.56 all-slot cost6 observation is retained as calibration evidence only, not validation ground truth.
+
 ## Immediate next milestones
 
 1. Export lossless fixtures from multiple videos and create dataset manifests.
