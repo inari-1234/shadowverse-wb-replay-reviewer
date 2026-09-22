@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {aggregateClassScores,aggregateCostEvidence,aggregateCostSlots,aggregateVisibilityCardEvidence,distinctFrames,median,shadowComparison,V5_SHADOW_VERSION} from '../experiments/recognition-v5-shadow.mjs';
 
-assert.equal(V5_SHADOW_VERSION,'recognition-v5-shadow-0.4');
+assert.equal(V5_SHADOW_VERSION,'recognition-v5-shadow-0.5');
 assert.equal(median([1,4,2,3]),2.5);
 assert.deepEqual(distinctFrames([
   {frameKey:'a',sampleTime:1},{frameKey:'a',sampleTime:1.01},{frameKey:'b',sampleTime:2}
@@ -64,8 +64,8 @@ assert.equal(canonicalSlots[1].evidence.disagreement,true);
 
 
 const visible=aggregateVisibilityCardEvidence([
-  {frameKey:'f1',candidateCount:9,cardScores:{barbaros:.36,quick:.30},maskedCardScores:{barbaros:.72,quick:.43},maskedCardMeta:{barbaros:{supportRatio:.5},quick:{supportRatio:.6}},visibility:{rightGap:33,anchorRightSpanPx:46,rightVisibleRatio:33/46,rightOcclusionRatio:1-33/46}},
-  {frameKey:'f2',candidateCount:9,cardScores:{barbaros:.35,quick:.31},maskedCardScores:{barbaros:.73,quick:.42},maskedCardMeta:{barbaros:{supportRatio:.5},quick:{supportRatio:.6}},visibility:{rightGap:33,anchorRightSpanPx:46,rightVisibleRatio:33/46,rightOcclusionRatio:1-33/46}}
+  {frameKey:'f1',candidateCount:9,cardScores:{barbaros:.36,quick:.30},maskedCardScores:{barbaros:.72,quick:.43},maskedCardMeta:{barbaros:{supportRatio:.5},quick:{supportRatio:.6}},commonStrip40Scores:{barbaros:.81,quick:.42},commonStrip50Scores:{barbaros:.83,quick:.43},visibility:{rightGap:33,anchorRightSpanPx:46,rightVisibleRatio:33/46,rightOcclusionRatio:1-33/46}},
+  {frameKey:'f2',candidateCount:9,cardScores:{barbaros:.35,quick:.31},maskedCardScores:{barbaros:.73,quick:.42},maskedCardMeta:{barbaros:{supportRatio:.5},quick:{supportRatio:.6}},commonStrip40Scores:{barbaros:.82,quick:.41},commonStrip50Scores:{barbaros:.84,quick:.42},visibility:{rightGap:33,anchorRightSpanPx:46,rightVisibleRatio:33/46,rightOcclusionRatio:1-33/46}}
 ]);
 assert.equal(visible.visibility.geometryLimited,true);
 assert.ok(visible.visibility.rightVisibleRatioMedian<1);
@@ -79,6 +79,14 @@ assert.equal(visible.confidence.rankConflict,false);
 assert.equal(visible.confidence.normalTopConsistency,1);
 assert.equal(visible.confidence.maskedTopConsistency,1);
 assert.ok(visible.confidence.marginGain>0);
+assert.equal(visible.commonStrip.left40.top.id,'barbaros');
+assert.equal(visible.commonStrip.left50.top.id,'barbaros');
+assert.equal(visible.confidence.commonStrip.stripsAgree,true);
+assert.equal(visible.confidence.commonStrip.left40Consistency,1);
+assert.equal(visible.confidence.commonStrip.left50Consistency,1);
+assert.equal(visible.confidence.commonStrip.left40AgreesNormal,true);
+assert.equal(visible.confidence.commonStrip.left50AgreesMasked,true);
+assert.ok(visible.commonStrip.left50.top.margin>.3);
 
 
 const visibilityConflict=aggregateVisibilityCardEvidence([
