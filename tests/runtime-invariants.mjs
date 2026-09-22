@@ -29,6 +29,8 @@ const expectedRuntime=[
 const runtime=[...index.matchAll(/<script[^>]+src="\.\/([^"]+\.js)"/g)].map(m=>m[1]);
 assert.deepEqual(runtime,expectedRuntime,'index runtime must remain exactly the approved eight scripts in order');
 assert.equal(runtime.some(x=>/fix-v/i.test(x)),false,'historical fix-v scripts must never load at runtime');
+assert.equal(index.includes('recognition-v5-shadow'),false,'v5 shadow experiments must not load in the production runtime');
+assert.equal(index.includes('v5-dataset-extractor'),false,'v5 dataset tooling must not load in the production runtime');
 
 const appMeta=app.match(/const APP=\{version:'([^']+)',build:'([^']+)',revision:'([^']+)'/);
 assert.ok(appMeta,'app-core APP metadata must be parseable');
