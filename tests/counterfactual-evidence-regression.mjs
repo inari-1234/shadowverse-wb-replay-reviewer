@@ -44,7 +44,7 @@ assert.equal(rows[0].temporalProbeFloor,.89);
 assert.equal(rows[0].sameCardLeaderMargin,.5);
 assert.equal(rows[0].crossCardLeaderMargin,.6);
 assert.deepEqual(rows[0].anchorVariant,{score:.895,dx:4,angle:0,profileIndex:4,atDxBoundary:true,atAngleBoundary:false,variantCount:25,edgeProbe:{diagnosticOnly:true,applied:false,baseDx:4,probeDx:6,score:.912,angle:0,profileIndex:4,gain:.017,candidateThreshold:.9,reachesCandidateThreshold:true,atAngleBoundary:false}});
-assert.deepEqual(rows[0].displayedCost,{accepted:true,value:6,source:'ocr',ocrValue:6,ocrAccepted:true,ocrConfidence:80,templateValue:7,templateScore:.67,templateThreshold:.98,templateAccepted:false});
+assert.deepEqual(rows[0].displayedCost,{accepted:true,value:6,source:'ocr',ocrValue:6,ocrAccepted:true,ocrConfidence:80,templateValue:7,templateScore:.67,templateThreshold:.98,templateAccepted:false,diagnostic6Probe:null});
 assert.deepEqual(rows[0].stableLeaderCostProbe,{tier:'eight-card-fan-cost-confirmed',minScore:.86,requiredCandidateCount:8,minTitleScore:.48,requiredAllowedOcrFrames:1,allowedOcrMinConfidence:60,sideOk:true});
 assert.deepEqual(rows[1],{sampleTime:10.085,candidateCount:1,found:false});
 assert.equal(JSON.stringify(rows).includes('data:image'),false,'diagnostic target evidence must remain image-free');
