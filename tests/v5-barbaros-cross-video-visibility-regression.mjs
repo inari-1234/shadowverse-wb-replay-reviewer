@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {aggregateVisibilityCardEvidence,V5_SHADOW_VERSION} from '../experiments/recognition-v5-shadow.mjs';
 
-assert.equal(V5_SHADOW_VERSION,'recognition-v5-shadow-0.3');
+assert.equal(V5_SHADOW_VERSION,'recognition-v5-shadow-0.4');
 
 const source={
   successVideo:'ScreenRecording_09-14-2026 21-17-26_1.mp4',
@@ -44,6 +44,13 @@ assert.equal(occluded.masked.top.median,.7254);
 assert.equal(+occluded.masked.top.margin.toFixed(4),.2958);
 assert.equal(+occluded.recovery.gain.toFixed(4),.3677);
 assert.equal(occluded.recovery.supportRatioMedian,.5);
+assert.equal(occluded.confidence.rankAgreement,true);
+assert.equal(occluded.confidence.rankPreservingRecovery,true);
+assert.equal(occluded.confidence.rankConflict,false);
+assert.equal(occluded.confidence.normalTopConsistency,1);
+assert.equal(occluded.confidence.maskedTopConsistency,1);
+assert.equal(+occluded.confidence.scoreGain.toFixed(4),.3677);
+assert.equal(+occluded.confidence.marginGain.toFixed(4),.2404);
 assert.ok(occluded.masked.top.median>occluded.normal.top.median+.35,'visible-region matching should preserve substantially more Barbaros evidence under 9-card overlap');
 
 assert.ok(success.normal.top.median-occluded.normal.top.median>.58,'the normal ROI collapses sharply between the 5-card and 9-card layouts');
