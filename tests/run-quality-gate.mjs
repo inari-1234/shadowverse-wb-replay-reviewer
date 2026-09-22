@@ -1,6 +1,6 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v31';
+const GATE_VERSION='recognition-quality-gate-v32';
 // v5 shadow 0.2: canonical dataset integration + abstaining temporal cost evaluation
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
@@ -21,6 +21,7 @@ const tests=[
   'tests/recognition-v5-shadow-regression.mjs',
   'tests/v5-dataset-extractor-regression.mjs',
   'tests/v5-cost6-real-device-shadow-regression.mjs',
+  'tests/v5-barbaros-cross-video-visibility-regression.mjs',
   'tests/counterfactual-evidence-regression.mjs',
   'tests/hand-fixture-export-regression.mjs',
   'tests/diagnostic-scenario-importer-regression.mjs',
