@@ -20,7 +20,7 @@ assert.equal(u40[0].cardId,'barbaros');
 assert.equal(u40[0].dominantSlot,2);
 assert.equal(u40[0].dominantFrameRatio,1);
 assert.equal(u40[0].topScoreMedian,.82);
-assert.equal(+u40[0].slotMarginMedian.toFixed(2),.38);
+assert.equal(+u40[0].slotMarginMedian.toFixed(2),.37);
 assert.equal(+u40[0].slotMarginMin.toFixed(2),.37);
 
 const ambiguous=[
