@@ -105,6 +105,14 @@ A v5 component can influence live recognition only when all are true:
 - The observed nine-card right gap is 33 px against a 46 px anchor span, so the production ROI is geometrically occluded.
 - This is calibration evidence only. No masked-score production threshold has been introduced.
 
+## Shadow 0.4 visibility confidence
+
+- Visibility evidence now records normal-vs-masked rank agreement, temporal top-class consistency, score recovery, margin gain, and masked support.
+- Rank-preserving recovery is diagnostic only: geometry must be limited, normal and masked top classes must agree, and both score and margin must improve.
+- Rank conflicts are surfaced explicitly instead of turning masked scores into an automatic rescue.
+- The nine-card Barbaros slot is a rank-preserving recovery case; several other nine-card slots are rank-conflict or weak-margin cases.
+- No production threshold or recognition decision uses these fields.
+
 ## Immediate next milestones
 
 1. Export lossless fixtures from multiple videos and create dataset manifests.
