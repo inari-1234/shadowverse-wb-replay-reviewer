@@ -3,8 +3,8 @@ import {datasetFromDiagnostic,datasetFromFixture,V5_DATASET_VERSION} from '../ex
 
 const sample={
   sampleTime:10.04,candidateCount:2,candidates:[
-    {index:0,center:{cx:700,cy:500},matchScores:{zeta:{imageScore:.2},quick:{imageScore:.88}},displayedCost:{value:1,source:'ocr',ocrValue:1,ocrConfidence:77,templateValue:1,templateScore:.99,diagnostic6Probe:{score:.41,threshold:.98,reachesThreshold:false}},imageBest:{cardId:'quick'},best:{cardId:'quick',decision:'matched',matched:true}},
-    {index:1,center:{cx:760,cy:500},matchScores:{zeta:{imageScore:.89},quick:{imageScore:.3}},displayedCost:{value:3,source:'ocr',ocrValue:3,ocrConfidence:72,templateValue:7,templateScore:.67,diagnostic6Probe:{score:.982,threshold:.98,reachesThreshold:true}},imageBest:{cardId:'zeta'},best:{cardId:'zeta',decision:'image-below-candidate',matched:false}}
+    {index:0,center:{cx:700,cy:500},geometry:{leftGapToCostCenter:null,rightGapToCostCenter:32,anchorRightSpanPx:46,titleRightSpanPx:81,titleLeftSpanPx:16,isRightmost:false},matchScores:{zeta:{imageScore:.2},quick:{imageScore:.88}},shadowMatchScores:{zeta:{score:.41,supportRatio:.5,visibleCells:70,totalCells:140,rightGap:32,limitX:726,marginPx:6,normalization:'visible-cells-per-channel'},quick:{score:.91,supportRatio:.6,visibleCells:84,totalCells:140,rightGap:32,limitX:726,marginPx:6,normalization:'visible-cells-per-channel'}},displayedCost:{value:1,source:'ocr',ocrValue:1,ocrConfidence:77,templateValue:1,templateScore:.99,diagnostic6Probe:{score:.41,threshold:.98,reachesThreshold:false}},imageBest:{cardId:'quick'},best:{cardId:'quick',decision:'matched',matched:true}},
+    {index:1,center:{cx:760,cy:500},geometry:{leftGapToCostCenter:32,rightGapToCostCenter:null,anchorRightSpanPx:46,titleRightSpanPx:81,titleLeftSpanPx:16,isRightmost:true},matchScores:{zeta:{imageScore:.89},quick:{imageScore:.3}},shadowMatchScores:{zeta:{score:.93,supportRatio:.7,visibleCells:98,totalCells:140,rightGap:null,limitX:null,marginPx:6,normalization:'visible-cells-per-channel'}},displayedCost:{value:3,source:'ocr',ocrValue:3,ocrConfidence:72,templateValue:7,templateScore:.67,diagnostic6Probe:{score:.982,threshold:.98,reachesThreshold:true}},imageBest:{cardId:'zeta'},best:{cardId:'zeta',decision:'image-below-candidate',matched:false}}
   ]
 };
 const diag=datasetFromDiagnostic({
@@ -21,6 +21,13 @@ assert.equal(diag.records[1].videoKey,'video-key');
 assert.equal(diag.records[1].frameIdentitySource,'sampleTime');
 assert.equal(diag.records[1].cost.scores['6'],.982);
 assert.equal(diag.records[1].cardScores.zeta,.89);
+assert.equal(diag.records[0].maskedCardScores.quick,.91);
+assert.equal(diag.records[0].maskedCardMeta.quick.supportRatio,.6);
+assert.equal(diag.records[0].visibility.rightGap,32);
+assert.equal(diag.records[0].visibility.anchorRightSpanPx,46);
+assert.equal(diag.records[0].visibility.rightVisibleRatio,32/46);
+assert.ok(diag.records[0].visibility.rightOcclusionRatio>.3);
+assert.equal(diag.records[1].visibility.isRightmost,true);
 assert.equal(diag.records[1].legacy.matched,false);
 
 const fixture=datasetFromFixture({
