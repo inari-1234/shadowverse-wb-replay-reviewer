@@ -15,8 +15,10 @@ const diag=datasetFromDiagnostic({
 });
 assert.equal(diag.version,V5_DATASET_VERSION);
 assert.equal(diag.sourceType,'diagnostic');
+assert.equal(diag.frameIdentityQuality,'time-fallback');
 assert.equal(diag.records.length,2);
 assert.equal(diag.records[1].videoKey,'video-key');
+assert.equal(diag.records[1].frameIdentitySource,'sampleTime');
 assert.equal(diag.records[1].cost.scores['6'],.982);
 assert.equal(diag.records[1].cardScores.zeta,.89);
 assert.equal(diag.records[1].legacy.matched,false);
@@ -29,8 +31,10 @@ const fixture=datasetFromFixture({
   frames:[{sampleTime:10.04,width:1200,height:675,image:{sha256:'abc',mime:'image/png'},replay:{geometry:{layoutCompatible:true}}}]
 });
 assert.equal(fixture.sourceType,'fixture');
+assert.equal(fixture.frameIdentityQuality,'sha256-partial');
 assert.equal(fixture.records.length,2);
 assert.equal(fixture.records[0].frameKey,'abc','lossless fixture SHA-256 must become the distinct-frame identity');
+assert.equal(fixture.records[0].frameIdentitySource,'sha256');
 assert.equal(fixture.images[0].sha256,'abc');
 assert.equal(fixture.images[0].replayGeometry.layoutCompatible,true);
 
