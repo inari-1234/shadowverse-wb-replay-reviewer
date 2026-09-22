@@ -121,6 +121,13 @@ A v5 component can influence live recognition only when all are true:
 - The fixed strips are not production thresholds and are not used by decideHandSamples.
 - v5 shadow 0.5 aggregates left40 and left50 separately and keeps agreement, temporal consistency and margins as diagnostics.
 
+## Shadow 0.6 cross-slot uniqueness
+
+- Fixed common-strip scores are now compared across all hand slots for the same card on the same decoded frame.
+- For each card and strip width, shadow output records the winning slot, runner-up margin, winning-slot stability across frames, score median/minimum, and per-slot win counts.
+- This specifically guards against narrow-strip false positives where the same card pattern appears plausible in several slots.
+- No uniqueness metric is connected to production recognition; it is evidence for deciding whether common-strip features are safe enough to promote later.
+
 ## Immediate next milestones
 
 1. Export lossless fixtures from multiple videos and create dataset manifests.
