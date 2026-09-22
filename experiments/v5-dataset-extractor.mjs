@@ -1,4 +1,4 @@
-export const V5_DATASET_VERSION='recognition-v5-dataset-0.1';
+export const V5_DATASET_VERSION='recognition-v5-dataset-0.2';
 
 const finite=v=>Number.isFinite(Number(v))?Number(v):null;
 function candidateCardScores(candidate){
@@ -21,13 +21,14 @@ function costScores(candidate){
 export function observationRecordsFromSamples(samples,{videoKey=null,frameHashes={}}={}){
   const out=[];
   for(const frame of samples||[]){
-    const t=finite(frame?.sampleTime);
+    const t=finite(frame?.sampleTime),hash=frameHashes?.[String(t)]||null;
     for(const cand of frame?.candidates||[]){
       out.push({
         datasetVersion:V5_DATASET_VERSION,
         videoKey,
         sampleTime:t,
-        frameKey:frameHashes?.[String(t)]||t,
+        frameKey:hash||t,
+        frameIdentitySource:hash?'sha256':'sampleTime',
         candidateCount:finite(frame?.candidateCount)??(frame?.candidates?.length??null),
         slot:finite(cand?.index),
         center:cand?.center?{cx:finite(cand.center.cx),cy:finite(cand.center.cy)}:null,
@@ -62,6 +63,7 @@ export function datasetFromDiagnostic(diagnostic){
     version:V5_DATASET_VERSION,
     sourceFormat:diagnostic?.format??null,
     sourceType:'diagnostic',
+    frameIdentityQuality:'time-fallback',
     video:diagnostic?.video??null,
     records:observationRecordsFromSamples(samples,{videoKey:diagnostic?.stateCapture?.context?.videoKey??diagnostic?.video?.name??null})
   };
@@ -72,15 +74,17 @@ export function datasetFromFixture(bundle){
     const t=finite(frame?.sampleTime);
     if(t!=null&&frame?.image?.sha256)hashes[String(t)]=frame.image.sha256;
   }
+  const records=observationRecordsFromSamples(bundle?.recognition?.samples||[],{
+    videoKey:bundle?.context?.videoKey??bundle?.video?.name??null,
+    frameHashes:hashes
+  });
   return{
     version:V5_DATASET_VERSION,
     sourceFormat:bundle?.format??null,
     sourceType:'fixture',
+    frameIdentityQuality:records.some(x=>x.frameIdentitySource==='sha256')?'sha256-partial':'time-fallback',
     video:bundle?.video??null,
-    records:observationRecordsFromSamples(bundle?.recognition?.samples||[],{
-      videoKey:bundle?.context?.videoKey??bundle?.video?.name??null,
-      frameHashes:hashes
-    }),
+    records,
     images:(bundle?.frames||[]).map(frame=>({
       sampleTime:finite(frame?.sampleTime),
       sha256:frame?.image?.sha256??null,
