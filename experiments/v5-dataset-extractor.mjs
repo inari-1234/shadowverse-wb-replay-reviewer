@@ -1,4 +1,4 @@
-export const V5_DATASET_VERSION='recognition-v5-dataset-0.2';
+export const V5_DATASET_VERSION='recognition-v5-dataset-0.3';
 
 const finite=v=>Number.isFinite(Number(v))?Number(v):null;
 function candidateCardScores(candidate){
@@ -8,6 +8,46 @@ function candidateCardScores(candidate){
     if(score!=null)out[id]=score;
   }
   return out;
+}
+function candidateMaskedCardScores(candidate){
+  const out={};
+  for(const [id,row] of Object.entries(candidate?.shadowMatchScores||{})){
+    const score=finite(row?.score);
+    if(score!=null)out[id]=score;
+  }
+  return out;
+}
+function candidateMaskedCardMeta(candidate){
+  const out={};
+  for(const [id,row] of Object.entries(candidate?.shadowMatchScores||{})){
+    const score=finite(row?.score);
+    if(score==null)continue;
+    out[id]={
+      score,
+      supportRatio:finite(row?.supportRatio),
+      visibleCells:finite(row?.visibleCells),
+      totalCells:finite(row?.totalCells),
+      rightGap:finite(row?.rightGap),
+      limitX:finite(row?.limitX),
+      marginPx:finite(row?.marginPx),
+      normalization:row?.normalization??null
+    };
+  }
+  return out;
+}
+function candidateVisibility(candidate){
+  const g=candidate?.geometry||{},rightGap=finite(g?.rightGapToCostCenter),leftGap=finite(g?.leftGapToCostCenter),anchorSpan=finite(g?.anchorRightSpanPx);
+  const rightVisibleRatio=rightGap!=null&&anchorSpan!=null&&anchorSpan>0?Math.max(0,Math.min(1,rightGap/anchorSpan)):null;
+  return{
+    leftGap,
+    rightGap,
+    anchorRightSpanPx:anchorSpan,
+    titleRightSpanPx:finite(g?.titleRightSpanPx),
+    titleLeftSpanPx:finite(g?.titleLeftSpanPx),
+    isRightmost:g?.isRightmost===true,
+    rightVisibleRatio,
+    rightOcclusionRatio:rightVisibleRatio==null?null:+(1-rightVisibleRatio).toFixed(4)
+  };
 }
 function costScores(candidate){
   const out={};
@@ -33,6 +73,9 @@ export function observationRecordsFromSamples(samples,{videoKey=null,frameHashes
         slot:finite(cand?.index),
         center:cand?.center?{cx:finite(cand.center.cx),cy:finite(cand.center.cy)}:null,
         cardScores:candidateCardScores(cand),
+        maskedCardScores:candidateMaskedCardScores(cand),
+        maskedCardMeta:candidateMaskedCardMeta(cand),
+        visibility:candidateVisibility(cand),
         cost:{
           scores:costScores(cand),
           ocrValue:finite(cand?.displayedCost?.ocrValue),
