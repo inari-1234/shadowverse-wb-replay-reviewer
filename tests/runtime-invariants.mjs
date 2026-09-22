@@ -141,6 +141,16 @@ assert.ok(handRecognition.includes('function nearThresholdOscillationTrend(sampl
 assert.ok(handRecognition.includes("nearThresholdSettlingTrend(samples)||nearThresholdOscillationTrend(samples)"),'phase diagnostics must fall back from settling to oscillation evidence');
 assert.ok(handRecognition.includes("mode:'oscillation'"),'oscillation diagnostics must identify their mode explicitly');
 assert.equal(handRecognition.includes('allowSettleRetry=!!nearThresholdOscillationTrend'),false,'oscillation diagnostics must never drive forward-settle recognition');
+assert.ok(handRecognition.includes("const DISPLAYED_COST_DIAGNOSTIC_VERSION='displayed-cost-diagnostic-1.0'"),'displayed-cost 6 diagnostics must have an explicit version');
+assert.ok(handRecognition.includes("DISPLAYED_COST_DIAGNOSTIC_TEMPLATES=Object.freeze({6:Object.freeze"),'diagnostic-only displayed-cost value 6 template must exist');
+assert.ok(handRecognition.includes("diagnosticOnly:true,applied:false,value:Number(def.value)"),'displayed-cost 6 probe must be explicitly diagnostic-only');
+assert.ok(handRecognition.includes("diagnostic6Probe=matchDisplayedCostDiagnosticFeatures(variants,6)"),'displayed-cost reads must attach a diagnostic 6 score');
+assert.ok(handRecognition.includes("return{...resolveDisplayedCost(ocr,template),diagnostic6Probe}"),'diagnostic 6 score must be attached only after the live resolver result is computed');
+const liveCostTemplateStart=handRecognition.indexOf('const DISPLAYED_COST_TEMPLATES=Object.freeze(');
+const liveCostTemplateEnd=handRecognition.indexOf('const DISPLAYED_COST_DIAGNOSTIC_VERSION',liveCostTemplateStart);
+assert.ok(liveCostTemplateStart>=0&&liveCostTemplateEnd>liveCostTemplateStart,'live displayed-cost template block must be extractable');
+const liveCostTemplateBlock=handRecognition.slice(liveCostTemplateStart,liveCostTemplateEnd);
+assert.equal(liveCostTemplateBlock.includes('6:Object.freeze'),false,'diagnostic value 6 must not be added to the live displayed-cost template set');
 assert.ok(handRecognition.includes('allowSettleRetry=!!settleTrend'), 'near-threshold diagnostic must not activate forward-settle retry');
 assert.equal(handRecognition.includes('allowSettleRetry=!!nearThresholdSettleDiagnostic'),false,'near-threshold diagnostic must never drive recognition decisions directly');
 assert.ok(handRecognition.includes("mode:'near-threshold-same-layout-counterfactual',diagnosticOnly:true,applied:false"),'near-threshold counterfactual must be explicitly diagnostic-only and never applied');
