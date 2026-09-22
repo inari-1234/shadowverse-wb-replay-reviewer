@@ -159,10 +159,10 @@ assert.ok(handRecognition.includes("function fixedLeftAnchorDiagnosticScores(anc
 assert.ok(handRecognition.includes("diagnosticOnly:true,applied:false,score:+best.score.toFixed(4)"),'common-strip results must be explicitly diagnostic-only');
 assert.ok(handRecognition.includes("commonStripScores=centers.length>=7?fixedLeftAnchorDiagnosticScores(anchorFeatures):{}"),'common-strip diagnostics must run only for dense seven-plus-card layouts');
 assert.ok(handRecognition.includes("matchScores,anchorVariantScores,shadowMatchScores,commonStripScores,displayedCost"),'common-strip evidence must be exported with each dense-layout candidate');
-const decideStart=handRecognition.indexOf('function decideHandSamples');
-const decideEnd=handRecognition.indexOf('function latestTargetTurnStart',decideStart);
-assert.ok(decideStart>=0&&decideEnd>decideStart,'decideHandSamples source block must be extractable');
-assert.equal(handRecognition.slice(decideStart,decideEnd).includes('commonStripScores'),false,'common-strip diagnostics must not affect live hand decisions');
+const commonStripDecideStart=handRecognition.indexOf('function decideHandSamples');
+const commonStripDecideEnd=handRecognition.indexOf('function latestTargetTurnStart',commonStripDecideStart);
+assert.ok(commonStripDecideStart>=0&&commonStripDecideEnd>commonStripDecideStart,'decideHandSamples source block must be extractable for common-strip isolation');
+assert.equal(handRecognition.slice(commonStripDecideStart,commonStripDecideEnd).includes('commonStripScores'),false,'common-strip diagnostics must not affect live hand decisions');
 assert.ok(handRecognition.includes('allowSettleRetry=!!settleTrend'), 'near-threshold diagnostic must not activate forward-settle retry');
 assert.equal(handRecognition.includes('allowSettleRetry=!!nearThresholdSettleDiagnostic'),false,'near-threshold diagnostic must never drive recognition decisions directly');
 assert.ok(handRecognition.includes("mode:'near-threshold-same-layout-counterfactual',diagnosticOnly:true,applied:false"),'near-threshold counterfactual must be explicitly diagnostic-only and never applied');
