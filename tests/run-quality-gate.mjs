@@ -1,7 +1,7 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v33';
-// v5 shadow 0.4: visibility confidence vector remains shadow-only
+const GATE_VERSION='recognition-quality-gate-v34';
+// v5 shadow 0.5: fixed-left common-strip evidence remains diagnostic-only
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
 const tests=[
@@ -18,6 +18,7 @@ const tests=[
   'tests/anchor-boundary-probe-regression.mjs',
   'tests/displayed-cost6-diagnostic-regression.mjs',
   'tests/displayed-cost6-all-slot-diagnostic-regression.mjs',
+  'tests/common-strip-diagnostic-regression.mjs',
   'tests/recognition-v5-shadow-regression.mjs',
   'tests/v5-dataset-extractor-regression.mjs',
   'tests/v5-cost6-real-device-shadow-regression.mjs',
