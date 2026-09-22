@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {aggregateClassScores,aggregateCostEvidence,aggregateCostSlots,aggregateVisibilityCardEvidence,distinctFrames,median,shadowComparison,V5_SHADOW_VERSION} from '../experiments/recognition-v5-shadow.mjs';
 
-assert.equal(V5_SHADOW_VERSION,'recognition-v5-shadow-0.5');
+assert.equal(V5_SHADOW_VERSION,'recognition-v5-shadow-0.6');
 assert.equal(median([1,4,2,3]),2.5);
 assert.deepEqual(distinctFrames([
   {frameKey:'a',sampleTime:1},{frameKey:'a',sampleTime:1.01},{frameKey:'b',sampleTime:2}
