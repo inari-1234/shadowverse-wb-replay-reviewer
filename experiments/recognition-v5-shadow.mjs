@@ -1,4 +1,4 @@
-export const V5_SHADOW_VERSION='recognition-v5-shadow-0.2';
+export const V5_SHADOW_VERSION='recognition-v5-shadow-0.3';
 
 const finite=v=>Number.isFinite(Number(v))?Number(v):null;
 export function median(values){
@@ -127,6 +127,76 @@ export function aggregateCardEvidence(rows){
     ...aggregateClassScores(rows,{scoreField:'cardScores'})
   };
 }
+function visibilitySummary(rows){
+  const frames=distinctFrames(rows),rightRatios=frames.map(r=>finite(r?.visibility?.rightVisibleRatio)).filter(v=>v!=null),occlusion=frames.map(r=>finite(r?.visibility?.rightOcclusionRatio)).filter(v=>v!=null),rightGaps=frames.map(r=>finite(r?.visibility?.rightGap)).filter(v=>v!=null),leftGaps=frames.map(r=>finite(r?.visibility?.leftGap)).filter(v=>v!=null),anchorSpans=frames.map(r=>finite(r?.visibility?.anchorRightSpanPx)).filter(v=>v!=null),candidateCounts=frames.map(r=>finite(r?.candidateCount)).filter(v=>v!=null);
+  return{
+    frames:frames.length,
+    candidateCountMedian:median(candidateCounts),
+    leftGapMedian:median(leftGaps),
+    rightGapMedian:median(rightGaps),
+    anchorRightSpanMedian:median(anchorSpans),
+    rightVisibleRatioMedian:median(rightRatios),
+    rightOcclusionRatioMedian:median(occlusion),
+    geometryLimited:median(rightRatios)!=null&&median(rightRatios)<1
+  };
+}
+function aggregateMaskedCardEvidence(rows){
+  const frames=distinctFrames(rows),classes=new Set();
+  for(const row of frames)for(const id of Object.keys(row?.maskedCardScores||{}))classes.add(id);
+  const ranked=[...classes].map(id=>{
+    const values=frames.map(r=>finite(r?.maskedCardScores?.[id])).filter(v=>v!=null);
+    const supports=frames.map(r=>finite(r?.maskedCardMeta?.[id]?.supportRatio)).filter(v=>v!=null);
+    const summary=scoreSummary(values);
+    return{id:String(id),...summary,support:frames.length?values.length/frames.length:0,supportRatioMedian:median(supports)};
+  }).sort((a,b)=>(b.median??-Infinity)-(a.median??-Infinity)||(b.support-a.support)||String(a.id).localeCompare(String(b.id)));
+  const top=ranked[0]||null,next=ranked[1]||null;
+  return{
+    ranked,
+    top:top?{...top,margin:next&&top.median!=null&&next.median!=null?top.median-next.median:null}:null
+  };
+}
+export function aggregateVisibilityCardEvidence(rows){
+  const frames=distinctFrames(rows),normal=aggregateClassScores(frames,{scoreField:'cardScores'}),masked=aggregateMaskedCardEvidence(frames),visibility=visibilitySummary(frames);
+  const recoveryByClass={};
+  const normalMap=new Map((normal.ranked||[]).map(x=>[x.id,x]));
+  for(const row of masked.ranked||[]){
+    const n=normalMap.get(row.id);
+    recoveryByClass[row.id]={
+      normalMedian:n?.median??null,
+      maskedMedian:row.median??null,
+      gain:n?.median!=null&&row.median!=null?row.median-n.median:null,
+      supportRatioMedian:row.supportRatioMedian??null
+    };
+  }
+  const topId=masked.top?.id??normal.top?.id??null;
+  return{
+    version:V5_SHADOW_VERSION,
+    mode:'shadow',
+    applied:false,
+    distinctFrames:frames.length,
+    visibility,
+    normal,
+    masked,
+    topClassId:topId,
+    recovery:topId?recoveryByClass[topId]??null:null,
+    recoveryByClass
+  };
+}
+export function aggregateVisibilityCardSlots(records){
+  const groups=new Map();
+  for(const row of records||[]){
+    if(finite(row?.slot)==null)continue;
+    const videoKey=String(row?.videoKey??'unknown'),slot=Number(row.slot),key=videoKey+'|'+slot;
+    if(!groups.has(key))groups.set(key,{videoKey,slot,rows:[]});
+    groups.get(key).rows.push(row);
+  }
+  return[...groups.values()].sort((a,b)=>a.videoKey.localeCompare(b.videoKey)||a.slot-b.slot).map(g=>({
+    videoKey:g.videoKey,
+    slot:g.slot,
+    evidence:aggregateVisibilityCardEvidence(g.rows)
+  }));
+}
+
 export function aggregateCardSlots(records){
   const groups=new Map();
   for(const row of records||[]){
@@ -158,6 +228,7 @@ export function shadowComparisonFromRecords(records,{legacy=null}={}){
     applied:false,
     legacy,
     costSlots:aggregateCostSlots(records),
-    cardSlots:aggregateCardSlots(records)
+    cardSlots:aggregateCardSlots(records),
+    visibilityCardSlots:aggregateVisibilityCardSlots(records)
   };
 }
