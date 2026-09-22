@@ -1,4 +1,4 @@
-export const V5_DATASET_VERSION='recognition-v5-dataset-0.3';
+export const V5_DATASET_VERSION='recognition-v5-dataset-0.4';
 
 const finite=v=>Number.isFinite(Number(v))?Number(v):null;
 function candidateCardScores(candidate){
@@ -31,6 +31,33 @@ function candidateMaskedCardMeta(candidate){
       limitX:finite(row?.limitX),
       marginPx:finite(row?.marginPx),
       normalization:row?.normalization??null
+    };
+  }
+  return out;
+}
+function candidateCommonStripScores(candidate,mode){
+  const out={};
+  for(const [id,row] of Object.entries(candidate?.commonStripScores||{})){
+    const score=finite(row?.[mode]?.score);
+    if(score!=null)out[id]=score;
+  }
+  return out;
+}
+function candidateCommonStripMeta(candidate,mode){
+  const out={};
+  for(const [id,row] of Object.entries(candidate?.commonStripScores||{})){
+    const x=row?.[mode];
+    if(!x||finite(x?.score)==null)continue;
+    out[id]={
+      score:finite(x.score),
+      dx:finite(x.dx),
+      angle:finite(x.angle),
+      profileIndex:finite(x.profileIndex),
+      columns:finite(x.columns),
+      supportRatio:finite(x.supportRatio),
+      normalization:x.normalization??null,
+      diagnosticOnly:x.diagnosticOnly===true,
+      applied:x.applied===true
     };
   }
   return out;
@@ -75,6 +102,10 @@ export function observationRecordsFromSamples(samples,{videoKey=null,frameHashes
         cardScores:candidateCardScores(cand),
         maskedCardScores:candidateMaskedCardScores(cand),
         maskedCardMeta:candidateMaskedCardMeta(cand),
+        commonStrip40Scores:candidateCommonStripScores(cand,'left40'),
+        commonStrip50Scores:candidateCommonStripScores(cand,'left50'),
+        commonStrip40Meta:candidateCommonStripMeta(cand,'left40'),
+        commonStrip50Meta:candidateCommonStripMeta(cand,'left50'),
         visibility:candidateVisibility(cand),
         cost:{
           scores:costScores(cand),
