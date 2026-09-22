@@ -39,7 +39,7 @@ assert.equal(left40.dominantFrameRatio,1);
 assert.equal(left50.dominantFrameRatio,1);
 
 assert.equal(left40.topScoreMedian,.9215);
-assert.equal(left50.topScoreMedian,.92355);
+assert.equal(+left50.topScoreMedian.toFixed(5),.92355);
 assert.equal(+left40.slotMarginMedian.toFixed(4),.4064);
 assert.equal(+left50.slotMarginMedian.toFixed(4),.4807);
 assert.equal(+left40.slotMarginMin.toFixed(4),.4040);
