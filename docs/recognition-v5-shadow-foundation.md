@@ -97,6 +97,14 @@ A v5 component can influence live recognition only when all are true:
 - Diagnostic JSON without image hashes is marked as time-fallback frame identity; lossless fixtures remain the preferred source for decoded-frame deduplication.
 - The 2026-09-22 v4.13.56 all-slot cost6 observation is retained as calibration evidence only, not validation ground truth.
 
+## Shadow 0.3 visibility evidence
+
+- Dataset records now preserve normal card scores, overlap-masked scores, masked support ratios, and per-slot geometry.
+- The evaluator reports geometry-limited layouts without turning masked evidence into a production decision.
+- A cross-video calibration snapshot now covers Barbaros at five cards (normal median 0.9405) and nine cards (normal median 0.3577, masked median 0.7254).
+- The observed nine-card right gap is 33 px against a 46 px anchor span, so the production ROI is geometrically occluded.
+- This is calibration evidence only. No masked-score production threshold has been introduced.
+
 ## Immediate next milestones
 
 1. Export lossless fixtures from multiple videos and create dataset manifests.
