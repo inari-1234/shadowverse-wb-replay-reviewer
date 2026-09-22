@@ -113,6 +113,14 @@ A v5 component can influence live recognition only when all are true:
 - The nine-card Barbaros slot is a rank-preserving recovery case; several other nine-card slots are rank-conflict or weak-margin cases.
 - No production threshold or recognition decision uses these fields.
 
+## Shadow 0.5 fixed common-strip evidence
+
+- Dense layouts (7+ cards) now export two diagnostic-only anchor comparisons using the same left-side columns for every card: left40 and left50.
+- This addresses a limitation of adaptive masking: the compared region changes as overlap changes, so scores are not directly comparable across hand counts.
+- Offline cross-video calibration using the five-card success frame and an eight-card fixture showed the Barbaros candidate improving from about 0.51 normal / 0.77 adaptive-mask to about 0.81-0.82 with fixed left-side evidence.
+- The fixed strips are not production thresholds and are not used by decideHandSamples.
+- v5 shadow 0.5 aggregates left40 and left50 separately and keeps agreement, temporal consistency and margins as diagnostics.
+
 ## Immediate next milestones
 
 1. Export lossless fixtures from multiple videos and create dataset manifests.
