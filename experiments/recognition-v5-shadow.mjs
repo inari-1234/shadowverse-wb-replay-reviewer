@@ -1,4 +1,4 @@
-export const V5_SHADOW_VERSION='recognition-v5-shadow-0.3';
+export const V5_SHADOW_VERSION='recognition-v5-shadow-0.4';
 
 const finite=v=>Number.isFinite(Number(v))?Number(v):null;
 export function median(values){
@@ -140,6 +140,44 @@ function visibilitySummary(rows){
     geometryLimited:median(rightRatios)!=null&&median(rightRatios)<1
   };
 }
+function frameTopConsistency(rows,scoreField,classId){
+  const frames=distinctFrames(rows);
+  if(!frames.length||!classId)return null;
+  let valid=0,wins=0;
+  for(const row of frames){
+    const scores=row?.[scoreField]||{},ranked=Object.entries(scores).map(([id,v])=>[String(id),finite(v)]).filter(x=>x[1]!=null).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+    if(!ranked.length)continue;
+    valid++;
+    if(ranked[0][0]===String(classId))wins++;
+  }
+  return valid?wins/valid:null;
+}
+function visibilityConfidenceVector(frames,normal,masked,visibility,recoveryByClass){
+  const normalTop=normal?.top||null,maskedTop=masked?.top||null;
+  const normalTopId=normalTop?.id??null,maskedTopId=maskedTop?.id??null;
+  const rankAgreement=!!(normalTopId&&maskedTopId&&normalTopId===maskedTopId);
+  const normalConsistency=frameTopConsistency(frames,'cardScores',normalTopId);
+  const maskedConsistency=frameTopConsistency(frames,'maskedCardScores',maskedTopId);
+  const normalMargin=finite(normalTop?.margin),maskedMargin=finite(maskedTop?.margin);
+  const recovery=maskedTopId?recoveryByClass?.[maskedTopId]??null:null;
+  const gain=finite(recovery?.gain);
+  return{
+    geometryLimited:visibility?.geometryLimited===true,
+    normalTopId,
+    maskedTopId,
+    rankAgreement,
+    normalTopConsistency:normalConsistency,
+    maskedTopConsistency:maskedConsistency,
+    normalMargin,
+    maskedMargin,
+    marginGain:normalMargin!=null&&maskedMargin!=null?maskedMargin-normalMargin:null,
+    scoreGain:gain,
+    supportRatioMedian:finite(recovery?.supportRatioMedian),
+    rankPreservingRecovery:visibility?.geometryLimited===true&&rankAgreement&&gain!=null&&gain>0&&maskedMargin!=null&&normalMargin!=null&&maskedMargin>normalMargin,
+    rankConflict:visibility?.geometryLimited===true&&!!(normalTopId&&maskedTopId)&&normalTopId!==maskedTopId,
+    degradedUnderMask:visibility?.geometryLimited===true&&rankAgreement&&gain!=null&&gain<=0
+  };
+}
 function aggregateMaskedCardEvidence(rows){
   const frames=distinctFrames(rows),classes=new Set();
   for(const row of frames)for(const id of Object.keys(row?.maskedCardScores||{}))classes.add(id);
@@ -179,7 +217,8 @@ export function aggregateVisibilityCardEvidence(rows){
     masked,
     topClassId:topId,
     recovery:topId?recoveryByClass[topId]??null:null,
-    recoveryByClass
+    recoveryByClass,
+    confidence:visibilityConfidenceVector(frames,normal,masked,visibility,recoveryByClass)
   };
 }
 export function aggregateVisibilityCardSlots(records){
