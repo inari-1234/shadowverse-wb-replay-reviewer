@@ -1,11 +1,11 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.56',build:'4.13.56-20260922-clean-13-56',revision:'clean-13-56',subtitle:'Build 2026.09.22-clean-13-56 / 表示コスト6全枠診断'};
+const APP={version:'4.13.57',build:'4.13.57-20260922-clean-13-57',revision:'clean-13-57',subtitle:'Build 2026.09.22-clean-13-57 / 共通左領域診断'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'turn-recognition':'turn-clean-1.2',
   'mulligan-class':'mulligan-class-clean-1.5',
   'card-db':'card-db-clean-1.22',
-  'hand-recognition':'hand-clean-1.46',
+  'hand-recognition':'hand-clean-1.47',
   'state-recognition':'state-clean-1.8.8',
   'review-engine':'review-clean-1.5.1',
   'diagnostics':'diagnostics-clean-1.49'
