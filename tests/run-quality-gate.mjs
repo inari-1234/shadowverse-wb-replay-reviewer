@@ -1,6 +1,7 @@
 import {spawnSync} from 'node:child_process';
 
 const GATE_VERSION='recognition-quality-gate-v31';
+// v5 shadow 0.2: canonical dataset integration + abstaining temporal cost evaluation
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
 const tests=[
