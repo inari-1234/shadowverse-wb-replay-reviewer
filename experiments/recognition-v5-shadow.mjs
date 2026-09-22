@@ -1,4 +1,4 @@
-export const V5_SHADOW_VERSION='recognition-v5-shadow-0.4';
+export const V5_SHADOW_VERSION='recognition-v5-shadow-0.5';
 
 const finite=v=>Number.isFinite(Number(v))?Number(v):null;
 export function median(values){
@@ -194,7 +194,7 @@ function aggregateMaskedCardEvidence(rows){
   };
 }
 export function aggregateVisibilityCardEvidence(rows){
-  const frames=distinctFrames(rows),normal=aggregateClassScores(frames,{scoreField:'cardScores'}),masked=aggregateMaskedCardEvidence(frames),visibility=visibilitySummary(frames);
+  const frames=distinctFrames(rows),normal=aggregateClassScores(frames,{scoreField:'cardScores'}),masked=aggregateMaskedCardEvidence(frames),common40=aggregateClassScores(frames,{scoreField:'commonStrip40Scores'}),common50=aggregateClassScores(frames,{scoreField:'commonStrip50Scores'}),visibility=visibilitySummary(frames);
   const recoveryByClass={};
   const normalMap=new Map((normal.ranked||[]).map(x=>[x.id,x]));
   for(const row of masked.ranked||[]){
@@ -215,10 +215,26 @@ export function aggregateVisibilityCardEvidence(rows){
     visibility,
     normal,
     masked,
+    commonStrip:{left40:common40,left50:common50},
     topClassId:topId,
     recovery:topId?recoveryByClass[topId]??null:null,
     recoveryByClass,
-    confidence:visibilityConfidenceVector(frames,normal,masked,visibility,recoveryByClass)
+    confidence:{
+      ...visibilityConfidenceVector(frames,normal,masked,visibility,recoveryByClass),
+      commonStrip:{
+        left40TopId:common40?.top?.id??null,
+        left50TopId:common50?.top?.id??null,
+        left40Margin:finite(common40?.top?.margin),
+        left50Margin:finite(common50?.top?.margin),
+        left40Consistency:frameTopConsistency(frames,'commonStrip40Scores',common40?.top?.id??null),
+        left50Consistency:frameTopConsistency(frames,'commonStrip50Scores',common50?.top?.id??null),
+        stripsAgree:!!(common40?.top?.id&&common50?.top?.id&&common40.top.id===common50.top.id),
+        left40AgreesNormal:!!(common40?.top?.id&&normal?.top?.id&&common40.top.id===normal.top.id),
+        left50AgreesNormal:!!(common50?.top?.id&&normal?.top?.id&&common50.top.id===normal.top.id),
+        left40AgreesMasked:!!(common40?.top?.id&&masked?.top?.id&&common40.top.id===masked.top.id),
+        left50AgreesMasked:!!(common50?.top?.id&&masked?.top?.id&&common50.top.id===masked.top.id)
+      }
+    }
   };
 }
 export function aggregateVisibilityCardSlots(records){
