@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {aggregateCostSlots,V5_SHADOW_VERSION} from '../experiments/recognition-v5-shadow.mjs';
 
-assert.equal(V5_SHADOW_VERSION,'recognition-v5-shadow-0.6');
+assert.equal(V5_SHADOW_VERSION,'recognition-v5-shadow-0.7');
 
 const source={
   diagnostic:'shadowverse-wb-diagnostic-v4.13.56-2026-09-22T0045.json',
