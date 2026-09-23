@@ -5,10 +5,10 @@ const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'turn-recognition':'turn-clean-1.2',
   'mulligan-class':'mulligan-class-clean-1.5',
   'card-db':'card-db-clean-1.22',
-  'hand-recognition':'hand-clean-1.47',
+  'hand-recognition':'hand-clean-1.48',
   'state-recognition':'state-clean-1.8.8',
   'review-engine':'review-clean-1.5.1',
-  'diagnostics':'diagnostics-clean-1.49'
+  'diagnostics':'diagnostics-clean-1.50'
 });
 const WB=window.WB={APP,expectedModules:EXPECTED_MODULE_VERSIONS,modules:[],moduleRegistrations:[],moduleRegistrationDuplicates:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
 WB.$=s=>document.querySelector(s);
