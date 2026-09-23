@@ -1,7 +1,7 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v39';
-// canonical 1200px hand canvas + cross-video v5 validation snapshots
+const GATE_VERSION='recognition-quality-gate-v40';
+// v5 shadow 0.8 generic 2-of-3 visual-source fusion + cross-video validation
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
 const tests=[
@@ -27,6 +27,7 @@ const tests=[
   'tests/v5-common-strip-uniqueness-regression.mjs',
   'tests/v5-zeta-common-strip-raw-fixture-regression.mjs',
   'tests/v5-real-video-validation-regression.mjs',
+  'tests/v5-fused-evidence-regression.mjs',
   'tests/counterfactual-evidence-regression.mjs',
   'tests/hand-fixture-export-regression.mjs',
   'tests/diagnostic-scenario-importer-regression.mjs',
