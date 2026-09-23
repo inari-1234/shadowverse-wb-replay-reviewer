@@ -1,7 +1,7 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v37';
-// v5 shadow 0.7: visual-frame identity and duplicate-safe multi-instance peaks remain shadow-only
+const GATE_VERSION='recognition-quality-gate-v38';
+// canonical 1200px hand canvas + v5 shadow 0.7 hardening
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
 const tests=[
@@ -19,6 +19,7 @@ const tests=[
   'tests/displayed-cost6-diagnostic-regression.mjs',
   'tests/displayed-cost6-all-slot-diagnostic-regression.mjs',
   'tests/common-strip-diagnostic-regression.mjs',
+  'tests/hand-canonical-canvas-regression.mjs',
   'tests/recognition-v5-shadow-regression.mjs',
   'tests/v5-dataset-extractor-regression.mjs',
   'tests/v5-cost6-real-device-shadow-regression.mjs',
