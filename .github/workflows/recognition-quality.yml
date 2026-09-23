@@ -7,6 +7,7 @@ on:
       - '*.js'
       - 'index.html'
       - 'latest.json'
+      - 'experiments/**'
       - 'tests/**'
       - '.github/workflows/recognition-quality.yml'
   push:
@@ -17,6 +18,7 @@ on:
       - '*.js'
       - 'index.html'
       - 'latest.json'
+      - 'experiments/**'
       - 'tests/**'
       - '.github/workflows/recognition-quality.yml'
 
