@@ -1,4 +1,4 @@
-export const V5_SHADOW_VERSION='recognition-v5-shadow-0.6';
+export const V5_SHADOW_VERSION='recognition-v5-shadow-0.7';
 
 const finite=v=>Number.isFinite(Number(v))?Number(v):null;
 export function median(values){
@@ -19,7 +19,7 @@ export function percentile(values,p=.5){
 export function distinctFrames(rows){
   const out=[],seen=new Set();
   for(const row of rows||[]){
-    const key=row?.frameKey??row?.imageHash??row?.sampleTime;
+    const key=row?.visualFrameId??row?.imageHash??row?.frameKey??row?.sampleTime;
     if(key==null||seen.has(String(key)))continue;
     seen.add(String(key));
     out.push(row);
@@ -305,6 +305,44 @@ export function aggregateCommonStripUniqueness(records,{scoreField='commonStrip4
     };
   });
 }
+export function aggregateMultiInstanceCardPeaks(records,{scoreField='commonStrip40Scores'}={}){
+  const slots=new Map();
+  for(const row of records||[]){
+    const slot=finite(row?.slot);if(slot==null)continue;
+    const videoKey=String(row?.videoKey??'unknown'),scores=row?.[scoreField]||{};
+    for(const [cardId,rawScore] of Object.entries(scores)){
+      const score=finite(rawScore);if(score==null)continue;
+      const key=videoKey+'|'+String(cardId)+'|'+Number(slot);
+      if(!slots.has(key))slots.set(key,{videoKey,cardId:String(cardId),slot:Number(slot),rows:[]});
+      slots.get(key).rows.push({...row,score});
+    }
+  }
+  const byCard=new Map();
+  for(const group of slots.values()){
+    const unique=distinctFrames(group.rows),scores=unique.map(x=>finite(x.score)).filter(x=>x!=null);
+    if(!scores.length)continue;
+    const row={
+      slot:group.slot,
+      distinctFrames:unique.length,
+      scoreMedian:median(scores),
+      scoreMin:Math.min(...scores),
+      scoreMax:Math.max(...scores),
+      scoreRange:Math.max(...scores)-Math.min(...scores)
+    };
+    const key=group.videoKey+'|'+group.cardId;
+    if(!byCard.has(key))byCard.set(key,{videoKey:group.videoKey,cardId:group.cardId,slots:[]});
+    byCard.get(key).slots.push(row);
+  }
+  return [...byCard.values()].sort((a,b)=>a.videoKey.localeCompare(b.videoKey)||a.cardId.localeCompare(b.cardId)).map(group=>({
+    videoKey:group.videoKey,
+    cardId:group.cardId,
+    scoreField,
+    mode:'multi-instance',
+    applied:false,
+    slots:group.slots.sort((a,b)=>b.scoreMedian-a.scoreMedian||a.slot-b.slot)
+  }));
+}
+
 export function aggregateCommonStripComparisons(records){
   return{
     left40:aggregateCommonStripUniqueness(records,{scoreField:'commonStrip40Scores'}),
@@ -345,6 +383,10 @@ export function shadowComparisonFromRecords(records,{legacy=null}={}){
     costSlots:aggregateCostSlots(records),
     cardSlots:aggregateCardSlots(records),
     visibilityCardSlots:aggregateVisibilityCardSlots(records),
-    commonStripUniqueness:aggregateCommonStripComparisons(records)
+    commonStripUniqueness:aggregateCommonStripComparisons(records),
+    commonStripMultiInstance:{
+      left40:aggregateMultiInstanceCardPeaks(records,{scoreField:'commonStrip40Scores'}),
+      left50:aggregateMultiInstanceCardPeaks(records,{scoreField:'commonStrip50Scores'})
+    }
   };
 }
