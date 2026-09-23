@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.57',build:'4.13.57-20260922-clean-13-57',revision:'clean-13-57',subtitle:'Build 2026.09.22-clean-13-57 / 共通左領域診断'};
+const APP={version:'4.13.58',build:'4.13.58-20260923-clean-13-58',revision:'clean-13-58',subtitle:'Build 2026.09.23-clean-13-58 / 手札1200幅正規化'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'turn-recognition':'turn-clean-1.2',
   'mulligan-class':'mulligan-class-clean-1.5',
