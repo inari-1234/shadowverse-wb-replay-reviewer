@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {aggregateCommonStripComparisons,V5_SHADOW_VERSION} from '../experiments/recognition-v5-shadow.mjs';
 
-assert.equal(V5_SHADOW_VERSION,'recognition-v5-shadow-0.9');
+assert.equal(V5_SHADOW_VERSION,'recognition-v5-shadow-0.10');
 
 const source={
   fixture:'shadowverse-wb-hand-fixture-v4.13.48-2026-09-21T0801.json',
