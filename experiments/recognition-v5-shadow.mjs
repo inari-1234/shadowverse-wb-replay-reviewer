@@ -1,4 +1,4 @@
-export const V5_SHADOW_VERSION='recognition-v5-shadow-0.8';
+export const V5_SHADOW_VERSION='recognition-v5-shadow-0.9';
 
 const finite=v=>Number.isFinite(Number(v))?Number(v):null;
 export function median(values){
@@ -16,15 +16,55 @@ export function percentile(values,p=.5){
   const f=pos-lo;
   return xs[lo]*(1-f)+xs[hi]*f;
 }
+function frameIdentitySource(row){
+  if(row?.visualFrameId!=null)return 'visual-frame-id';
+  if(row?.imageHash!=null)return 'image-hash';
+  const declared=row?.frameIdentitySource==null?null:String(row.frameIdentitySource);
+  if(declared&&declared!=='sampleTime'&&declared!=='time-fallback')return declared;
+  if(finite(row?.presentedFrames)!=null)return 'presentedFrames';
+  if(finite(row?.mediaTime)!=null)return 'mediaTime';
+  return declared||'sampleTime';
+}
+function frameIdentityKey(row){
+  if(row?.visualFrameId!=null)return 'visual:'+String(row.visualFrameId);
+  if(row?.imageHash!=null)return 'hash:'+String(row.imageHash);
+  const declared=row?.frameIdentitySource==null?null:String(row.frameIdentitySource);
+  if(declared==='sha256'&&row?.frameKey!=null)return 'sha256:'+String(row.frameKey);
+  if(finite(row?.presentedFrames)!=null)return 'presented:'+String(row.presentedFrames);
+  if(finite(row?.mediaTime)!=null)return 'media:'+Number(row.mediaTime).toFixed(6);
+  if(row?.frameKey!=null)return 'frame:'+String(row.frameKey);
+  if(row?.sampleTime!=null)return 'sample:'+String(row.sampleTime);
+  return null;
+}
 export function distinctFrames(rows){
   const out=[],seen=new Set();
   for(const row of rows||[]){
-    const key=row?.visualFrameId??row?.imageHash??row?.frameKey??row?.sampleTime;
-    if(key==null||seen.has(String(key)))continue;
-    seen.add(String(key));
+    const key=frameIdentityKey(row);
+    if(key==null||seen.has(key))continue;
+    seen.add(key);
     out.push(row);
   }
   return out;
+}
+export function summarizeFrameIdentity(rows){
+  const observations=Array.isArray(rows)?rows:[],unique=distinctFrames(observations),sourceCounts={};
+  let actualIdentityFrames=0,timeFallbackFrames=0;
+  for(const row of unique){
+    const source=frameIdentitySource(row);
+    sourceCounts[source]=(sourceCounts[source]||0)+1;
+    if(source==='sampleTime'||source==='time-fallback')timeFallbackFrames++;
+    else actualIdentityFrames++;
+  }
+  return{
+    observations:observations.length,
+    distinctFrames:unique.length,
+    duplicateObservations:Math.max(0,observations.length-unique.length),
+    actualIdentityFrames,
+    timeFallbackFrames,
+    actualIdentityRatio:unique.length?actualIdentityFrames/unique.length:0,
+    identitySafe:unique.length>0&&actualIdentityFrames===unique.length,
+    sourceCounts
+  };
 }
 function scoreSummary(values){
   const xs=(values||[]).map(Number).filter(Number.isFinite);
@@ -402,6 +442,48 @@ export function aggregateFusedCardSlots(records,{floor=.90,minFrames=3}={}){
   });
 }
 
+export function aggregateTemporalMedianCardSlots(records,{floor=.90,minFrames=3}={}){
+  const groups=new Map();
+  for(const row of records||[]){
+    const slot=finite(row?.slot);if(slot==null)continue;
+    const videoKey=String(row?.videoKey??'unknown');
+    const cardIds=new Set([
+      ...Object.keys(row?.cardScores||{}),
+      ...Object.keys(row?.commonStrip40Scores||{}),
+      ...Object.keys(row?.commonStrip50Scores||{})
+    ]);
+    for(const cardId of cardIds){
+      const key=videoKey+'|'+Number(slot)+'|'+String(cardId);
+      if(!groups.has(key))groups.set(key,{videoKey,slot:Number(slot),cardId:String(cardId),rows:[]});
+      groups.get(key).rows.push(row);
+    }
+  }
+  return [...groups.values()].sort((a,b)=>a.videoKey.localeCompare(b.videoKey)||a.slot-b.slot||a.cardId.localeCompare(b.cardId)).map(g=>{
+    const unique=distinctFrames(g.rows);
+    const normalMedian=median(unique.map(r=>finite(r?.cardScores?.[g.cardId])).filter(v=>v!=null));
+    const left40Median=median(unique.map(r=>finite(r?.commonStrip40Scores?.[g.cardId])).filter(v=>v!=null));
+    const left50Median=median(unique.map(r=>finite(r?.commonStrip50Scores?.[g.cardId])).filter(v=>v!=null));
+    const fused=fuseVisualEvidenceSources({normal:normalMedian,left40:left40Median,left50:left50Median},floor);
+    const identity=summarizeFrameIdentity(g.rows);
+    const temporalEligible=unique.length>=minFrames&&fused.sourceConsensus;
+    return{
+      videoKey:g.videoKey,
+      slot:g.slot,
+      cardId:g.cardId,
+      mode:'temporal-source-median-fusion',
+      floor,
+      minFrames,
+      distinctFrames:unique.length,
+      temporalSources:{normalMedian,left40Median,left50Median},
+      fused,
+      frameIdentity:identity,
+      temporalEligible,
+      identitySafeEligible:temporalEligible&&identity.actualIdentityFrames>=minFrames,
+      applied:false
+    };
+  });
+}
+
 export function summarizeTrackEvidence(row={}){
   const patchSimilarity=finite(row?.patchSimilarity),topScore=finite(row?.topScore),runnerScore=finite(row?.runnerScore),margin=finite(row?.margin??(topScore!=null&&runnerScore!=null?topScore-runnerScore:null));
   return{
@@ -462,6 +544,7 @@ export function shadowComparisonFromRecords(records,{legacy=null}={}){
       left40:aggregateMultiInstanceCardPeaks(records,{scoreField:'commonStrip40Scores'}),
       left50:aggregateMultiInstanceCardPeaks(records,{scoreField:'commonStrip50Scores'})
     },
-    fusedCardSlots:aggregateFusedCardSlots(records)
+    fusedCardSlots:aggregateFusedCardSlots(records),
+    temporalMedianCardSlots:aggregateTemporalMedianCardSlots(records)
   };
 }
