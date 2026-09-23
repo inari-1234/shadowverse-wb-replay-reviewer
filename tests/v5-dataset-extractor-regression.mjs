@@ -36,6 +36,23 @@ assert.ok(diag.records[0].visibility.rightOcclusionRatio>.3);
 assert.equal(diag.records[1].visibility.isRightmost,true);
 assert.equal(diag.records[1].legacy.matched,false);
 
+const runtimeSample={...sample,frameIdentity:{requestedTime:10.04,actualTime:10.033,mediaTime:10.033333,presentedFrames:301,visualFrameId:'hand-vf-301'}};
+const runtimeDiag=datasetFromDiagnostic({
+  format:'shadowverse-wb-diagnostic-v4.13.57-clean',
+  video:{name:'runtime.mp4'},
+  stateCapture:{context:{videoKey:'runtime-key'}},
+  handRecognition:{samples:[runtimeSample]}
+});
+assert.equal(runtimeDiag.frameIdentityQuality,'runtime-frame-id-partial');
+assert.equal(runtimeDiag.records[0].frameKey,'hand-vf-301');
+assert.equal(runtimeDiag.records[0].frameIdentitySource,'visual-frame-id');
+assert.equal(runtimeDiag.records[0].requestedTime,10.04);
+assert.equal(runtimeDiag.records[0].actualTime,10.033);
+assert.equal(runtimeDiag.records[0].mediaTime,10.033333);
+assert.equal(runtimeDiag.records[0].presentedFrames,301);
+assert.equal(runtimeDiag.records[0].visualFrameId,'hand-vf-301');
+
+
 const fixture=datasetFromFixture({
   format:'shadowverse-wb-hand-fixture-v1',
   video:{name:'fixture.mp4'},
