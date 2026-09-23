@@ -1,7 +1,7 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v36';
-// v5 shadow 0.6: common-strip cross-slot uniqueness remains shadow-only
+const GATE_VERSION='recognition-quality-gate-v37';
+// v5 shadow 0.7: visual-frame identity and duplicate-safe multi-instance peaks remain shadow-only
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
 const tests=[
