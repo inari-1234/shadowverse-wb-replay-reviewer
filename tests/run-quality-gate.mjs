@@ -1,7 +1,7 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v40';
-// v5 shadow 0.8 generic 2-of-3 visual-source fusion + cross-video validation
+const GATE_VERSION='recognition-quality-gate-v41';
+// v5 shadow 0.9 temporal source medians + actual-frame identity safety
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
 const tests=[
@@ -28,6 +28,7 @@ const tests=[
   'tests/v5-zeta-common-strip-raw-fixture-regression.mjs',
   'tests/v5-real-video-validation-regression.mjs',
   'tests/v5-fused-evidence-regression.mjs',
+  'tests/v5-temporal-identity-fusion-regression.mjs',
   'tests/counterfactual-evidence-regression.mjs',
   'tests/hand-fixture-export-regression.mjs',
   'tests/diagnostic-scenario-importer-regression.mjs',
