@@ -1,4 +1,4 @@
-export const V5_DATASET_VERSION='recognition-v5-dataset-0.5';
+export const V5_DATASET_VERSION='recognition-v5-dataset-0.6';
 
 const finite=v=>Number.isFinite(Number(v))?Number(v):null;
 function candidateCardScores(candidate){
@@ -101,6 +101,7 @@ export function observationRecordsFromSamples(samples,{videoKey=null,frameHashes
         visualFrameId:visualFrameId==null?null:String(visualFrameId),
         frameKey,
         frameIdentitySource,
+        roiAppearanceId:(cand?.roiAppearanceId??cand?.roiHash??null)==null?null:String(cand?.roiAppearanceId??cand?.roiHash),
         candidateCount:finite(frame?.candidateCount)??(frame?.candidates?.length??null),
         slot:finite(cand?.index),
         center:cand?.center?{cx:finite(cand.center.cx),cy:finite(cand.center.cy)}:null,
