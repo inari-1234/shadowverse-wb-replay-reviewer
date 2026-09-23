@@ -1,7 +1,7 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v41';
-// v5 shadow 0.9 temporal source medians + actual-frame identity safety
+const GATE_VERSION='recognition-quality-gate-v42';
+// v5 shadow 0.10 conservative tracking inheritance + ROI appearance identity
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
 const tests=[
@@ -29,6 +29,7 @@ const tests=[
   'tests/v5-real-video-validation-regression.mjs',
   'tests/v5-fused-evidence-regression.mjs',
   'tests/v5-temporal-identity-fusion-regression.mjs',
+  'tests/v5-tracking-roi-regression.mjs',
   'tests/counterfactual-evidence-regression.mjs',
   'tests/hand-fixture-export-regression.mjs',
   'tests/diagnostic-scenario-importer-regression.mjs',
