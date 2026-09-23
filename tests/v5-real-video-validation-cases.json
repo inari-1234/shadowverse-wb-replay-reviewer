@@ -1,0 +1,160 @@
+{
+  "version": "v5-real-video-validation-v1",
+  "description": "Cross-video validation snapshots derived from uploaded real replay videos after canonical 1200px normalization. These are validation evidence, not live decision thresholds.",
+  "policy": {
+    "validation": true,
+    "diagnosticOnly": true,
+    "applied": false,
+    "requirePositiveAndNegativePerCard": true,
+    "doNotTuneProductionThresholdsFromThisFile": true
+  },
+  "positives": [
+    {
+      "id": "validation-quick-dense-20260914-37.82",
+      "cardId": "quickBlader",
+      "video": "ScreenRecording_09-14-2026 11-06-13_1.mp4",
+      "window": [
+        37.82,
+        37.98
+      ],
+      "candidateCount": 7,
+      "evidenceClass": "real-video-visual-reviewed",
+      "scores": {
+        "normalMedian": 0.672,
+        "left40Median": 0.946,
+        "left50Median": 0.948
+      },
+      "note": "Dense-hand positive: normal anchor is weak while both common strips remain strong."
+    },
+    {
+      "id": "validation-zeta-20260923-70.00",
+      "cardId": "zetaBeatrix",
+      "video": "ScreenRecording_09-23-2026 23-53-13_1.mp4",
+      "time": 70,
+      "candidateCount": 5,
+      "slot": 0,
+      "evidenceClass": "real-video-visual-reviewed",
+      "scores": {
+        "normal": 0.9279378653,
+        "left40": 0.9460079471,
+        "left50": 0.9461311499
+      }
+    },
+    {
+      "id": "validation-barbaros-20260923-70.00",
+      "cardId": "barbaros",
+      "video": "ScreenRecording_09-23-2026 23-53-13_1.mp4",
+      "time": 70,
+      "candidateCount": 5,
+      "slot": 2,
+      "evidenceClass": "real-video-visual-reviewed",
+      "scores": {
+        "normal": 0.9514648318,
+        "left40": 0.9565394322,
+        "left50": 0.9590985775
+      }
+    }
+  ],
+  "negatives": [
+    {
+      "id": "validation-all-targets-absent-20260923-128.00",
+      "video": "ScreenRecording_09-23-2026 23-53-13_1.mp4",
+      "time": 128,
+      "candidateCount": 4,
+      "evidenceClass": "real-video-visual-reviewed",
+      "groundTruthAbsent": [
+        "quickBlader",
+        "zetaBeatrix",
+        "barbaros"
+      ],
+      "maxScores": {
+        "quickBlader": {
+          "normal": 0.4481063783,
+          "left40": 0.4283613643,
+          "left50": 0.4386747026
+        },
+        "zetaBeatrix": {
+          "normal": 0.2729428113,
+          "left40": 0.3882527286,
+          "left50": 0.3107991566
+        },
+        "barbaros": {
+          "normal": 0.4489340186,
+          "left40": 0.3316459854,
+          "left50": 0.3725470404
+        }
+      }
+    }
+  ],
+  "tracking": [
+    {
+      "id": "validation-quick-count-transition-114.00-114.04",
+      "cardId": "quickBlader",
+      "video": "ScreenRecording_09-23-2026 23-53-13_1.mp4",
+      "from": {
+        "time": 114,
+        "handCount": 4,
+        "slot": 3,
+        "cx": 955
+      },
+      "to": {
+        "time": 114.04,
+        "handCount": 5,
+        "slot": 4,
+        "cx": 955
+      },
+      "patchSimilarity": 0.997,
+      "evidenceClass": "real-video-patch-tracking"
+    },
+    {
+      "id": "validation-barbaros-count-transition-50.5-51.0",
+      "cardId": "barbaros",
+      "video": "ScreenRecording_09-14-2026 11-06-13_1.mp4",
+      "from": {
+        "time": 50.5,
+        "handCount": 7,
+        "slot": 6,
+        "cx": 960
+      },
+      "to": {
+        "time": 51,
+        "handCount": 6,
+        "slot": 5,
+        "cx": 960
+      },
+      "topScore": 0.988,
+      "runnerScore": 0.347,
+      "margin": 0.641,
+      "evidenceClass": "real-video-patch-tracking"
+    },
+    {
+      "id": "validation-barbaros-count-transition-58.5-59.0",
+      "cardId": "barbaros",
+      "video": "ScreenRecording_09-14-2026 11-06-13_1.mp4",
+      "from": {
+        "time": 58.5,
+        "handCount": 6,
+        "slot": 5
+      },
+      "to": {
+        "time": 59,
+        "handCount": 5,
+        "slot": 4
+      },
+      "topScore": 0.914,
+      "runnerScore": 0.37,
+      "margin": 0.544,
+      "evidenceClass": "real-video-patch-tracking"
+    }
+  ],
+  "frameIdentity": {
+    "video": "ScreenRecording_09-23-2026 23-53-13_1.mp4",
+    "fps": 30,
+    "measuredDuplicateRates": {
+      "0.012": 0.647,
+      "0.020": 0.382,
+      "0.040": 0
+    },
+    "note": "Requested-time offsets below one frame period frequently resolve to the same decoded frame; ordinary 40ms windows were distinct in the uploaded samples."
+  }
+}
