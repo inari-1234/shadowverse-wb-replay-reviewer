@@ -7,7 +7,7 @@ import {
   summarizeTrackEvidence
 } from '../experiments/recognition-v5-shadow.mjs';
 
-assert.equal(V5_SHADOW_VERSION,'recognition-v5-shadow-0.8');
+assert.equal(V5_SHADOW_VERSION,'recognition-v5-shadow-0.9');
 const validation=JSON.parse(fs.readFileSync(new URL('./v5-real-video-validation-cases.json',import.meta.url),'utf8'));
 const negative=validation.negatives.find(x=>x.id==='validation-all-targets-absent-20260923-128.00');
 assert.ok(negative);
