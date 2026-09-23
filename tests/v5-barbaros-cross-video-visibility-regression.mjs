@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {aggregateVisibilityCardEvidence,V5_SHADOW_VERSION} from '../experiments/recognition-v5-shadow.mjs';
 
-assert.equal(V5_SHADOW_VERSION,'recognition-v5-shadow-0.8');
+assert.equal(V5_SHADOW_VERSION,'recognition-v5-shadow-0.9');
 
 const source={
   successVideo:'ScreenRecording_09-14-2026 21-17-26_1.mp4',
