@@ -7,7 +7,7 @@ import {
   shadowComparisonFromRecords
 } from '../experiments/recognition-v5-shadow.mjs';
 
-assert.equal(V5_SHADOW_VERSION,'recognition-v5-shadow-0.9');
+assert.equal(V5_SHADOW_VERSION,'recognition-v5-shadow-0.10');
 
 const actualRows=[
   {videoKey:'actual',visualFrameId:'vf-1',frameIdentitySource:'visual-frame-id',sampleTime:10.000,slot:4,cardScores:{quickBlader:.91},commonStrip40Scores:{quickBlader:.94},commonStrip50Scores:{quickBlader:.945}},
@@ -66,7 +66,7 @@ assert.equal(negative.identitySafeEligible,false);
 assert.ok(negative.fused.robustMedian<.45);
 
 const comparison=shadowComparisonFromRecords(actualRows);
-assert.equal(comparison.version,'recognition-v5-shadow-0.9');
+assert.equal(comparison.version,'recognition-v5-shadow-0.10');
 assert.equal(comparison.applied,false);
 assert.equal(comparison.temporalMedianCardSlots.length,1);
 assert.equal(comparison.temporalMedianCardSlots[0].identitySafeEligible,true);
