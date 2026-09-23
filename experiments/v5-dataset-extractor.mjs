@@ -1,4 +1,4 @@
-export const V5_DATASET_VERSION='recognition-v5-dataset-0.4';
+export const V5_DATASET_VERSION='recognition-v5-dataset-0.5';
 
 const finite=v=>Number.isFinite(Number(v))?Number(v):null;
 function candidateCardScores(candidate){
@@ -88,14 +88,19 @@ function costScores(candidate){
 export function observationRecordsFromSamples(samples,{videoKey=null,frameHashes={}}={}){
   const out=[];
   for(const frame of samples||[]){
-    const t=finite(frame?.sampleTime),hash=frameHashes?.[String(t)]||null;
+    const t=finite(frame?.sampleTime),hash=frameHashes?.[String(t)]||null,identity=frame?.frameIdentity||{},visualFrameId=identity?.visualFrameId??frame?.visualFrameId??null,actualTime=finite(identity?.actualTime??frame?.actualTime),mediaTime=finite(identity?.mediaTime??frame?.mediaTime),presentedFrames=finite(identity?.presentedFrames??frame?.presentedFrames),runtimeKey=visualFrameId??(presentedFrames!=null?'presented:'+presentedFrames:null)??(mediaTime!=null?'media:'+mediaTime.toFixed(6):null),frameKey=hash||runtimeKey||t,frameIdentitySource=hash?'sha256':visualFrameId!=null?'visual-frame-id':presentedFrames!=null?'presentedFrames':mediaTime!=null?'mediaTime':'sampleTime';
     for(const cand of frame?.candidates||[]){
       out.push({
         datasetVersion:V5_DATASET_VERSION,
         videoKey,
         sampleTime:t,
-        frameKey:hash||t,
-        frameIdentitySource:hash?'sha256':'sampleTime',
+        requestedTime:finite(identity?.requestedTime??frame?.requestedTime??t),
+        actualTime,
+        mediaTime,
+        presentedFrames,
+        visualFrameId:visualFrameId==null?null:String(visualFrameId),
+        frameKey,
+        frameIdentitySource,
         candidateCount:finite(frame?.candidateCount)??(frame?.candidates?.length??null),
         slot:finite(cand?.index),
         center:cand?.center?{cx:finite(cand.center.cx),cy:finite(cand.center.cy)}:null,
@@ -133,14 +138,16 @@ export function observationRecordsFromSamples(samples,{videoKey=null,frameHashes
 export function datasetFromDiagnostic(diagnostic){
   const recognition=diagnostic?.handRecognition||diagnostic?.stateCapture?.hand?.result||null;
   const samples=recognition?.samples||[];
-  return{
+  const out={
     version:V5_DATASET_VERSION,
     sourceFormat:diagnostic?.format??null,
     sourceType:'diagnostic',
-    frameIdentityQuality:'time-fallback',
+    frameIdentityQuality:null,
     video:diagnostic?.video??null,
     records:observationRecordsFromSamples(samples,{videoKey:diagnostic?.stateCapture?.context?.videoKey??diagnostic?.video?.name??null})
   };
+  out.frameIdentityQuality=out.records.some(x=>x.frameIdentitySource!=='sampleTime')?'runtime-frame-id-partial':'time-fallback';
+  return out;
 }
 export function datasetFromFixture(bundle){
   const hashes={};
