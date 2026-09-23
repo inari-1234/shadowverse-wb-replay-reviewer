@@ -1,4 +1,4 @@
-export const V5_SHADOW_VERSION='recognition-v5-shadow-0.9';
+export const V5_SHADOW_VERSION='recognition-v5-shadow-0.10';
 
 const finite=v=>Number.isFinite(Number(v))?Number(v):null;
 export function median(values){
@@ -47,13 +47,15 @@ export function distinctFrames(rows){
   return out;
 }
 export function summarizeFrameIdentity(rows){
-  const observations=Array.isArray(rows)?rows:[],unique=distinctFrames(observations),sourceCounts={};
-  let actualIdentityFrames=0,timeFallbackFrames=0;
+  const observations=Array.isArray(rows)?rows:[],unique=distinctFrames(observations),sourceCounts={},roiSeen=new Set();
+  let actualIdentityFrames=0,timeFallbackFrames=0,roiAppearanceFrames=0;
   for(const row of unique){
     const source=frameIdentitySource(row);
     sourceCounts[source]=(sourceCounts[source]||0)+1;
     if(source==='sampleTime'||source==='time-fallback')timeFallbackFrames++;
     else actualIdentityFrames++;
+    const roi=row?.roiAppearanceId??row?.roiHash??null;
+    if(roi!=null){roiAppearanceFrames++;roiSeen.add(String(roi))}
   }
   return{
     observations:observations.length,
@@ -63,6 +65,10 @@ export function summarizeFrameIdentity(rows){
     timeFallbackFrames,
     actualIdentityRatio:unique.length?actualIdentityFrames/unique.length:0,
     identitySafe:unique.length>0&&actualIdentityFrames===unique.length,
+    roiAppearanceFrames,
+    distinctRoiAppearances:roiSeen.size,
+    duplicateRoiAppearances:Math.max(0,roiAppearanceFrames-roiSeen.size),
+    roiAppearanceRatio:roiAppearanceFrames?roiSeen.size/roiAppearanceFrames:null,
     sourceCounts
   };
 }
@@ -484,17 +490,72 @@ export function aggregateTemporalMedianCardSlots(records,{floor=.90,minFrames=3}
   });
 }
 
-export function summarizeTrackEvidence(row={}){
+export function evaluateTrackingTransition(row={},{
+  minTopScore=.78,
+  minMargin=.40,
+  strongPatch=.98,
+  disappearanceMaxScore=.60,
+  disappearanceMaxMargin=.10
+}={}){
+  const priorConfirmed=row?.priorConfirmed===true;
   const patchSimilarity=finite(row?.patchSimilarity),topScore=finite(row?.topScore),runnerScore=finite(row?.runnerScore),margin=finite(row?.margin??(topScore!=null&&runnerScore!=null?topScore-runnerScore:null));
+  const rankedContinuity=topScore!=null&&margin!=null&&topScore>=minTopScore&&margin>=minMargin;
+  const patchContinuity=patchSimilarity!=null&&patchSimilarity>=strongPatch;
+  const disappearanceVeto=topScore!=null&&margin!=null&&topScore<=disappearanceMaxScore&&margin<=disappearanceMaxMargin;
+  const continuitySupported=!disappearanceVeto&&(rankedContinuity||patchContinuity);
+  const inheritanceAllowed=priorConfirmed&&continuitySupported;
   return{
     cardId:row?.cardId==null?null:String(row.cardId),
-    slotChanged:finite(row?.from?.slot)!=null&&finite(row?.to?.slot)!=null?Number(row.from.slot)!==Number(row.to.slot):null,
-    handCountChanged:finite(row?.from?.handCount)!=null&&finite(row?.to?.handCount)!=null?Number(row.from.handCount)!==Number(row.to.handCount):null,
+    priorConfirmed,
     patchSimilarity,
     topScore,
     runnerScore,
     margin,
-    imageFloorSupport:(patchSimilarity!=null&&patchSimilarity>=.90)||(topScore!=null&&topScore>=.90),
+    thresholds:{minTopScore,minMargin,strongPatch,disappearanceMaxScore,disappearanceMaxMargin},
+    rankedContinuity,
+    patchContinuity,
+    continuitySupported,
+    disappearanceVeto,
+    inheritanceAllowed,
+    state:disappearanceVeto?'lost':inheritanceAllowed?'continue':'ambiguous',
+    applied:false
+  };
+}
+
+export function evaluateTrackingSequence(rows,options={}){
+  let confirmed=options?.initialConfirmed===true;
+  const steps=[];
+  for(const row of rows||[]){
+    const step=evaluateTrackingTransition({...row,priorConfirmed:confirmed},options);
+    steps.push(step);
+    if(step.disappearanceVeto)confirmed=false;
+    else if(step.inheritanceAllowed)confirmed=true;
+    if(row?.reconfirmed===true)confirmed=true;
+  }
+  return{
+    initialConfirmed:options?.initialConfirmed===true,
+    finalConfirmed:confirmed,
+    lost:steps.some(x=>x.disappearanceVeto),
+    steps,
+    applied:false
+  };
+}
+
+export function summarizeTrackEvidence(row={}){
+  const transition=evaluateTrackingTransition(row);
+  return{
+    cardId:transition.cardId,
+    slotChanged:finite(row?.from?.slot)!=null&&finite(row?.to?.slot)!=null?Number(row.from.slot)!==Number(row.to.slot):null,
+    handCountChanged:finite(row?.from?.handCount)!=null&&finite(row?.to?.handCount)!=null?Number(row.from.handCount)!==Number(row.to.handCount):null,
+    patchSimilarity:transition.patchSimilarity,
+    topScore:transition.topScore,
+    runnerScore:transition.runnerScore,
+    margin:transition.margin,
+    imageFloorSupport:(transition.patchSimilarity!=null&&transition.patchSimilarity>=.90)||(transition.topScore!=null&&transition.topScore>=.90),
+    continuitySupported:transition.continuitySupported,
+    disappearanceVeto:transition.disappearanceVeto,
+    inheritanceAllowed:transition.inheritanceAllowed,
+    state:transition.state,
     applied:false
   };
 }
@@ -530,7 +591,7 @@ export function shadowComparison({legacy=null,costRows=[],cardRows=[]}={}){
     cards:aggregateCardEvidence(cardRows)
   };
 }
-export function shadowComparisonFromRecords(records,{legacy=null}={}){
+export function shadowComparisonFromRecords(records,{legacy=null,tracking=[]}={}){
   return{
     version:V5_SHADOW_VERSION,
     mode:'shadow',
@@ -545,6 +606,7 @@ export function shadowComparisonFromRecords(records,{legacy=null}={}){
       left50:aggregateMultiInstanceCardPeaks(records,{scoreField:'commonStrip50Scores'})
     },
     fusedCardSlots:aggregateFusedCardSlots(records),
-    temporalMedianCardSlots:aggregateTemporalMedianCardSlots(records)
+    temporalMedianCardSlots:aggregateTemporalMedianCardSlots(records),
+    tracking:tracking.map(row=>evaluateTrackingTransition(row))
   };
 }
