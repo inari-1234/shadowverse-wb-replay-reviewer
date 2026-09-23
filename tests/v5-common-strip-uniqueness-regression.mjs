@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {aggregateCommonStripUniqueness,aggregateCommonStripComparisons,V5_SHADOW_VERSION} from '../experiments/recognition-v5-shadow.mjs';
 
-assert.equal(V5_SHADOW_VERSION,'recognition-v5-shadow-0.9');
+assert.equal(V5_SHADOW_VERSION,'recognition-v5-shadow-0.10');
 
 const uniqueRecords=[
   {videoKey:'v',frameKey:'f1',slot:0,commonStrip40Scores:{barbaros:.31},commonStrip50Scores:{barbaros:.33}},
