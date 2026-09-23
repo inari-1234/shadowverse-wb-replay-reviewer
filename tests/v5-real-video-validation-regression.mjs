@@ -1,8 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
-const root=new URL('../',import.meta.url);
-const data=JSON.parse(fs.readFileSync(new URL('v5-real-video-validation-cases.json',root),'utf8'));
+const data=JSON.parse(fs.readFileSync(new URL('./v5-real-video-validation-cases.json',import.meta.url),'utf8'));
 
 assert.equal(data.version,'v5-real-video-validation-v1');
 assert.equal(data.policy.validation,true);
