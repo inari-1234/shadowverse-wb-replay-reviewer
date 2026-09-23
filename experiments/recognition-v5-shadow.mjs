@@ -1,4 +1,4 @@
-export const V5_SHADOW_VERSION='recognition-v5-shadow-0.7';
+export const V5_SHADOW_VERSION='recognition-v5-shadow-0.8';
 
 const finite=v=>Number.isFinite(Number(v))?Number(v):null;
 export function median(values){
@@ -343,6 +343,80 @@ export function aggregateMultiInstanceCardPeaks(records,{scoreField='commonStrip
   }));
 }
 
+export function fuseVisualEvidenceSources({normal=null,left40=null,left50=null}={},floor=.90){
+  const sources={normal:finite(normal),left40:finite(left40),left50:finite(left50)};
+  const values=Object.values(sources).filter(x=>x!=null),supporting=Object.entries(sources).filter(([,v])=>v!=null&&v>=floor).map(([k])=>k);
+  return{
+    sources,
+    availableSources:values.length,
+    robustMedian:median(values),
+    sourceMin:values.length?Math.min(...values):null,
+    sourceMax:values.length?Math.max(...values):null,
+    sourceRange:values.length?Math.max(...values)-Math.min(...values):null,
+    supportingSources:supporting,
+    supportingCount:supporting.length,
+    floor,
+    sourceConsensus:supporting.length>=2,
+    applied:false
+  };
+}
+
+export function aggregateFusedCardSlots(records,{floor=.90,minFrames=3}={}){
+  const groups=new Map();
+  for(const row of records||[]){
+    const slot=finite(row?.slot);if(slot==null)continue;
+    const videoKey=String(row?.videoKey??'unknown');
+    const cardIds=new Set([
+      ...Object.keys(row?.cardScores||{}),
+      ...Object.keys(row?.commonStrip40Scores||{}),
+      ...Object.keys(row?.commonStrip50Scores||{})
+    ]);
+    for(const cardId of cardIds){
+      const normal=finite(row?.cardScores?.[cardId]),left40=finite(row?.commonStrip40Scores?.[cardId]),left50=finite(row?.commonStrip50Scores?.[cardId]);
+      if(normal==null&&left40==null&&left50==null)continue;
+      const key=videoKey+'|'+Number(slot)+'|'+String(cardId);
+      if(!groups.has(key))groups.set(key,{videoKey,slot:Number(slot),cardId:String(cardId),rows:[]});
+      groups.get(key).rows.push({...row,fused:fuseVisualEvidenceSources({normal,left40,left50},floor)});
+    }
+  }
+  return [...groups.values()].sort((a,b)=>a.videoKey.localeCompare(b.videoKey)||a.slot-b.slot||a.cardId.localeCompare(b.cardId)).map(g=>{
+    const unique=distinctFrames(g.rows),fused=unique.map(x=>x.fused),scores=fused.map(x=>finite(x.robustMedian)).filter(x=>x!=null),supportFrames=fused.filter(x=>x.sourceConsensus).length;
+    return{
+      videoKey:g.videoKey,
+      slot:g.slot,
+      cardId:g.cardId,
+      mode:'visual-source-fusion',
+      floor,
+      minFrames,
+      distinctFrames:unique.length,
+      scoreMedian:median(scores),
+      scoreMin:scores.length?Math.min(...scores):null,
+      scoreMax:scores.length?Math.max(...scores):null,
+      scoreRange:scores.length?Math.max(...scores)-Math.min(...scores):null,
+      sourceConsensusFrames:supportFrames,
+      sourceConsensusRatio:unique.length?supportFrames/unique.length:0,
+      shadowEligible:unique.length>=minFrames&&supportFrames>=minFrames,
+      applied:false,
+      frames:fused
+    };
+  });
+}
+
+export function summarizeTrackEvidence(row={}){
+  const patchSimilarity=finite(row?.patchSimilarity),topScore=finite(row?.topScore),runnerScore=finite(row?.runnerScore),margin=finite(row?.margin??(topScore!=null&&runnerScore!=null?topScore-runnerScore:null));
+  return{
+    cardId:row?.cardId==null?null:String(row.cardId),
+    slotChanged:finite(row?.from?.slot)!=null&&finite(row?.to?.slot)!=null?Number(row.from.slot)!==Number(row.to.slot):null,
+    handCountChanged:finite(row?.from?.handCount)!=null&&finite(row?.to?.handCount)!=null?Number(row.from.handCount)!==Number(row.to.handCount):null,
+    patchSimilarity,
+    topScore,
+    runnerScore,
+    margin,
+    imageFloorSupport:(patchSimilarity!=null&&patchSimilarity>=.90)||(topScore!=null&&topScore>=.90),
+    applied:false
+  };
+}
+
 export function aggregateCommonStripComparisons(records){
   return{
     left40:aggregateCommonStripUniqueness(records,{scoreField:'commonStrip40Scores'}),
@@ -387,6 +461,7 @@ export function shadowComparisonFromRecords(records,{legacy=null}={}){
     commonStripMultiInstance:{
       left40:aggregateMultiInstanceCardPeaks(records,{scoreField:'commonStrip40Scores'}),
       left50:aggregateMultiInstanceCardPeaks(records,{scoreField:'commonStrip50Scores'})
-    }
+    },
+    fusedCardSlots:aggregateFusedCardSlots(records)
   };
 }
