@@ -1,11 +1,34 @@
 import assert from 'node:assert/strict';
-import {aggregateClassScores,aggregateCostEvidence,aggregateCostSlots,aggregateVisibilityCardEvidence,distinctFrames,median,shadowComparison,V5_SHADOW_VERSION} from '../experiments/recognition-v5-shadow.mjs';
+import {aggregateClassScores,aggregateCostEvidence,aggregateCostSlots,aggregateMultiInstanceCardPeaks,aggregateVisibilityCardEvidence,distinctFrames,median,shadowComparison,V5_SHADOW_VERSION} from '../experiments/recognition-v5-shadow.mjs';
 
-assert.equal(V5_SHADOW_VERSION,'recognition-v5-shadow-0.6');
+assert.equal(V5_SHADOW_VERSION,'recognition-v5-shadow-0.7');
 assert.equal(median([1,4,2,3]),2.5);
 assert.deepEqual(distinctFrames([
   {frameKey:'a',sampleTime:1},{frameKey:'a',sampleTime:1.01},{frameKey:'b',sampleTime:2}
 ]).map(x=>x.frameKey),['a','b']);
+
+assert.equal(distinctFrames([
+  {visualFrameId:'vf-1',frameKey:'requested-a',sampleTime:1},
+  {visualFrameId:'vf-1',frameKey:'requested-b',sampleTime:1.012},
+  {visualFrameId:'vf-2',frameKey:'requested-c',sampleTime:1.04}
+]).length,2,'actual visual-frame identity must take precedence over requested-time/frameKey aliases');
+
+const duplicateSafe=aggregateMultiInstanceCardPeaks([
+  {videoKey:'dup',visualFrameId:'f1',slot:2,commonStrip40Scores:{quickBlader:.93}},
+  {videoKey:'dup',visualFrameId:'f1',slot:5,commonStrip40Scores:{quickBlader:.92}},
+  {videoKey:'dup',visualFrameId:'f2',slot:2,commonStrip40Scores:{quickBlader:.92}},
+  {videoKey:'dup',visualFrameId:'f2',slot:5,commonStrip40Scores:{quickBlader:.93}},
+  {videoKey:'dup',visualFrameId:'f3',slot:2,commonStrip40Scores:{quickBlader:.94}},
+  {videoKey:'dup',visualFrameId:'f3',slot:5,commonStrip40Scores:{quickBlader:.93}},
+  {videoKey:'dup',visualFrameId:'f4',slot:2,commonStrip40Scores:{quickBlader:.93}},
+  {videoKey:'dup',visualFrameId:'f4',slot:5,commonStrip40Scores:{quickBlader:.94}}
+])[0];
+assert.equal(duplicateSafe.cardId,'quickBlader');
+assert.equal(duplicateSafe.mode,'multi-instance');
+assert.equal(duplicateSafe.applied,false);
+assert.equal(duplicateSafe.slots.length,2,'two legitimate copies must remain as two slot peaks');
+assert.deepEqual(duplicateSafe.slots.map(x=>x.slot).sort((a,b)=>a-b),[2,5]);
+assert.equal(duplicateSafe.slots.every(x=>x.distinctFrames===4),true);
 
 const ranked=aggregateClassScores([
   {frameKey:'f1',scores:{zeta:.89,quick:.35}},
