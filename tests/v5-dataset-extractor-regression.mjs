@@ -36,7 +36,7 @@ assert.ok(diag.records[0].visibility.rightOcclusionRatio>.3);
 assert.equal(diag.records[1].visibility.isRightmost,true);
 assert.equal(diag.records[1].legacy.matched,false);
 
-const runtimeSample={...sample,frameIdentity:{requestedTime:10.04,actualTime:10.033,mediaTime:10.033333,presentedFrames:301,visualFrameId:'hand-vf-301'}};
+const runtimeSample={...sample,candidates:sample.candidates.map((x,i)=>({...x,roiAppearanceId:i===0?'roi-quick-301':null})),frameIdentity:{requestedTime:10.04,actualTime:10.033,mediaTime:10.033333,presentedFrames:301,visualFrameId:'hand-vf-301'}};
 const runtimeDiag=datasetFromDiagnostic({
   format:'shadowverse-wb-diagnostic-v4.13.57-clean',
   video:{name:'runtime.mp4'},
@@ -51,6 +51,8 @@ assert.equal(runtimeDiag.records[0].actualTime,10.033);
 assert.equal(runtimeDiag.records[0].mediaTime,10.033333);
 assert.equal(runtimeDiag.records[0].presentedFrames,301);
 assert.equal(runtimeDiag.records[0].visualFrameId,'hand-vf-301');
+assert.equal(runtimeDiag.records[0].roiAppearanceId,'roi-quick-301');
+assert.equal(runtimeDiag.records[1].roiAppearanceId,null);
 
 
 const fixture=datasetFromFixture({
