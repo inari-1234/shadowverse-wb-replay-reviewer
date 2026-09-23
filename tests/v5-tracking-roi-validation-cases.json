@@ -1,0 +1,160 @@
+{
+  "version": "v5-tracking-roi-validation-v1",
+  "sourceVideo": "ScreenRecording_09-24-2026 05-00-39_1.mp4",
+  "sourceMeta": {
+    "fps": 30,
+    "width": 1112,
+    "height": 512,
+    "canonicalWidth": 1200
+  },
+  "policy": {
+    "validation": true,
+    "diagnosticOnly": true,
+    "applied": false,
+    "trackingMayOnlyInheritPreviouslyConfirmedIdentity": true,
+    "disappearanceVetoStopsInheritanceButDoesNotAssertAbsence": true
+  },
+  "zetaHardPositive": {
+    "initialConfirmed": {
+      "time": 20,
+      "handCount": 5,
+      "slot": 1,
+      "scores": {
+        "normal": 0.9489,
+        "left40": 0.9664,
+        "left50": 0.9649
+      }
+    },
+    "visualHardCase": {
+      "time": 26.04,
+      "handCount": 6,
+      "slot": 0,
+      "scores": {
+        "normal": 0.8151,
+        "left40": 0.8904,
+        "left50": 0.9067
+      }
+    },
+    "temporalHardCase": {
+      "time": 27,
+      "handCount": 6,
+      "slot": 0,
+      "temporalMedians": {
+        "normal": 0.8016,
+        "left40": 0.8968,
+        "left50": 0.8906
+      }
+    },
+    "tracking": [
+      {
+        "fromTime": 24,
+        "toTime": 25,
+        "topScore": 0.979,
+        "margin": 0.622,
+        "priorConfirmed": true
+      },
+      {
+        "fromTime": 25,
+        "toTime": 26.02,
+        "topScore": 0.808,
+        "margin": 0.442,
+        "priorConfirmed": true
+      },
+      {
+        "fromTime": 26.06,
+        "toTime": 27,
+        "topScore": 0.879,
+        "margin": 0.504,
+        "priorConfirmed": true
+      },
+      {
+        "fromTime": 27,
+        "toTime": 28,
+        "topScore": 0.919,
+        "margin": 0.501,
+        "priorConfirmed": true
+      },
+      {
+        "fromTime": 31,
+        "toTime": 32,
+        "topScore": 0.926,
+        "margin": 0.505,
+        "priorConfirmed": true
+      },
+      {
+        "fromTime": 34.06,
+        "toTime": 35.02,
+        "topScore": 0.963,
+        "margin": 0.561,
+        "priorConfirmed": true
+      },
+      {
+        "fromTime": 39.94,
+        "toTime": 40.06,
+        "topScore": 0.823,
+        "margin": 0.436,
+        "priorConfirmed": true
+      },
+      {
+        "fromTime": 41,
+        "toTime": 42,
+        "topScore": 0.972,
+        "margin": 0.538,
+        "priorConfirmed": true
+      },
+      {
+        "fromTime": 44,
+        "toTime": 45.02,
+        "topScore": 0.802,
+        "margin": 0.426,
+        "priorConfirmed": true
+      }
+    ],
+    "disappearance": {
+      "fromTime": 60,
+      "toTime": 62,
+      "topScore": 0.419,
+      "margin": 0.004,
+      "priorConfirmed": true
+    }
+  },
+  "roiIdentity": {
+    "sequence": [
+      {
+        "time": 113.92,
+        "frameIndex": 3418,
+        "visualFrameId": "frame-3418",
+        "frameSha256": "8914e159a3d7d8d83c22bc1bec1db61852cebb80a469f9187606bbbf8b2bde8f",
+        "roiAppearanceId": "1e570ba145b96d1daa632b6d27cb65fd2a38678a1eaccf9d5bed7d920cbf127f"
+      },
+      {
+        "time": 113.96,
+        "frameIndex": 3419,
+        "visualFrameId": "frame-3419",
+        "frameSha256": "d7c46254657e88eca09c082f03321d06284f5c0987eb956d0426f61e9edf8f3b",
+        "roiAppearanceId": "e0fbc2a3f2351416a8686712aa60c8b6aa7c48253838af26aa0f68597d5663c6"
+      },
+      {
+        "time": 114,
+        "frameIndex": 3420,
+        "visualFrameId": "frame-3420",
+        "frameSha256": "7b3514952657d3d38bbf0404b91c233c28c389d920254fae7f63e50e952e4ef8",
+        "roiAppearanceId": "9dfbe7e6f855e182851d93b2592ba06adbe76e374771e89a1f60ddb7baf3b48e"
+      },
+      {
+        "time": 114.04,
+        "frameIndex": 3421,
+        "visualFrameId": "frame-3421",
+        "frameSha256": "3a39fa0600bb16f4ef880621a7c3918fe02c373ceaf42cc9537ad0d851b432df",
+        "roiAppearanceId": "743d133796150f88ba84ed0debe97ef04dc1a716c92942bff3c7e24a32730eac"
+      },
+      {
+        "time": 114.08,
+        "frameIndex": 3422,
+        "visualFrameId": "frame-3422",
+        "frameSha256": "6b8e3c84774dc16dd139c0dfddb69fcb3e2568f4ce88a4caa83bfd1a96797b22",
+        "roiAppearanceId": "743d133796150f88ba84ed0debe97ef04dc1a716c92942bff3c7e24a32730eac"
+      }
+    ]
+  }
+}
