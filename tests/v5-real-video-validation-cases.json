@@ -1,160 +1,193 @@
 {
-  "version": "v5-real-video-validation-v1",
-  "description": "Cross-video validation snapshots derived from uploaded real replay videos after canonical 1200px normalization. These are validation evidence, not live decision thresholds.",
+  "version": "v5-real-video-evidence-v2",
+  "description": "Current-upload frame-hash evidence for v5 shadow comparison. Snapshot-only in-repo because raw media is not committed; it must not be treated as end-to-end validation.",
+  "pipeline": {
+    "handRecognition": "hand-clean-1.48",
+    "v5Shadow": "recognition-v5-shadow-0.10",
+    "canonicalWidth": 1200,
+    "visualFloor": 0.9
+  },
   "policy": {
-    "validation": true,
+    "validation": false,
+    "snapshotOnly": true,
     "diagnosticOnly": true,
     "applied": false,
     "requirePositiveAndNegativePerCard": true,
+    "requireSourceSha256": true,
+    "requireFrameHashes": true,
+    "rawFixtureRequiredForValidationClaim": true,
     "doNotTuneProductionThresholdsFromThisFile": true
+  },
+  "sources": {
+    "quickDense": {
+      "name": "ScreenRecording_09-14-2026 11-06-13_1.mp4",
+      "size": 66490572,
+      "duration": 92.333333,
+      "width": 1112,
+      "height": 512,
+      "fps": 30,
+      "sha256": "c13eaf644a21b820467cf3516190fc129ed687f59c9a61dfaae7ce6eb4124862",
+      "canonicalWidth": 1200
+    },
+    "zbar70": {
+      "name": "ScreenRecording_09-23-2026 23-53-13_1.mp4",
+      "size": 104180854,
+      "duration": 146.3,
+      "width": 1112,
+      "height": 512,
+      "fps": 30,
+      "sha256": "d5f6d6dd298f125257eafe14839e11f3f1d79d9bdfc14c194326d549fd6e50d2",
+      "canonicalWidth": 1200
+    },
+    "negative10": {
+      "name": "ScreenRecording_09-14-2026 21-19-26_1(1).mp4",
+      "size": 102215672,
+      "duration": 142.488333,
+      "width": 1112,
+      "height": 512,
+      "fps": 30,
+      "sha256": "d230fb56e1dcefbaae606527830a4b34917a103e47310ccac2fcc1da0cd08d3a",
+      "canonicalWidth": 1200
+    }
   },
   "positives": [
     {
-      "id": "validation-quick-dense-20260914-37.82",
+      "id": "quick-dense",
+      "source": "quickDense",
       "cardId": "quickBlader",
-      "video": "ScreenRecording_09-14-2026 11-06-13_1.mp4",
-      "window": [
-        37.82,
-        37.98
+      "groundTruth": "present",
+      "slot": 4,
+      "frames": [
+        {"frameIndex": 1135, "mediaTime": 37.833333333333336, "framePngSha256": "23d19ce61ce46e294921149467c503e7e5978c006b14b217976b89ccfbf1a8fa"},
+        {"frameIndex": 1136, "mediaTime": 37.86666666666667, "framePngSha256": "fc79d58f3e22ec8616ac8642926e05c612de511b92ec534be60df4c540b10d4f"},
+        {"frameIndex": 1137, "mediaTime": 37.9, "framePngSha256": "73b9c98aa69b8af1d64a0228775244d7443870ad746730f132733877e6222c1e"},
+        {"frameIndex": 1138, "mediaTime": 37.93333333333333, "framePngSha256": "37f8b0f401a70bb7fba1a83aa4e796844222667682fb2b72ac3ae7958d1feba6"},
+        {"frameIndex": 1139, "mediaTime": 37.96666666666667, "framePngSha256": "6a41a4dceb23c2da628cc064ca5404cb838a0c42a3babe4dd51ce107f1bab74d"}
       ],
-      "candidateCount": 7,
-      "evidenceClass": "real-video-visual-reviewed",
-      "scores": {
-        "normalMedian": 0.672,
-        "left40Median": 0.946,
-        "left50Median": 0.948
-      },
-      "note": "Dense-hand positive: normal anchor is weak while both common strips remain strong."
+      "medianScores": {"normal": 0.7051, "left40": 0.9727, "left50": 0.9735},
+      "evidenceClass": "current-upload-frame-hash-snapshot",
+      "validation": false,
+      "applied": false
     },
     {
-      "id": "validation-zeta-20260923-70.00",
+      "id": "zeta-70",
+      "source": "zbar70",
       "cardId": "zetaBeatrix",
-      "video": "ScreenRecording_09-23-2026 23-53-13_1.mp4",
-      "time": 70,
-      "candidateCount": 5,
+      "groundTruth": "present",
       "slot": 0,
-      "evidenceClass": "real-video-visual-reviewed",
-      "scores": {
-        "normal": 0.9279378653,
-        "left40": 0.9460079471,
-        "left50": 0.9461311499
-      }
+      "frames": [
+        {"frameIndex": 2098, "mediaTime": 69.93333333333334, "framePngSha256": "9dd67f5265c44d192e0496cde92c129d0c56460d280cd7d39658c588ee95da04"},
+        {"frameIndex": 2099, "mediaTime": 69.96666666666667, "framePngSha256": "c335ad155365f56aa52cbe03606f85ce643d7daa04de2364cfc636c996e3f3a1"},
+        {"frameIndex": 2100, "mediaTime": 70.0, "framePngSha256": "34a6ad8d5ccd907694c31a192f3854c25fb73a4d678efc6dd8d85630cdb0c263"},
+        {"frameIndex": 2101, "mediaTime": 70.03333333333333, "framePngSha256": "bf269fadb5b6dd39c03fb026bbd4f44ff86f4c34935cb6868438804f35592512"}
+      ],
+      "medianScores": {"normal": 0.904, "left40": 0.9366, "left50": 0.9384},
+      "evidenceClass": "current-upload-frame-hash-snapshot",
+      "validation": false,
+      "applied": false
     },
     {
-      "id": "validation-barbaros-20260923-70.00",
+      "id": "barbaros-70",
+      "source": "zbar70",
       "cardId": "barbaros",
-      "video": "ScreenRecording_09-23-2026 23-53-13_1.mp4",
-      "time": 70,
-      "candidateCount": 5,
+      "groundTruth": "present",
       "slot": 2,
-      "evidenceClass": "real-video-visual-reviewed",
-      "scores": {
-        "normal": 0.9514648318,
-        "left40": 0.9565394322,
-        "left50": 0.9590985775
-      }
+      "frames": [
+        {"frameIndex": 2098, "mediaTime": 69.93333333333334, "framePngSha256": "9dd67f5265c44d192e0496cde92c129d0c56460d280cd7d39658c588ee95da04"},
+        {"frameIndex": 2099, "mediaTime": 69.96666666666667, "framePngSha256": "c335ad155365f56aa52cbe03606f85ce643d7daa04de2364cfc636c996e3f3a1"},
+        {"frameIndex": 2100, "mediaTime": 70.0, "framePngSha256": "34a6ad8d5ccd907694c31a192f3854c25fb73a4d678efc6dd8d85630cdb0c263"},
+        {"frameIndex": 2101, "mediaTime": 70.03333333333333, "framePngSha256": "bf269fadb5b6dd39c03fb026bbd4f44ff86f4c34935cb6868438804f35592512"}
+      ],
+      "medianScores": {"normal": 0.958, "left40": 0.9576, "left50": 0.958},
+      "evidenceClass": "current-upload-frame-hash-snapshot",
+      "validation": false,
+      "applied": false
     }
   ],
   "negatives": [
     {
+      "id": "all-targets-absent-10s",
+      "source": "negative10",
+      "groundTruthAbsent": ["quickBlader", "zetaBeatrix", "barbaros"],
+      "frames": [
+        {"frameIndex": 297, "mediaTime": 9.9, "framePngSha256": "62af96998e3f85670504c48ccf953aab8d694055c8156a8ce2acea3af907e798"},
+        {"frameIndex": 298, "mediaTime": 9.933333333333334, "framePngSha256": "1ec897ef27fd7cc568c009686e7b6aa5f7b0e69d6903dbb7da9cdbdc94f2bc91"},
+        {"frameIndex": 299, "mediaTime": 9.966666666666667, "framePngSha256": "fe2c55228b8685a51cbb1c3d5aedca36017f694bbb82a98cc26375417b364420"},
+        {"frameIndex": 300, "mediaTime": 10.0, "framePngSha256": "4ac4de4547ab03cea9865bc59930628fd9bae8b66c4231a8512639cc67fb9170"},
+        {"frameIndex": 301, "mediaTime": 10.033333333333333, "framePngSha256": "951b878719cb34c7211901da9136c22c63d17c4a63f849727858c2b82c9f2c1f"},
+        {"frameIndex": 302, "mediaTime": 10.066666666666666, "framePngSha256": "c8c62eee405367be87b4635e266db136b5ee8a79fb19b643ea1ef27c93251950"},
+        {"frameIndex": 303, "mediaTime": 10.1, "framePngSha256": "e6e6af95894c78cb449e288d5087962e7cd3f43196e66b180d8a2f62de00e85a"},
+        {"frameIndex": 304, "mediaTime": 10.133333333333333, "framePngSha256": "3c1cd2cdd46324efd384137732663c45d640aad10dd54c0410dd7cbc50ff7a40"}
+      ],
+      "globalMaxScores": {
+        "quickBlader": {"normal": 0.5698, "left40": 0.7041, "left50": 0.7177},
+        "zetaBeatrix": {"normal": 0.382, "left40": 0.6131, "left50": 0.526},
+        "barbaros": {"normal": 0.4873, "left40": 0.6464, "left50": 0.5974}
+      },
+      "evidenceClass": "current-upload-frame-hash-snapshot",
+      "validation": false,
+      "applied": false
+    }
+  ],
+  "historicalSnapshots": {
+    "tracking": [
+      {
+        "id": "validation-quick-count-transition-114.00-114.04",
+        "cardId": "quickBlader",
+        "video": "ScreenRecording_09-23-2026 23-53-13_1.mp4",
+        "from": {"time": 114, "handCount": 4, "slot": 3, "cx": 955},
+        "to": {"time": 114.04, "handCount": 5, "slot": 4, "cx": 955},
+        "patchSimilarity": 0.997,
+        "evidenceClass": "historical-score-snapshot",
+        "validation": false,
+        "applied": false
+      },
+      {
+        "id": "validation-barbaros-count-transition-50.5-51.0",
+        "cardId": "barbaros",
+        "video": "ScreenRecording_09-14-2026 11-06-13_1.mp4",
+        "from": {"time": 50.5, "handCount": 7, "slot": 6, "cx": 960},
+        "to": {"time": 51, "handCount": 6, "slot": 5, "cx": 960},
+        "topScore": 0.988,
+        "runnerScore": 0.347,
+        "margin": 0.641,
+        "evidenceClass": "historical-score-snapshot",
+        "validation": false,
+        "applied": false
+      },
+      {
+        "id": "validation-barbaros-count-transition-58.5-59.0",
+        "cardId": "barbaros",
+        "video": "ScreenRecording_09-14-2026 11-06-13_1.mp4",
+        "from": {"time": 58.5, "handCount": 6, "slot": 5},
+        "to": {"time": 59, "handCount": 5, "slot": 4},
+        "topScore": 0.914,
+        "runnerScore": 0.37,
+        "margin": 0.544,
+        "evidenceClass": "historical-score-snapshot",
+        "validation": false,
+        "applied": false
+      }
+    ],
+    "frameIdentity": {
+      "video": "ScreenRecording_09-23-2026 23-53-13_1.mp4",
+      "fps": 30,
+      "measuredDuplicateRates": {"0.012": 0.647, "0.020": 0.382, "0.040": 0},
+      "note": "Requested-time offsets below one frame period frequently resolve to the same decoded frame; ordinary 40ms windows were distinct in the uploaded samples.",
+      "evidenceClass": "historical-measurement-snapshot",
+      "validation": false,
+      "applied": false
+    }
+  },
+  "invalidatedEvidence": [
+    {
       "id": "validation-all-targets-absent-20260923-128.00",
+      "formerVersion": "v5-real-video-validation-v1",
       "video": "ScreenRecording_09-23-2026 23-53-13_1.mp4",
       "time": 128,
-      "candidateCount": 4,
-      "evidenceClass": "real-video-visual-reviewed",
-      "groundTruthAbsent": [
-        "quickBlader",
-        "zetaBeatrix",
-        "barbaros"
-      ],
-      "maxScores": {
-        "quickBlader": {
-          "normal": 0.4481063783,
-          "left40": 0.4283613643,
-          "left50": 0.4386747026
-        },
-        "zetaBeatrix": {
-          "normal": 0.2729428113,
-          "left40": 0.3882527286,
-          "left50": 0.3107991566
-        },
-        "barbaros": {
-          "normal": 0.4489340186,
-          "left40": 0.3316459854,
-          "left50": 0.3725470404
-        }
-      }
+      "reason": "Not reproducible from the current uploaded video: Barbaros is visibly present and current-pipeline normal score reaches 0.9058. Source-video byte identity was not stored in v1, so the old ground-truth-absent claim is retired rather than rewritten.",
+      "validation": false,
+      "applied": false
     }
-  ],
-  "tracking": [
-    {
-      "id": "validation-quick-count-transition-114.00-114.04",
-      "cardId": "quickBlader",
-      "video": "ScreenRecording_09-23-2026 23-53-13_1.mp4",
-      "from": {
-        "time": 114,
-        "handCount": 4,
-        "slot": 3,
-        "cx": 955
-      },
-      "to": {
-        "time": 114.04,
-        "handCount": 5,
-        "slot": 4,
-        "cx": 955
-      },
-      "patchSimilarity": 0.997,
-      "evidenceClass": "real-video-patch-tracking"
-    },
-    {
-      "id": "validation-barbaros-count-transition-50.5-51.0",
-      "cardId": "barbaros",
-      "video": "ScreenRecording_09-14-2026 11-06-13_1.mp4",
-      "from": {
-        "time": 50.5,
-        "handCount": 7,
-        "slot": 6,
-        "cx": 960
-      },
-      "to": {
-        "time": 51,
-        "handCount": 6,
-        "slot": 5,
-        "cx": 960
-      },
-      "topScore": 0.988,
-      "runnerScore": 0.347,
-      "margin": 0.641,
-      "evidenceClass": "real-video-patch-tracking"
-    },
-    {
-      "id": "validation-barbaros-count-transition-58.5-59.0",
-      "cardId": "barbaros",
-      "video": "ScreenRecording_09-14-2026 11-06-13_1.mp4",
-      "from": {
-        "time": 58.5,
-        "handCount": 6,
-        "slot": 5
-      },
-      "to": {
-        "time": 59,
-        "handCount": 5,
-        "slot": 4
-      },
-      "topScore": 0.914,
-      "runnerScore": 0.37,
-      "margin": 0.544,
-      "evidenceClass": "real-video-patch-tracking"
-    }
-  ],
-  "frameIdentity": {
-    "video": "ScreenRecording_09-23-2026 23-53-13_1.mp4",
-    "fps": 30,
-    "measuredDuplicateRates": {
-      "0.012": 0.647,
-      "0.020": 0.382,
-      "0.040": 0
-    },
-    "note": "Requested-time offsets below one frame period frequently resolve to the same decoded frame; ordinary 40ms windows were distinct in the uploaded samples."
-  }
+  ]
 }
