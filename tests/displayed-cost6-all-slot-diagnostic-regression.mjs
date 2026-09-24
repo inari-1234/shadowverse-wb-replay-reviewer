@@ -3,12 +3,14 @@ import assert from 'node:assert/strict';
 
 const hand=fs.readFileSync(new URL('../hand-recognition.js',import.meta.url),'utf8');
 
-assert.ok(hand.includes("diagnosticCostVariants=displayedCostFeatureVariants(canvas,center),diagnostic6Probe=matchDisplayedCostDiagnosticFeatures(diagnosticCostVariants,6)"),
-  'every detected hand slot must get the diagnostic-only cost6 feature probe');
+assert.ok(hand.includes("diagnosticCostVariants=shouldReadCost||diagnosticProbes?displayedCostFeatureVariants(canvas,center):null"),
+  'cost features must be computed only for live cost reads or explicit deep diagnostics');
+assert.ok(hand.includes("diagnostic6Probe=diagnosticProbes&&diagnosticCostVariants?matchDisplayedCostDiagnosticFeatures(diagnosticCostVariants,6):null"),
+  'all-slot cost6 probing must require explicit diagnostic mode');
 assert.ok(hand.includes("template:{accepted:false,value:null,score:null,threshold:null,reason:'not-run'},diagnostic6Probe"),
-  'slots below the live cost-read gate must still retain cost6 diagnostic evidence');
+  'slots below the live cost-read gate must expose null diagnostic6 evidence unless deep diagnostics are requested');
 assert.ok(hand.includes("if(shouldReadCost)displayedCost=await readDisplayedCost(canvas,center,worker,diagnosticCostVariants,diagnostic6Probe)"),
-  'live OCR reads must remain gated by shouldReadCost and reuse cached diagnostic features');
+  'live OCR reads must remain gated by shouldReadCost; candidate slots may still reuse their live cost features');
 
 const observeStart=hand.indexOf('async function observeHandFrame');
 const decideStart=hand.indexOf('function decideHandSamples',observeStart);
@@ -27,4 +29,4 @@ const selectEnd=hand.indexOf('function resolveCostGate',selectStart);
 assert.ok(selectStart>=0&&selectEnd>selectStart,'selectCostScopedMatch source block must be extractable');
 assert.equal(hand.slice(selectStart,selectEnd).includes('diagnostic6Probe'),false,'cost6 diagnostics must not affect card selection');
 
-console.log('DISPLAYED COST 6 ALL-SLOT DIAGNOSTIC REGRESSION PASS');
+console.log('DISPLAYED COST 6 OPT-IN ALL-SLOT DIAGNOSTIC REGRESSION PASS');

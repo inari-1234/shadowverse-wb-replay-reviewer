@@ -55,18 +55,22 @@ assert.equal(runtimeDiag.records[0].roiAppearanceId,'roi-quick-301');
 assert.equal(runtimeDiag.records[1].roiAppearanceId,null);
 
 
+const fixtureSourceSample={sampleTime:10.04,candidateCount:1,candidates:[{index:0,matchScores:{quick:{imageScore:.2}},displayedCost:{value:1,templateValue:1,templateScore:.99}}]};
 const fixture=datasetFromFixture({
   format:'shadowverse-wb-hand-fixture-v1',
   video:{name:'fixture.mp4'},
   context:{videoKey:'fixture-key'},
-  recognition:{samples:[sample]},
-  frames:[{sampleTime:10.04,width:1200,height:675,image:{sha256:'abc',mime:'image/png'},replay:{geometry:{layoutCompatible:true}}}]
+  recognition:{samples:[fixtureSourceSample]},
+  frames:[{sampleTime:10.04,width:1200,height:675,sample,sourceSample:fixtureSourceSample,image:{sha256:'abc',mime:'image/png'},replay:{geometry:{layoutCompatible:true}}}]
 });
 assert.equal(fixture.sourceType,'fixture');
 assert.equal(fixture.frameIdentityQuality,'sha256-partial');
 assert.equal(fixture.records.length,2);
 assert.equal(fixture.records[0].frameKey,'abc','lossless fixture SHA-256 must become the distinct-frame identity');
 assert.equal(fixture.records[0].frameIdentitySource,'sha256');
+assert.equal(fixture.records[0].commonStrip40Scores.quick,.92,'fixture extractor must prefer diagnostic frame.sample over the light runtime recognition snapshot');
+assert.equal(fixture.records[0].cost.diagnostic6.score,.41);
+assert.equal(fixture.records[0].cardScores.quick,.88);
 assert.equal(fixture.images[0].sha256,'abc');
 assert.equal(fixture.images[0].replayGeometry.layoutCompatible,true);
 

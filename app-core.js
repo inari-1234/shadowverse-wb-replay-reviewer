@@ -1,14 +1,14 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.59',build:'4.13.59-20260924-clean-13-59',revision:'clean-13-59',subtitle:'Build 2026.09.24-clean-13-59 / 認識診断軽量化'};
+const APP={version:'4.13.60',build:'4.13.60-20260924-clean-13-60',revision:'clean-13-60',subtitle:'Build 2026.09.24-clean-13-60 / 深い手札診断をfixtureへ分離'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'turn-recognition':'turn-clean-1.2',
   'mulligan-class':'mulligan-class-clean-1.5',
   'card-db':'card-db-clean-1.22',
-  'hand-recognition':'hand-clean-1.49',
+  'hand-recognition':'hand-clean-1.50',
   'state-recognition':'state-clean-1.8.9',
   'review-engine':'review-clean-1.5.1',
-  'diagnostics':'diagnostics-clean-1.50'
+  'diagnostics':'diagnostics-clean-1.51'
 });
 const WB=window.WB={APP,expectedModules:EXPECTED_MODULE_VERSIONS,modules:[],moduleRegistrations:[],moduleRegistrationDuplicates:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
 WB.$=s=>document.querySelector(s);

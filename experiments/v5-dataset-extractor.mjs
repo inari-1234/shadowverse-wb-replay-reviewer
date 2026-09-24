@@ -1,4 +1,4 @@
-export const V5_DATASET_VERSION='recognition-v5-dataset-0.6';
+export const V5_DATASET_VERSION='recognition-v5-dataset-0.7';
 
 const finite=v=>Number.isFinite(Number(v))?Number(v):null;
 function candidateCardScores(candidate){
@@ -156,7 +156,8 @@ export function datasetFromFixture(bundle){
     const t=finite(frame?.sampleTime);
     if(t!=null&&frame?.image?.sha256)hashes[String(t)]=frame.image.sha256;
   }
-  const records=observationRecordsFromSamples(bundle?.recognition?.samples||[],{
+  const frameSamples=(bundle?.frames||[]).map(frame=>frame?.sample).filter(Boolean),samples=frameSamples.length?frameSamples:(bundle?.recognition?.samples||[]);
+  const records=observationRecordsFromSamples(samples,{
     videoKey:bundle?.context?.videoKey??bundle?.video?.name??null,
     frameHashes:hashes
   });
