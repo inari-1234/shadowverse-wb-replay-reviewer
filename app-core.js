@@ -1,12 +1,12 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.58',build:'4.13.58-20260923-clean-13-58',revision:'clean-13-58',subtitle:'Build 2026.09.23-clean-13-58 / 手札1200幅正規化'};
+const APP={version:'4.13.59',build:'4.13.59-20260924-clean-13-59',revision:'clean-13-59',subtitle:'Build 2026.09.24-clean-13-59 / 認識診断軽量化'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'turn-recognition':'turn-clean-1.2',
   'mulligan-class':'mulligan-class-clean-1.5',
   'card-db':'card-db-clean-1.22',
-  'hand-recognition':'hand-clean-1.48',
-  'state-recognition':'state-clean-1.8.8',
+  'hand-recognition':'hand-clean-1.49',
+  'state-recognition':'state-clean-1.8.9',
   'review-engine':'review-clean-1.5.1',
   'diagnostics':'diagnostics-clean-1.50'
 });

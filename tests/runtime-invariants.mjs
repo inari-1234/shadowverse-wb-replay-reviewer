@@ -195,6 +195,7 @@ assert.ok(handRecognition.includes('nearThresholdCounterfactual,nearThresholdPha
 assert.equal(handRecognition.includes('decision=phaseDecision'),false,'phase-probe decision must never replace the live hand decision');
 assert.ok(handRecognition.includes('nearThresholdSettleDiagnostic,nearThresholdCounterfactual,nearThresholdPhaseProbe,continuityRescue'),'counterfactual and phase-probe results must be exported with hand diagnostics');
 assert.equal(handRecognition.includes('decision=retryDecision'),false,'counterfactual retry decision must never replace the live hand decision');
+assert.ok(handRecognition.includes('const allowNearCounterfactual=ctx?.diagnosticProbes===true&&'),'near-threshold counterfactual scans must be explicit diagnostic opt-in, not normal recognition work');
 assert.ok(handRecognition.includes('minSepX:.018'),'cost-center minimum separation must retain the real-video-calibrated .018 ratio');
 assert.ok(handRecognition.includes('function costCenterSeparated(kept,x,width=CFG.maxW)'),'cost-center peak separation must use the explicit cx-aware helper');
 assert.ok(handRecognition.includes('costCenterSeparated(kept,p.x,w)'),'findCostCenters must apply calibrated separation before accepting a peak');
