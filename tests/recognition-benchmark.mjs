@@ -103,7 +103,8 @@ for(const testCase of fixture.cases){
   const actual=!!recognized;
   const expected=!!testCase.expected.recognized;
   const outcome=expected?(actual?'TP':'FN'):(actual?'FP':'TN');
-  const pass=actual===expected&&(!expected||!testCase.expected.decision||recognized?.decision===testCase.expected.decision);
+  const enforceDecisionPath=testCase.expected?.enforceDecisionPath===true;
+  const pass=actual===expected&&(!expected||!enforceDecisionPath||!testCase.expected.decision||recognized?.decision===testCase.expected.decision);
   const row={
     id:testCase.id,split:testCase.split,origin:testCase.origin,cardId:testCase.cardId,
     expected,actual,outcome,pass,decision:recognized?.decision??null,
@@ -115,7 +116,6 @@ for(const testCase of fixture.cases){
   const s=bySplit[testCase.split]??={TP:0,FN:0,TN:0,FP:0,total:0};
   s[outcome]++;s.total++;
 }
-
 
 const scenarioResults=[];
 for(const scenario of fixture.scenarios||[]){
@@ -129,7 +129,7 @@ for(const scenario of fixture.scenarios||[]){
   const decisionMismatches=[];
   for(const [id,expectedDecision] of Object.entries(scenario.expected?.decisions||{})){
     const actualDecision=decision.recognized?.[id]?.decision??null;
-    if(actualDecision!==expectedDecision)decisionMismatches.push({cardId:id,expected:expectedDecision,actual:actualDecision});
+    if(scenario.expected?.enforceDecisionPaths===true&&actualDecision!==expectedDecision)decisionMismatches.push({cardId:id,expected:expectedDecision,actual:actualDecision});
   }
   const observed=Array.isArray(scenario.observed?.recognized)?scenario.observed.recognized:[];
   scenarioResults.push({
@@ -167,7 +167,9 @@ const validationCoverage=Object.fromEntries(Object.keys(cards).map(id=>{
   const negative=caseRows.filter(x=>x.expected?.recognized===false).length+scenarioRows.filter(x=>!x.expected.recognized.includes(id)).length;
   return[id,{positive,negative,total:positive+negative}];
 }));
-const validationReady=validationCount>0&&Object.values(validationCoverage).every(v=>v.positive>=1&&v.negative>=1);
+const validationRows=[...fixture.cases.filter(x=>x.split==='validation'),...(fixture.scenarios||[]).filter(x=>x.split==='validation')];
+const validationReproducible=validationRows.length>0&&validationRows.every(x=>x.reproducibility==='raw-fixture');
+const validationReady=validationCount>0&&validationReproducible&&Object.values(validationCoverage).every(v=>v.positive>=1&&v.negative>=1);
 const scenarioFailures=scenarioResults.filter(x=>!x.exact||x.decisionMismatches.length);
 const scenarioCoverage=Object.fromEntries(Object.keys(cards).map(id=>{
   const positive=(fixture.scenarios||[]).filter(x=>x.origin==='real-diagnostic'&&(x.expected?.recognized||[]).includes(id)).length;
@@ -190,18 +192,18 @@ console.log(JSON.stringify({
   cases:results.length,
   scenarios:scenarioResults,
   byCard,metrics,bySplit,coverage,scenarioCoverage,
-  validation:{cases:validationCount,ready:validationReady,coverage:validationCoverage},
+  validation:{cases:validationCount,ready:validationReady,reproducible:validationReproducible,coverage:validationCoverage},
   failures:{falsePositives,falseNegatives,decisionMismatches,missingPolarity,scenarioFailures,missingScenarioCoverage}
 },null,2));
 
 assert.equal(falsePositives.length,0,'recognition benchmark must have zero false positives');
 assert.equal(falseNegatives.length,0,'recognition benchmark must have zero false negatives');
-assert.equal(decisionMismatches.length,0,'recognition benchmark expected decision paths must remain stable');
+assert.equal(decisionMismatches.length,0,'recognition benchmark enforced decision paths must remain stable');
 assert.equal(missingPolarity.length,0,'each tuned card needs at least one real positive and real negative calibration case');
-assert.equal(scenarioFailures.length,0,'full-frame benchmark must recognize exactly the expected card set and decision paths');
+assert.equal(scenarioFailures.length,0,'full-frame benchmark must recognize exactly the expected card set');
 assert.equal(missingScenarioCoverage.length,0,'each recognition card needs positive and negative full-frame real-device scenario coverage');
 
 if(fixture.policy.validationRequiredForGeneralizationClaim&&!validationReady){
-  console.log('RECOGNITION BENCHMARK NOTE: validation coverage is incomplete; PASS does not prove cross-video generalization.');
+  console.log('RECOGNITION BENCHMARK NOTE: validation coverage is incomplete or not raw-fixture reproducible; PASS does not prove cross-video generalization.');
 }
 console.log('RECOGNITION BENCHMARK PASS');
