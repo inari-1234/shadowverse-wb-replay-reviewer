@@ -99,7 +99,7 @@ assert.ok(review.includes("W.emit('review-evaluated'"),'ReviewEngine must publis
 assert.ok(review.includes("W.emit('review-state-changed'"),'ReviewEngine must publish saved tactical review state');
 assert.ok(app.includes("WB.emit('scene-saved',{scene})"),'scene save must feed ReplaySession');
 assert.ok(app.includes("WB.emit('scenes-cleared',{sceneIds})"),'scene clear must feed ReplaySession');
-assert.ok(mulligan.includes("W.emit('postprocess-complete'"),'mulligan/class result must feed ReplaySession');
+assert.ok(mulligan.includes("WB.emit('postprocess-complete'"),'mulligan/class result must feed ReplaySession');
 assert.ok(diagnostics.includes('replaySessionV1:clone(WB.ReplaySession?.snapshot?.()||window.__wbReplaySessionV1||null)'),'review exports must carry ReplaySession metadata');
 
 console.log('REPLAY SESSION REGRESSION PASS');
