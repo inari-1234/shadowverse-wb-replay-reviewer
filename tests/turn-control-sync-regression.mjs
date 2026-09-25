@@ -41,7 +41,7 @@ const hpSandbox={window:{WB:hpWB},document:{},console,Map,Float32Array,Uint8Clam
 vm.createContext(hpSandbox);
 new vm.Script(fs.readFileSync(new URL('../state-recognition.js',import.meta.url),'utf8'),{filename:'state-recognition.js'}).runInContext(hpSandbox);
 const SR=hpWB.StateRecognition;
-assert.equal(SR.version,'state-clean-1.8.11');
+assert.equal(SR.version,'state-clean-1.8.12');
 assert.deepEqual([...SR.config.hp.directOffsets],[0,-.04,-.08,-.12],'direct HP confirmation must use current plus three past-only frames');
 const hpSingle=(value,offset,{accepted=false,votes=1}={})=>({offset,accepted,reason:accepted?'ok':'ocr-insufficient-consensus',value:accepted?value:null,frameCandidate:value,frameVotes:votes});
 const hpRealLike=[hpSingle(9,0),hpSingle(9,-.04),hpSingle(9,-.08)];
@@ -51,6 +51,13 @@ assert.equal(hpRealDecision.value,9,'real-like repeated candidate must be preser
 assert.equal(hpRealDecision.reason,'direct-stable-consensus');
 assert.equal(hpRealDecision.stableCount,3);
 assert.equal(hpRealDecision.bestCount,3);
+hpWB.video={duration:30};
+hpWB.turnTimeline=[{side:'bottom',turn:1,time:5},{side:'top',turn:2,time:8}];
+const pairPlan=SR.statePairTarget(5,{row:hpWB.turnTimeline[0],turn:1,absoluteSide:'bottom',relativeSide:'自分'},2);
+assert.equal(pairPlan.target,7,'state pair should use the requested +2s point while remaining inside the same turn');
+const nearBoundary=SR.statePairTarget(7.4,{row:hpWB.turnTimeline[0],turn:1,absoluteSide:'bottom',relativeSide:'自分'},2);
+assert.equal(nearBoundary.valid,false,'state pair must reject a comparison when the next turn boundary is too close');
+
 assert.equal(SR.decideHpDirectStable([hpSingle(9,0),hpSingle(9,-.04)],9).accepted,false,'two one-vote frames must remain insufficient');
 const hpOldDominates=[hpSingle(9,0),hpSingle(10,-.04,{accepted:true,votes:2}),hpSingle(10,-.08)];
 const hpOldDecision=SR.decideHpDirectStable(hpOldDominates,9);
