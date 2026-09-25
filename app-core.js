@@ -1,9 +1,9 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.64',build:'4.13.64-20260925-clean-13-64',revision:'clean-13-64',subtitle:'Build 2026.09.25-clean-13-64 / ReplaySession・状態変化・振り返り候補'};
+const APP={version:'4.13.65',build:'4.13.65-20260925-clean-13-65',revision:'clean-13-65',subtitle:'Build 2026.09.25-clean-13-65 / 実動画の開始境界・マリガン誤認修正'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
-  'turn-recognition':'turn-clean-1.2',
-  'mulligan-class':'mulligan-class-clean-1.5.1',
+  'turn-recognition':'turn-clean-1.3',
+  'mulligan-class':'mulligan-class-clean-1.5.2',
   'card-db':'card-db-clean-1.23',
   'hand-recognition':'hand-clean-1.50',
   'state-recognition':'state-clean-1.8.11',
