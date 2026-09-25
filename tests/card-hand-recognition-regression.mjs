@@ -24,7 +24,7 @@ assert.equal(qb.officialId,10021110);
 assert.equal(qb.cost,1);
 assert.equal(qb.atk,1);
 assert.equal(qb.life,1);
-assert.equal(qb.route.type,'storm');
+assert.equal('route' in qb,false,'card DB must not own tactical route data');
 assert.equal(qb.recognition.method,'hand-title-anchor-cost-gate-v12');
 assert.equal(qb.recognition.threshold,.938);
 assert.equal(qb.recognition.candidateThreshold,.90);
