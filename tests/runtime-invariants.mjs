@@ -128,6 +128,15 @@ assert.ok(diagnostics.includes('loadedModules:clone(inv.loadedModules)'),'diagno
 assert.ok(diagnostics.includes('moduleVersionMismatches:clone(inv.moduleVersionMismatches)'),'diagnostic export must include module version mismatches');
 assert.ok(diagnostics.includes('moduleVersionsOk:moduleIntegrity.ok'),'runtime invariant must expose module version integrity status');
 assert.ok(index.includes('id="exportHandFixture"'),'diagnostics UI must expose explicit hand-fixture export');
+assert.ok(index.includes('id="reviewProfile"'),'review UI must expose an explicit tactical review profile selector');
+assert.ok(index.includes('<option value="none" selected>使用しない（状態確認のみ）</option>'),'tactical review must default to none');
+assert.ok(index.includes('使用デッキ（記録用）'),'deck field must be labeled as record-only metadata');
+assert.ok(index.includes('戦術レビューの切替には使用しません'),'deck metadata must not imply tactical profile selection');
+assert.ok(index.includes('id="diagnosticsPanel"'),'diagnostics must be placed in a collapsible details region');
+assert.ok(review.includes("const REVIEW_PROFILES=Object.freeze"),'review engine must define explicit review profiles');
+assert.ok(review.includes("function activeProfile()"),'review engine must expose active profile resolution');
+assert.ok(review.includes("status:'profile-disabled'"),'review engine must have a no-tactics result when profile is disabled');
+assert.ok(review.includes("if(!profileEnabled())"),'review engine must gate pirate-specific review work behind the active profile');
 assert.ok(index.includes('通常の診断JSONには画像や深い手札診断値を含めません'),'UI must state that ordinary diagnostics remain image-free and exclude deep hand diagnostics');
 assert.ok(diagnostics.includes("format:'shadowverse-wb-hand-fixture-v1'"),'hand fixture format must be versioned independently');
 assert.ok(diagnostics.includes('automatic:false'),'raw fixture capture must remain explicit and diagnostic-only');
