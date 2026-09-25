@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const W=window.WB;if(!W)return;
-const VERSION='replay-session-clean-1.0';
+const VERSION='replay-session-clean-1.1';
 const DB_NAME='wb-replay-session-v1',DB_VERSION=1,SESSION_STORE='sessions',SCENE_STORE='scene-images',MAX_CONTIGUOUS_GAP=3;
 W.registerModule('replay-session',VERSION);
 
@@ -53,16 +53,19 @@ function normalizeCapture(capture){
   const resources={extraPP:String(c.extraPP??capture?.resources?.ui?.extra??'unknown'),ep:String(c.ep??capture?.resources?.ui?.ep??'unknown'),sep:String(c.sep??capture?.resources?.ui?.sep??'unknown')};
   const opponentWard=String(c.opponentWard??capture?.ward?.state??'unknown'),known=[pp!=null,opponentHP!=null,resources.extraPP!=='unknown',resources.ep!=='unknown',resources.sep!=='unknown',opponentWard!=='unknown',c.boardDamageKnown===true||boardDamage!=null],knownCount=known.filter(Boolean).length;
   return{
-    id:`st:${turn??'x'}:${time==null?'x':time.toFixed(3)}`,capturedAt:capture.at||nowIso(),time,turn,
-    relativeSide:c.relativeSide??ctx.relativeSide??null,pp,opponentHP,resources,opponentWard,
+    id:`st:${turn??'x'}:${String(c.absoluteSide??ctx.absoluteSide??'x')}:${time==null?'x':time.toFixed(3)}`,capturedAt:capture.at||nowIso(),time,turn,
+    absoluteSide:c.absoluteSide??ctx.absoluteSide??null,relativeSide:c.relativeSide??ctx.relativeSide??null,pp,opponentHP,resources,opponentWard,
     boardDamage,boardDamageKnown:c.boardDamageKnown===true||boardDamage!=null,hand:{recognized},
     completeness:+(knownCount/known.length).toFixed(3),partial:!!capture.partial
   }
 }
 function action(id,type,prev,curr,data={},confidence='observed'){return{id,type,fromStateId:prev?.id||null,toStateId:curr?.id||null,time:curr?.time??null,turn:curr?.turn??null,confidence,data}}
 function deriveActions(prev,curr){
-  if(!prev||!curr)return[];const out=[],dt=curr.time!=null&&prev.time!=null?curr.time-prev.time:null,sameTurn=prev.turn!=null&&curr.turn!=null&&Number(prev.turn)===Number(curr.turn);
-  if(!sameTurn){out.push(action(`${prev.id}->${curr.id}:turn`,'turn-transition',prev,curr,{fromTurn:prev.turn,toTurn:curr.turn,elapsedSeconds:dt},'observed'));return out}
+  if(!prev||!curr)return[];const out=[],dt=curr.time!=null&&prev.time!=null?curr.time-prev.time:null,
+    sameNumber=prev.turn!=null&&curr.turn!=null&&Number(prev.turn)===Number(curr.turn),
+    sameSide=(prev.absoluteSide&&curr.absoluteSide)?prev.absoluteSide===curr.absoluteSide:(prev.relativeSide&&curr.relativeSide)?prev.relativeSide===curr.relativeSide:false,
+    sameTurn=sameNumber&&sameSide;
+  if(!sameTurn){out.push(action(`${prev.id}->${curr.id}:turn`,'turn-transition',prev,curr,{fromTurn:prev.turn,toTurn:curr.turn,fromSide:prev.absoluteSide||prev.relativeSide||null,toSide:curr.absoluteSide||curr.relativeSide||null,elapsedSeconds:dt},'observed'));return out}
   if(dt==null||dt<0||dt>MAX_CONTIGUOUS_GAP){out.push(action(`${prev.id}->${curr.id}:gap`,'observation-gap',prev,curr,{elapsedSeconds:dt},'observed'));return out}
   if(prev.opponentHP!=null&&curr.opponentHP!=null&&prev.opponentHP!==curr.opponentHP)out.push(action(`${prev.id}->${curr.id}:hp`,'opponent-hp-change',prev,curr,{from:prev.opponentHP,to:curr.opponentHP,delta:curr.opponentHP-prev.opponentHP}));
   if(prev.pp!=null&&curr.pp!=null&&prev.pp!==curr.pp)out.push(action(`${prev.id}->${curr.id}:pp`,'pp-change',prev,curr,{from:prev.pp,to:curr.pp,delta:curr.pp-prev.pp}));
@@ -140,5 +143,5 @@ W.on('review-profile-changed',()=>{const s=ensureCurrent();if(s){refreshMetadata
 W.on('scene-saved',detail=>{ingestScene(detail?.scene).catch(err=>W.recordError('replay-session-scene-save',err))});
 W.on('scenes-cleared',detail=>{clearScenes(detail?.sceneIds||[]).catch(err=>W.recordError('replay-session-scenes-clear',err))});
 W.on('video-reset',()=>{current=null;expose();render()});
-W.onReady(()=>{render();W.log('module-ready',{module:'replay-session',version:VERSION,persistence:persistenceMode(),maxContiguousGap:MAX_CONTIGUOUS_GAP,unknownSafe:true})});
+W.onReady(()=>{render();W.log('module-ready',{module:'replay-session',version:VERSION,persistence:persistenceMode(),maxContiguousGap:MAX_CONTIGUOUS_GAP,turnIdentity:'number+side',unknownSafe:true})});
 })();
