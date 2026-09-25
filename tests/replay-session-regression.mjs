@@ -21,7 +21,8 @@ vm.createContext(sandbox);
 new vm.Script(source,{filename:'replay-session.js'}).runInContext(sandbox);
 const R=WB.ReplaySession;
 
-assert.equal(R.version,'replay-session-clean-1.1');
+assert.equal(R.version,'replay-session-clean-1.2');
+assert.equal(R.schema,'replay-session-v2');
 assert.equal(R.persistenceMode(),'memory','no IndexedDB in regression sandbox must use memory fallback');
 
 const capture=(time,over={})=>({
@@ -41,6 +42,15 @@ const a=R.normalizeCapture(capture(10));
 const b=R.normalizeCapture(capture(12,{pp:3,opponentHP:17,ep:'no',opponentWard:'present',boardDamage:5}));
 assert.equal(a.completeness,1);
 assert.equal(a.hand.recognized.quickBlader.count,1);
+const unknownNumeric=R.normalizeCapture({
+  at:'2026-09-25T00:00:00.000Z',
+  context:{time:10.5,turn:2,absoluteSide:'bottom',relativeSide:'自分'},
+  confirmed:{version:'confirmed-state-v1',time:10.5,turn:2,absoluteSide:'bottom',relativeSide:'自分',pp:null,opponentHP:null,extraPP:'unknown',ep:'unknown',sep:'unknown',opponentWard:'unknown',boardDamage:null,boardDamageKnown:false,hand:{recognized:{}}}
+});
+assert.equal(unknownNumeric.pp,null,'unknown PP must remain null instead of Number(null)=0');
+assert.equal(unknownNumeric.opponentHP,null,'unknown HP must remain null instead of Number(null)=0');
+assert.equal(unknownNumeric.boardDamage,null,'unknown board damage must remain null');
+assert.equal(unknownNumeric.boardDamageKnown,false,'unknown board damage must not become known zero');
 
 const actions=R.deriveActions(a,b);
 assert.deepEqual(Array.from(actions.map(x=>x.type)),[
@@ -68,6 +78,11 @@ assert.equal(sideTransition[0].data.toSide,'top');
 const unknownA=R.normalizeCapture(capture(20,{extraPP:'unknown'}));
 const unknownB=R.normalizeCapture(capture(21,{extraPP:'no'}));
 assert.equal(R.deriveActions(unknownA,unknownB).some(x=>x.type==='resource-change'&&x.data.resource==='extraPP'),false,'UNKNOWN must never be converted into resource usage');
+const hpKnown=R.normalizeCapture(capture(22,{opponentHP:16}));
+const hpUnknown=R.normalizeCapture(capture(23,{opponentHP:null}));
+const hpKnownAgain=R.normalizeCapture(capture(24,{opponentHP:11}));
+assert.equal(R.deriveActions(hpKnown,hpUnknown).some(x=>x.type==='opponent-hp-change'),false,'known→unknown HP must not create an observed HP change');
+assert.equal(R.deriveActions(hpUnknown,hpKnownAgain).some(x=>x.type==='opponent-hp-change'),false,'unknown→known HP must not create an observed HP change');
 
 const points=R.deriveReviewPoints(actions,[{
   id:'ev:lethal',kind:'lethal',time:12,turn:2,status:'confirmed-lethal',lethalRoutes:['Quick route']
@@ -100,6 +115,21 @@ assert.ok(snap.reviewPoints.some(x=>x.kind==='saved-scene'));
 await R.clearScenes(['scene1']);
 assert.equal(R.snapshot().scenes.length,0);
 assert.equal(R.snapshot().reviewPoints.some(x=>x.kind==='saved-scene'),false);
+const migrated=R.migrateLoadedSession({
+  version:'replay-session-v1',sourceKey:'match.mp4|1000|123',createdAt:'2026-09-25T00:00:00.000Z',
+  states:[{id:'legacy-bad-state',opponentHP:0}],actions:[{id:'legacy-bad-action',type:'opponent-hp-change'}],
+  reviewPoints:[{id:'legacy-bad-point',kind:'large-hp-change'}],
+  reviewSignals:[{id:'safe-signal',kind:'manual-scene',time:12,turn:2,note:'keep'}],
+  scenes:[{id:'scene-legacy',time:12,turn:2,imageKey:'k'}],tacticalReview:{safe:true}
+},'match.mp4|1000|123');
+assert.equal(migrated.migrated,true);
+assert.equal(migrated.reason,'legacy-unsafe-null-number-coercion');
+assert.equal(migrated.session.version,'replay-session-v2');
+assert.equal(migrated.session.states.length,0,'legacy v1 observation states must be discarded because null could have been coerced to zero');
+assert.equal(migrated.session.actions.length,0,'legacy v1 derived actions must be discarded');
+assert.equal(migrated.session.reviewPoints.length,0,'legacy v1 derived review points must be rebuilt from safe signals only after load');
+assert.equal(migrated.session.reviewSignals.length,1,'independent review signals may be preserved');
+assert.equal(migrated.session.scenes.length,1,'saved scene metadata must be preserved during migration');
 
 assert.ok(source.includes("indexedDB.open(DB_NAME,DB_VERSION)"));
 assert.ok(source.includes("MAX_CONTIGUOUS_GAP=3"));
