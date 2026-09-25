@@ -40,7 +40,7 @@ const tacticalEls={
 
 const WB={
   APP:{version:'4.13.61',build:'4.13.61-20260925-clean-13-61',revision:'clean-13-61'},
-  registerModule(){},onReady(fn){ready.push(fn)},on(){},
+  registerModule(){},onReady(fn){ready.push(fn)},on(){},emit(){},
   videoMeta:{name:'replay.mp4',size:100,lastModified:123},video:{currentTime:42.5},
   currentTurnContext:()=>({turn:2}),playOrder:()=> '後攻',targetSide:()=> 'bottom',videoKey:()=> 'replay.mp4|100|123',
   $:s=>elements[s]??null,escape:s=>String(s),recordError(){},log(){},
