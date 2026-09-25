@@ -18,7 +18,7 @@ function loadTurn(){
 }
 
 const M=loadMulligan(),T=loadTurn();
-assert.equal(M.version,'mulligan-class-clean-1.5.2');
+assert.equal(M.version,'mulligan-class-clean-1.5.3');
 assert.equal(T.version,'turn-clean-1.3');
 
 // Real-video calibration from ScreenRecording_09-24-2026 05-00-39_1:
@@ -37,9 +37,9 @@ const rows=[
   {time:1.0,rawHandCount:4,chromePass:false},
   {time:1.5,rawHandCount:4,chromePass:false},
   {time:10.0,rawHandCount:0,chromePass:false},
-  {time:10.5,rawHandCount:4,chromePass:true},
-  {time:11.0,rawHandCount:4,chromePass:true},
-  {time:11.5,rawHandCount:4,chromePass:true},
+  {time:10.5,rawHandCount:4,handScore:2.229,centerDark:.487,chromePass:true},
+  {time:11.0,rawHandCount:4,handScore:3.036,centerDark:.635,chromePass:true},
+  {time:11.5,rawHandCount:4,handScore:2.900,centerDark:.669,chromePass:true},
   {time:12.0,rawHandCount:3,chromePass:true},
   {time:12.5,rawHandCount:2,chromePass:true},
   {time:13.0,rawHandCount:1,chromePass:true},
@@ -49,7 +49,9 @@ const w=M.mulliganWindowFromRows(rows,.5);
 assert.equal(w.confirmed,true,'real mulligan window must be confirmed');
 assert.equal(w.start,10.5);
 assert.equal(w.end,13);
-assert.equal(w.representativeTime,10.5);
+assert.equal(w.representativeTime,11,'representative frame must prefer the clearest four-card sample, not the first passing frame');
+assert.equal(w.representativePolicy,'clearest-four-card-frame');
+assert.equal(w.representativeScore,3.036);
 assert.deepEqual(Array.from(w.fourCardTimes),[10.5,11,11.5]);
 assert.equal(w.fourCardTimes.includes(.5),false,'prebattle false four-card pattern must never become mulligan evidence');
 
