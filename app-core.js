@@ -3,7 +3,7 @@
 const APP={version:'4.13.64',build:'4.13.64-20260925-clean-13-64',revision:'clean-13-64',subtitle:'Build 2026.09.25-clean-13-64 / ReplaySession・状態変化・振り返り候補'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'turn-recognition':'turn-clean-1.2',
-  'mulligan-class':'mulligan-class-clean-1.5',
+  'mulligan-class':'mulligan-class-clean-1.5.1',
   'card-db':'card-db-clean-1.23',
   'hand-recognition':'hand-clean-1.50',
   'state-recognition':'state-clean-1.8.11',
