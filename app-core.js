@@ -1,14 +1,15 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.63',build:'4.13.63-20260925-clean-13-63',revision:'clean-13-63',subtitle:'Build 2026.09.25-clean-13-63 / 海賊ロイヤル戦術rulesetをReviewEngineへ集約'};
+const APP={version:'4.13.64',build:'4.13.64-20260925-clean-13-64',revision:'clean-13-64',subtitle:'Build 2026.09.25-clean-13-64 / ReplaySession・状態変化・振り返り候補'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'turn-recognition':'turn-clean-1.2',
   'mulligan-class':'mulligan-class-clean-1.5',
   'card-db':'card-db-clean-1.23',
   'hand-recognition':'hand-clean-1.50',
-  'state-recognition':'state-clean-1.8.10',
-  'review-engine':'review-clean-1.5.4',
-  'diagnostics':'diagnostics-clean-1.51'
+  'state-recognition':'state-clean-1.8.11',
+  'replay-session':'replay-session-clean-1.0',
+  'review-engine':'review-clean-1.5.5',
+  'diagnostics':'diagnostics-clean-1.52'
 });
 const WB=window.WB={APP,expectedModules:EXPECTED_MODULE_VERSIONS,modules:[],moduleRegistrations:[],moduleRegistrationDuplicates:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
 WB.$=s=>document.querySelector(s);
@@ -95,8 +96,8 @@ function init(){
   WB.$('#goTurn')?.addEventListener('click',async()=>{const n=Number(WB.$('#turnPick').value)||1,row=WB.turnForTarget(n);if(!row||WB.task)return;WB.pauseVideo('go-selected-turn');try{await WB.runTask('ターン移動',async()=>{await WB.seekTo(row.time,'go-selected-turn');WB.log('turn-move-stable',{turn:n,target:+Number(row.time).toFixed(3),actual:+WB.video.currentTime.toFixed(3),paused:!!WB.video.paused})},{lockText:`${n}Tへ移動しています。`})}catch{}});
   WB.$('#leFill')?.addEventListener('click',()=>{if(!WB.task)WB.pauseVideo('state-capture-start')},{capture:true});
   WB.$('#classSelect')?.addEventListener('change',e=>{const v=e.target.value,match=WB.$('#matchup');if(v&&match)match.value=v;WB.log('class-manual',{value:v,videoKey:WB.videoKey()})});
-  WB.$('#captureScene')?.addEventListener('click',async()=>{if(!WB.videoMeta||WB.task)return;try{await WB.runTask('局面保存',async()=>{const c=WB.frameCanvas(1200);if(!c)throw new Error('画像を取得できません');const blob=await WB.canvasBlob(c,.84),ctx=WB.currentTurnContext(),scene={id:`s${Date.now().toString(36)}`,turn:ctx.turn,time:+WB.video.currentTime.toFixed(3),playOrder:WB.playOrder(),matchup:WB.$('#matchup').value.trim()||null,deck:WB.$('#deck').value.trim()||null,note:WB.$('#note').value.trim()||null,blob,url:URL.createObjectURL(blob)};WB.scenes.push(scene);WB.renderScenes();WB.$('#captureStatus').textContent=`${ctx.turn?ctx.turn+'T / ':''}${WB.fmt(scene.time)} を保存しました。`;WB.log('scene-save',{turn:ctx.turn,time:scene.time})},{lockText:'現在フレームを保存しています。'})}catch(err){WB.$('#captureStatus').textContent='保存エラー: '+err.message}});
-  WB.$('#clearScenes')?.addEventListener('click',()=>{for(const s of WB.scenes)if(s.url)URL.revokeObjectURL(s.url);WB.scenes=[];WB.renderScenes();WB.log('scenes-clear')});
+  WB.$('#captureScene')?.addEventListener('click',async()=>{if(!WB.videoMeta||WB.task)return;try{await WB.runTask('局面保存',async()=>{const c=WB.frameCanvas(1200);if(!c)throw new Error('画像を取得できません');const blob=await WB.canvasBlob(c,.84),ctx=WB.currentTurnContext(),scene={id:`s${Date.now().toString(36)}`,turn:ctx.turn,time:+WB.video.currentTime.toFixed(3),playOrder:WB.playOrder(),matchup:WB.$('#matchup').value.trim()||null,deck:WB.$('#deck').value.trim()||null,note:WB.$('#note').value.trim()||null,blob,url:URL.createObjectURL(blob)};WB.scenes.push(scene);WB.renderScenes();WB.emit('scene-saved',{scene});WB.$('#captureStatus').textContent=`${ctx.turn?ctx.turn+'T / ':''}${WB.fmt(scene.time)} を保存しました。`;WB.log('scene-save',{turn:ctx.turn,time:scene.time})},{lockText:'現在フレームを保存しています。'})}catch(err){WB.$('#captureStatus').textContent='保存エラー: '+err.message}});
+  WB.$('#clearScenes')?.addEventListener('click',()=>{const sceneIds=WB.scenes.map(s=>s.id);for(const s of WB.scenes)if(s.url)URL.revokeObjectURL(s.url);WB.scenes=[];WB.renderScenes();WB.emit('scenes-cleared',{sceneIds});WB.log('scenes-clear')});
   WB.$('#cancelScan')?.addEventListener('click',WB.requestCancel);
   WB.log('app-start',{build:APP.build,href:location.href,standalone:matchMedia('(display-mode: standalone)').matches});
   WB.registerServiceWorker();
