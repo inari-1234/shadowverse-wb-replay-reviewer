@@ -132,7 +132,10 @@ assert.ok(index.includes('id="replaySessionStatus"')&&index.includes('id="review
 assert.ok(index.includes('id="leCompare"'),'state UI must expose guided two-point comparison');
 assert.ok(stateRecognition.includes('async function captureStatePair(offset=2)'),'state recognition must implement the guided pair capture');
 assert.ok(replaySession.includes("turnIdentity:'number+side'"),'ReplaySession must keep numeric turn and active side together when deriving changes');
-assert.ok(replaySession.includes("const VERSION='replay-session-clean-1.1'"),'ReplaySession module must have an explicit version');
+assert.ok(replaySession.includes("SESSION_SCHEMA='replay-session-v2'"),'ReplaySession must migrate away from the unsafe v1 numeric-null schema');
+assert.ok(replaySession.includes("v===null||v===undefined"),'ReplaySession numeric normalization must preserve null/undefined');
+assert.ok(replaySession.includes("legacy-unsafe-null-number-coercion"),'ReplaySession must explicitly invalidate unsafe v1 derived observations');
+assert.ok(replaySession.includes("const VERSION='replay-session-clean-1.2'"),'ReplaySession module must have an explicit version');
 assert.ok(replaySession.includes("indexedDB.open(DB_NAME,DB_VERSION)"),'ReplaySession persistence must use IndexedDB');
 assert.ok(replaySession.includes("MAX_CONTIGUOUS_GAP=3"),'detailed state-change derivation must remain limited to a short same-turn observation gap');
 assert.ok(replaySession.includes("'observation-gap'"),'ReplaySession must preserve observation gaps instead of inventing detailed actions');
