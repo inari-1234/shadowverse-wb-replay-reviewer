@@ -129,7 +129,10 @@ assert.ok(diagnostics.includes('stateCaptureHistory:clone(WB.stateCaptureHistory
 assert.ok(stateRecognition.includes("version:'confirmed-state-v1'"),'state recognition must expose a generic confirmed-state snapshot');
 assert.ok(index.includes('id="reviewOverviewPanel"'),'user runtime must expose the automatic review overview');
 assert.ok(index.includes('id="replaySessionStatus"')&&index.includes('id="reviewPoints"')&&index.includes('id="actionTimeline"'),'automatic review UI must expose session, review-point and action-timeline targets');
-assert.ok(replaySession.includes("const VERSION='replay-session-clean-1.0'"),'ReplaySession module must have an explicit version');
+assert.ok(index.includes('id="leCompare"'),'state UI must expose guided two-point comparison');
+assert.ok(stateRecognition.includes('async function captureStatePair(offset=2)'),'state recognition must implement the guided pair capture');
+assert.ok(replaySession.includes("turnIdentity:'number+side'"),'ReplaySession must keep numeric turn and active side together when deriving changes');
+assert.ok(replaySession.includes("const VERSION='replay-session-clean-1.1'"),'ReplaySession module must have an explicit version');
 assert.ok(replaySession.includes("indexedDB.open(DB_NAME,DB_VERSION)"),'ReplaySession persistence must use IndexedDB');
 assert.ok(replaySession.includes("MAX_CONTIGUOUS_GAP=3"),'detailed state-change derivation must remain limited to a short same-turn observation gap');
 assert.ok(replaySession.includes("'observation-gap'"),'ReplaySession must preserve observation gaps instead of inventing detailed actions');
