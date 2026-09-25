@@ -97,8 +97,8 @@ assert.ok(source.includes("MAX_CONTIGUOUS_GAP=3"));
 assert.equal(source.includes("'card-play'"),false);
 assert.ok(review.includes("W.emit('review-evaluated'"),'ReviewEngine must publish evaluation results');
 assert.ok(review.includes("W.emit('review-state-changed'"),'ReviewEngine must publish saved tactical review state');
-assert.ok(app.includes("W.emit('scene-saved',{scene})"),'scene save must feed ReplaySession');
-assert.ok(app.includes("W.emit('scenes-cleared',{sceneIds})"),'scene clear must feed ReplaySession');
+assert.ok(app.includes("WB.emit('scene-saved',{scene})"),'scene save must feed ReplaySession');
+assert.ok(app.includes("WB.emit('scenes-cleared',{sceneIds})"),'scene clear must feed ReplaySession');
 assert.ok(mulligan.includes("W.emit('postprocess-complete'"),'mulligan/class result must feed ReplaySession');
 assert.ok(diagnostics.includes('replaySessionV1:clone(WB.ReplaySession?.snapshot?.()||window.__wbReplaySessionV1||null)'),'review exports must carry ReplaySession metadata');
 
