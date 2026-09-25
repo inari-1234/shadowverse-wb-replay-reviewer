@@ -1,21 +1,30 @@
 (()=>{'use strict';
 const W=window.WB;if(!W)return;
-const VERSION='replay-session-clean-1.1';
-const DB_NAME='wb-replay-session-v1',DB_VERSION=1,SESSION_STORE='sessions',SCENE_STORE='scene-images',MAX_CONTIGUOUS_GAP=3;
+const VERSION='replay-session-clean-1.2';
+const DB_NAME='wb-replay-session-v1',DB_VERSION=1,SESSION_STORE='sessions',SCENE_STORE='scene-images',MAX_CONTIGUOUS_GAP=3,SESSION_SCHEMA='replay-session-v2';
 W.registerModule('replay-session',VERSION);
 
 const clone=x=>{try{return structuredClone(x)}catch{return x==null?x:JSON.parse(JSON.stringify(x))}};
-const finite=v=>Number.isFinite(Number(v))?Number(v):null;
+const finite=v=>{if(v===null||v===undefined)return null;if(typeof v==='string'&&v.trim()==='')return null;const n=Number(v);return Number.isFinite(n)?n:null};
 const nowIso=()=>new Date().toISOString();
 let current=null,dbPromise=null,persistQueue=Promise.resolve();
 
 function sourceKey(){return W.videoMeta?W.videoKey():null}
 function emptySession(key=sourceKey()){return{
-  version:'replay-session-v1',sourceKey:key,video:clone(W.videoMeta||null),createdAt:nowIso(),updatedAt:nowIso(),
+  version:SESSION_SCHEMA,sourceKey:key,video:clone(W.videoMeta||null),createdAt:nowIso(),updatedAt:nowIso(),
   turnTimeline:clone(W.turnTimeline||[]),mulligan:clone(W.mulligan||null),classDetection:clone(W.classDetection||null),
   reviewProfile:W.ReviewEngine?.activeProfile?.()||'none',states:[],actions:[],reviewSignals:[],reviewPoints:[],scenes:[],tacticalReview:null
 }}
 function ensureCurrent(){const key=sourceKey();if(!key)return null;if(!current||current.sourceKey!==key)current=emptySession(key);return current}
+function migrateLoadedSession(loaded,key){
+  const base=emptySession(key);
+  if(!loaded)return{session:base,migrated:false,reason:null};
+  if(loaded.version===SESSION_SCHEMA)return{session:{...base,...clone(loaded),sourceKey:key},migrated:false,reason:null};
+  const keptSignals=Array.isArray(loaded.reviewSignals)?clone(loaded.reviewSignals):[];
+  const legacyScenes=Array.isArray(loaded.scenes)?clone(loaded.scenes):[];
+  const session={...base,createdAt:loaded.createdAt||base.createdAt,updatedAt:nowIso(),reviewSignals:keptSignals,scenes:legacyScenes,tacticalReview:clone(loaded.tacticalReview||null)};
+  return{session,migrated:true,reason:'legacy-unsafe-null-number-coercion'}
+}
 function refreshMetadata(){const s=ensureCurrent();if(!s)return null;s.video=clone(W.videoMeta||null);s.turnTimeline=clone(W.turnTimeline||s.turnTimeline||[]);s.mulligan=clone(W.mulligan||s.mulligan||null);s.classDetection=clone(W.classDetection||s.classDetection||null);s.reviewProfile=W.ReviewEngine?.activeProfile?.()||s.reviewProfile||'none';s.updatedAt=nowIso();return s}
 
 function openDb(){
@@ -118,7 +127,7 @@ async function restoreScenes(s){
   if(!s)return[];const rows=[];for(const meta of s.scenes||[]){const stored=meta.imageKey?await dbGet(SCENE_STORE,meta.imageKey):null,blob=stored?.blob||null,url=blob&&typeof URL?.createObjectURL==='function'?URL.createObjectURL(blob):null;rows.push({...clone(meta),blob,url})}return rows
 }
 async function restoreCurrent(){
-  const key=sourceKey();if(!key)return null;const loaded=await dbGet(SESSION_STORE,key);if(sourceKey()!==key)return null;current=loaded?{...emptySession(key),...clone(loaded),sourceKey:key}:emptySession(key);rebuildDerived();
+  const key=sourceKey();if(!key)return null;const loaded=await dbGet(SESSION_STORE,key);if(sourceKey()!==key)return null;const migrated=migrateLoadedSession(loaded,key);current=migrated.session;rebuildDerived();if(migrated.migrated){W.log('replay-session-migrate',{sourceKey:key,fromVersion:loaded?.version||null,toVersion:SESSION_SCHEMA,reason:migrated.reason});await dbPut(SESSION_STORE,sessionForStorage(current))}
   const old=W.scenes||[];for(const s of old)if(s?.url&&typeof URL?.revokeObjectURL==='function')URL.revokeObjectURL(s.url);
   W.scenes=await restoreScenes(current);if(typeof W.renderScenes==='function')W.renderScenes();refreshMetadata();expose();render();W.log('replay-session-restore',{sourceKey:key,restored:!!loaded,states:current.states.length,reviewPoints:current.reviewPoints.length,scenes:current.scenes.length,persistence:persistenceMode()});return snapshot()
 }
@@ -131,7 +140,7 @@ function render(){
   if(at)at.innerHTML=s?.actions?.length?s.actions.slice(-20).map(x=>`<div class="branchItem"><b>${x.turn?x.turn+'T':'-'}</b><div>${W.escape(actionLabel(x))}<br><span class="muted">${x.time==null?'--:--.-':W.fmt(x.time)} / ${W.escape(x.confidence)}</span></div></div>`).join(''):'<p class="help">連続した状態取得がまだありません。3秒以内の同一ターン観測だけを詳細な状態変化として扱います。</p>'
 }
 
-W.ReplaySession={version:VERSION,dbName:DB_NAME,persistenceMode,emptySession,normalizeCapture,deriveActions,deriveReviewPoints,ingestState,ingestReviewSignal,ingestScene,clearScenes,ingestReviewState,restoreCurrent,snapshot,rebuildDerived,render};
+W.ReplaySession={version:VERSION,schema:SESSION_SCHEMA,dbName:DB_NAME,persistenceMode,emptySession,migrateLoadedSession,normalizeCapture,deriveActions,deriveReviewPoints,ingestState,ingestReviewSignal,ingestScene,clearScenes,ingestReviewState,restoreCurrent,snapshot,rebuildDerived,render};
 
 W.on('metadata',()=>{restoreCurrent().catch(err=>W.recordError('replay-session-restore',err))});
 W.on('timeline',detail=>{const s=ensureCurrent();if(s){s.turnTimeline=clone(detail?.timeline||W.turnTimeline||[]);schedulePersist()}});
@@ -143,5 +152,5 @@ W.on('review-profile-changed',()=>{const s=ensureCurrent();if(s){refreshMetadata
 W.on('scene-saved',detail=>{ingestScene(detail?.scene).catch(err=>W.recordError('replay-session-scene-save',err))});
 W.on('scenes-cleared',detail=>{clearScenes(detail?.sceneIds||[]).catch(err=>W.recordError('replay-session-scenes-clear',err))});
 W.on('video-reset',()=>{current=null;expose();render()});
-W.onReady(()=>{render();W.log('module-ready',{module:'replay-session',version:VERSION,persistence:persistenceMode(),maxContiguousGap:MAX_CONTIGUOUS_GAP,turnIdentity:'number+side',unknownSafe:true})});
+W.onReady(()=>{render();W.log('module-ready',{module:'replay-session',version:VERSION,persistence:persistenceMode(),maxContiguousGap:MAX_CONTIGUOUS_GAP,turnIdentity:'number+side',unknownSafe:true,nullNumericSafe:true,sessionSchema:SESSION_SCHEMA})});
 })();
