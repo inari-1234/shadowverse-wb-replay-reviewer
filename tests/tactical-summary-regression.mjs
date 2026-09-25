@@ -122,5 +122,7 @@ assert.equal(incomplete.coverage.complete,false);
 assert.ok(incomplete.coverage.missing.includes('守護'));
 assert.ok(R.decisionSummary(incomplete).includes('リーサルなし断定禁止'));
 
-assert.equal(R.catalog.cards.some(c=>c.id==='quickBlader'&&c.route?.type==='storm'&&c.route.cost===1&&c.route.baseDamage===1),true);
+assert.equal(R.ruleset.cards.quickBlader.type,'storm');
+assert.equal(R.ruleset.cards.quickBlader.cost,1);
+assert.equal(R.ruleset.cards.quickBlader.baseDamage,1);
 console.log('TACTICAL SUMMARY REGRESSION PASS');
