@@ -21,14 +21,14 @@ vm.createContext(sandbox);
 new vm.Script(source,{filename:'replay-session.js'}).runInContext(sandbox);
 const R=WB.ReplaySession;
 
-assert.equal(R.version,'replay-session-clean-1.0');
+assert.equal(R.version,'replay-session-clean-1.1');
 assert.equal(R.persistenceMode(),'memory','no IndexedDB in regression sandbox must use memory fallback');
 
 const capture=(time,over={})=>({
   at:'2026-09-25T00:00:00.000Z',
-  context:{time,turn:2,relativeSide:'自分'},
+  context:{time,turn:2,absoluteSide:'bottom',relativeSide:'自分'},
   confirmed:{
-    version:'confirmed-state-v1',time,turn:2,relativeSide:'自分',
+    version:'confirmed-state-v1',time,turn:2,absoluteSide:'bottom',relativeSide:'自分',
     pp:5,opponentHP:20,extraPP:'yes',ep:'yes',sep:'no',opponentWard:'none',
     boardDamage:2,boardDamageKnown:true,
     hand:{recognized:{quickBlader:{known:true,count:1,label:'刹那のクイックブレイダー',confidence:.95}}},
@@ -55,6 +55,15 @@ assert.deepEqual(Array.from(gapActions.map(x=>x.type)),['observation-gap'],'more
 
 const nextTurn=R.normalizeCapture({...capture(19),context:{time:19,turn:3,relativeSide:'自分'},confirmed:{...capture(19).confirmed,time:19,turn:3}});
 assert.deepEqual(Array.from(R.deriveActions(gap,nextTurn).map(x=>x.type)),['turn-transition'],'turn changes must remain a transition, not inferred actions');
+const sameNumberOtherSide=R.normalizeCapture({
+  ...capture(12.5),
+  context:{time:12.5,turn:2,absoluteSide:'top',relativeSide:'相手'},
+  confirmed:{...capture(12.5).confirmed,time:12.5,turn:2,absoluteSide:'top',relativeSide:'相手'}
+});
+const sideTransition=R.deriveActions(b,sameNumberOtherSide);
+assert.deepEqual(Array.from(sideTransition.map(x=>x.type)),['turn-transition'],'same numeric turn on the opposite side must never be treated as the same turn');
+assert.equal(sideTransition[0].data.fromSide,'bottom');
+assert.equal(sideTransition[0].data.toSide,'top');
 
 const unknownA=R.normalizeCapture(capture(20,{extraPP:'unknown'}));
 const unknownB=R.normalizeCapture(capture(21,{extraPP:'no'}));
