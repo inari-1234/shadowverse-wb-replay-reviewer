@@ -1,13 +1,13 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.62',build:'4.13.62-20260925-clean-13-62',revision:'clean-13-62',subtitle:'Build 2026.09.25-clean-13-62 / 状態認識と戦術レビュー境界を分離'};
+const APP={version:'4.13.63',build:'4.13.63-20260925-clean-13-63',revision:'clean-13-63',subtitle:'Build 2026.09.25-clean-13-63 / 海賊ロイヤル戦術rulesetをReviewEngineへ集約'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'turn-recognition':'turn-clean-1.2',
   'mulligan-class':'mulligan-class-clean-1.5',
-  'card-db':'card-db-clean-1.22',
+  'card-db':'card-db-clean-1.23',
   'hand-recognition':'hand-clean-1.50',
   'state-recognition':'state-clean-1.8.10',
-  'review-engine':'review-clean-1.5.3',
+  'review-engine':'review-clean-1.5.4',
   'diagnostics':'diagnostics-clean-1.51'
 });
 const WB=window.WB={APP,expectedModules:EXPECTED_MODULE_VERSIONS,modules:[],moduleRegistrations:[],moduleRegistrationDuplicates:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
