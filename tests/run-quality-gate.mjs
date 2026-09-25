@@ -1,6 +1,6 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v51';
+const GATE_VERSION='recognition-quality-gate-v52';
 // v5 shadow 0.10 conservative tracking inheritance + ROI appearance identity
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
