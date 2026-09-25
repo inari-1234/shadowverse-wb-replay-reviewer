@@ -14,7 +14,7 @@ assert.ok(state.includes("WB.emit('state-input-changed',{id,value:e.value})"),'s
 assert.ok(review.includes("W.on('state-hand-recognized',detail=>applyDetectedHand(detail?.result||null))"),'review engine must consume generic hand observation event');
 assert.ok(review.includes("W.on('state-captured',()=>renderLethal())"),'review engine must refresh after generic state capture');
 assert.ok(review.includes("W.on('state-input-changed',()=>renderLethal())"),'review engine must refresh after generic state input changes');
-assert.ok(app.includes("'state-recognition':'state-clean-1.8.11'"),'app manifest must require decoupled state module');
+assert.ok(app.includes("'state-recognition':'state-clean-1.8.12'"),'app manifest must require decoupled state module');
 assert.ok(app.includes("'review-engine':'review-clean-1.5.5'"),'app manifest must require event-based review module');
 
 for(const token of ['barbaros','zetaBeatrix','quickBlader','pirateFlagCountdowns']){
@@ -24,3 +24,5 @@ for(const token of ['barbaros','zetaBeatrix','quickBlader','pirateFlagCountdowns
 console.log('STATE REVIEW BOUNDARY REGRESSION PASS');
 
 assert.ok(state.includes("version:'confirmed-state-v1'"),'state-recognition must expose a generic confirmed-state snapshot for replay sessions');
+
+assert.ok(state.includes("WB.emit('state-pair-complete',result)"),'state comparison must remain a generic state event without tactical coupling');
