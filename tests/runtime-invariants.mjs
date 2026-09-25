@@ -12,6 +12,7 @@ const mulliganClass=read('mulligan-class.js');
 const review=read('review-engine.js');
 const handRecognition=read('hand-recognition.js');
 const stateRecognition=read('state-recognition.js');
+const replaySession=read('replay-session.js');
 const diagnostics=read('diagnostics.js');
 const cardDb=read('card-db.js');
 const latest=JSON.parse(read('latest.json'));
@@ -23,11 +24,12 @@ const expectedRuntime=[
   'card-db.js',
   'hand-recognition.js',
   'state-recognition.js',
+  'replay-session.js',
   'review-engine.js',
   'diagnostics.js'
 ];
 const runtime=[...index.matchAll(/<script[^>]+src="\.\/([^"]+\.js)"/g)].map(m=>m[1]);
-assert.deepEqual(runtime,expectedRuntime,'index runtime must remain exactly the approved eight scripts in order');
+assert.deepEqual(runtime,expectedRuntime,'index runtime must remain exactly the approved nine scripts in order');
 assert.equal(runtime.some(x=>/fix-v/i.test(x)),false,'historical fix-v scripts must never load at runtime');
 assert.equal(index.includes('recognition-v5-shadow'),false,'v5 shadow experiments must not load in the production runtime');
 assert.equal(index.includes('v5-dataset-extractor'),false,'v5 dataset tooling must not load in the production runtime');
@@ -48,6 +50,7 @@ const moduleSources={
   'card-db':cardDb,
   'hand-recognition':handRecognition,
   'state-recognition':stateRecognition,
+  'replay-session':replaySession,
   'review-engine':review,
   'diagnostics':diagnostics
 };
@@ -123,6 +126,15 @@ assert.ok(diagnostics.includes('shadowverse-wb-review-v${WB.APP.version}-clean')
 assert.ok(stateRecognition.includes('WB.stateCaptureHistory=history.slice(-5)'),'state recognition must retain the five most recent captures');
 assert.ok(stateRecognition.includes("WB.on('video-reset',()=>{WB.stateCaptureHistory=[]"),'state capture history must reset with the video');
 assert.ok(diagnostics.includes('stateCaptureHistory:clone(WB.stateCaptureHistory||[])'),'diagnostic/review exports must include recent state-capture history');
+assert.ok(stateRecognition.includes("version:'confirmed-state-v1'"),'state recognition must expose a generic confirmed-state snapshot');
+assert.ok(index.includes('id="reviewOverviewPanel"'),'user runtime must expose the automatic review overview');
+assert.ok(index.includes('id="replaySessionStatus"')&&index.includes('id="reviewPoints"')&&index.includes('id="actionTimeline"'),'automatic review UI must expose session, review-point and action-timeline targets');
+assert.ok(replaySession.includes("const VERSION='replay-session-clean-1.0'"),'ReplaySession module must have an explicit version');
+assert.ok(replaySession.includes("indexedDB.open(DB_NAME,DB_VERSION)"),'ReplaySession persistence must use IndexedDB');
+assert.ok(replaySession.includes("MAX_CONTIGUOUS_GAP=3"),'detailed state-change derivation must remain limited to a short same-turn observation gap');
+assert.ok(replaySession.includes("'observation-gap'"),'ReplaySession must preserve observation gaps instead of inventing detailed actions');
+assert.equal(replaySession.includes("'card-play'"),false,'ReplaySession must not infer a card play from state differences alone');
+assert.ok(diagnostics.includes('replaySessionV1:clone(WB.ReplaySession?.snapshot?.()||window.__wbReplaySessionV1||null)'),'diagnostic and review export must include ReplaySession metadata');
 assert.ok(diagnostics.includes('expectedModules:clone(inv.expectedModules)'),'diagnostic export must include expected module versions');
 assert.ok(diagnostics.includes('loadedModules:clone(inv.loadedModules)'),'diagnostic export must include loaded module versions');
 assert.ok(diagnostics.includes('moduleVersionMismatches:clone(inv.moduleVersionMismatches)'),'diagnostic export must include module version mismatches');
