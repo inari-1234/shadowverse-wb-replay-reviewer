@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.66',build:'4.13.66-20260925-clean-13-66',revision:'clean-13-66',subtitle:'Build 2026.09.25-clean-13-66 / マリガン代表画像の視認性改善'};
+const APP={version:'4.13.67',build:'4.13.67-20260925-clean-13-67',revision:'clean-13-67',subtitle:'Build 2026.09.25-clean-13-67 / iPhone Safariシーク完了判定の安定化'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'turn-recognition':'turn-clean-1.3',
   'mulligan-class':'mulligan-class-clean-1.5.3',
@@ -53,7 +53,9 @@ WB.setProgress=p=>{const w=WB.$('#progressWrap'),b=WB.$('#progress');if(!w||!b)r
 WB.setScanStatus=(msg,cls='help')=>{const e=WB.$('#scanStatus');if(e){e.className=cls;e.textContent=msg}};
 WB.pauseVideo=(reason='stability-guard')=>{const v=WB.video;if(!v)return false;const wasPaused=!!v.paused;if(!wasPaused)v.pause();WB.log('video-pause-guard',{reason,wasPaused,currentTime:Number.isFinite(v.currentTime)?+v.currentTime.toFixed(3):null});return !wasPaused};
 
-WB.seekTo=async(t,reason='seek')=>{const v=WB.video;if(!v||!Number.isFinite(v.duration))throw new Error('動画未読込');const target=Math.max(0,Math.min(Math.max(0,v.duration-.05),Number(t)||0));if(Math.abs(v.currentTime-target)<=.025){await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));return +v.currentTime.toFixed(3)}WB.seekCount++;WB.seekReasons[reason]=(WB.seekReasons[reason]||0)+1;WB.log('seek-start',{reason,target,from:+v.currentTime.toFixed(3)});return await new Promise((resolve,reject)=>{let done=false;const finish=(ok,err)=>{if(done)return;done=true;v.removeEventListener('seeked',onSeek);clearTimeout(timer);if(ok){WB.log('seek-complete',{reason,target,actual:+v.currentTime.toFixed(3)});requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(+v.currentTime.toFixed(3))))}else reject(err||new Error('シーク失敗'))};const onSeek=()=>finish(true);const timer=setTimeout(()=>finish(false,new Error(`シーク失敗: ${reason}`)),3500);v.addEventListener('seeked',onSeek,{once:true});v.currentTime=target})};
+function seekPositionReached(v,target,tol=.06){const current=Number(v?.currentTime),ready=Number(v?.readyState||0);return Number.isFinite(current)&&Math.abs(current-Number(target))<=tol&&v?.seeking!==true&&ready>=2}
+WB.seekPositionReached=seekPositionReached;
+WB.seekTo=async(t,reason='seek')=>{const v=WB.video;if(!v||!Number.isFinite(v.duration))throw new Error('動画未読込');const target=Math.max(0,Math.min(Math.max(0,v.duration-.05),Number(t)||0));if(Math.abs(v.currentTime-target)<=.025){await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));return +v.currentTime.toFixed(3)}WB.seekCount++;WB.seekReasons[reason]=(WB.seekReasons[reason]||0)+1;WB.log('seek-start',{reason,target,from:+v.currentTime.toFixed(3)});return await new Promise((resolve,reject)=>{let done=false,poll=null;const cleanup=()=>{v.removeEventListener('seeked',onSeek);clearTimeout(timer);if(poll!==null)clearInterval(poll)};const finish=(ok,err,completion='seeked')=>{if(done)return;done=true;cleanup();if(ok){WB.log('seek-complete',{reason,target,actual:+v.currentTime.toFixed(3),completion,safariFallback:completion!=='seeked'});requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(+v.currentTime.toFixed(3))))}else reject(err||new Error('シーク失敗'))};const check=(completion)=>{if(seekPositionReached(v,target)){finish(true,null,completion);return true}return false};const onSeek=()=>finish(true,null,'seeked');const timer=setTimeout(()=>{if(!check('timeout-currentTime'))finish(false,new Error(`シーク失敗: ${reason}`),'timeout')},3500);v.addEventListener('seeked',onSeek,{once:true});poll=setInterval(()=>check('currentTime-fallback'),80);v.currentTime=target})};
 window.seek=WB.seekTo;
 
 WB.ocrWorker=null;
