@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.71',build:'4.13.71-20260926-clean-13-71',revision:'clean-13-71',subtitle:'Build 2026.09.26-clean-13-71 / Files高速読込ガイド・経路比較'};
+const APP={version:'4.13.72',build:'4.13.72-20260926-clean-13-72',revision:'clean-13-72',subtitle:'Build 2026.09.26-clean-13-72 / 動画入力UI復元・受け渡し計測維持'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'turn-recognition':'turn-clean-1.3',
   'mulligan-class':'mulligan-class-clean-1.5.3',
@@ -86,16 +86,13 @@ function init(){
   if(!shellOk){const key='wb-shell-reload-'+APP.build;let shouldReload=false;try{if(sessionStorage.getItem(key)!=='1'){sessionStorage.setItem(key,'1');shouldReload=true}}catch{}WB.log('shell-version-mismatch',{build:APP.build,shellHeader,shellSub,shouldReload});if(shouldReload){location.reload();return}}
   if(head)head.textContent=`シャドバWB リプレイ診断 v${APP.version}`;if(sub)sub.textContent=APP.subtitle;document.title=`シャドバWB リプレイ診断 v${APP.version}`;
   WB.video=WB.$('#video');
-  const file=WB.$('#videoFile'),scrub=WB.$('#scrub'),fastPick=WB.$('#pickVideoFiles'),photoPick=WB.$('#pickVideoPhotos');
-  let pickerStartPerf=null,pickerStartedAt=null,fileReceivedPerf=null,pickerIntent='unspecified';
+  const file=WB.$('#videoFile'),scrub=WB.$('#scrub');
+  let pickerStartPerf=null,pickerStartedAt=null,fileReceivedPerf=null;
   const timingEl=()=>WB.$('#videoLoadTiming');
-  const markPickerStart=(intent='unspecified')=>{pickerIntent=intent;pickerStartPerf=performance.now();pickerStartedAt=new Date().toISOString();const t=timingEl();if(t)t.textContent=intent==='files-guided'?'高速読込: 次のメニューで「ファイルを選択」を選んでください。':intent==='photos-comparison'?'写真ライブラリ比較を開始します。':'動画を選択中…';WB.log('video-picker-open',{pickerStartedAt,pickerIntent:intent})};
-  const openPicker=intent=>{if(!file)return;markPickerStart(intent);file.click()};
-  fastPick?.addEventListener('click',()=>openPicker('files-guided'));
-  photoPick?.addEventListener('click',()=>openPicker('photos-comparison'));
-  file?.addEventListener('pointerdown',()=>markPickerStart('standard-input'),{passive:true});
-  file?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')markPickerStart('standard-input')});
-  file?.addEventListener('change',e=>{const f=e.target.files?.[0];if(!f)return;const receivedPerf=performance.now(),fileReceivedAt=new Date().toISOString(),pickerElapsedMs=Number.isFinite(pickerStartPerf)?Math.max(0,Math.round(receivedPerf-pickerStartPerf)):null;fileReceivedPerf=receivedPerf;if(WB.objectUrl)URL.revokeObjectURL(WB.objectUrl);WB.videoMeta={name:f.name,size:f.size,type:f.type,lastModified:f.lastModified,inputTiming:{pickerIntent,pickerStartedAt,fileReceivedAt,pickerElapsedMs,fileToMetadataMs:null,pickerElapsedIncludesUserSelection:true,pickerIntentIsGuidanceOnly:true}};WB.videoName=WB.safeName(f.name);WB.objectUrl=URL.createObjectURL(f);WB.video.src=WB.objectUrl;WB.resetForVideo();WB.$('#videoStatus').textContent='動画情報を読み込み中…';const t=timingEl(),intentLabel=pickerIntent==='files-guided'?'Files推奨':pickerIntent==='photos-comparison'?'写真比較':'標準選択';if(t)t.textContent=pickerElapsedMs==null?`${intentLabel}: Fileを受領しました。`:`${intentLabel}: 選択開始→File受領 ${(pickerElapsedMs/1000).toFixed(1)}秒（操作時間を含む）`;WB.log('video-selected',WB.videoMeta)});
+  const markPickerStart=()=>{pickerStartPerf=performance.now();pickerStartedAt=new Date().toISOString();const t=timingEl();if(t)t.textContent='動画を選択中…';WB.log('video-picker-open',{pickerStartedAt})};
+  file?.addEventListener('pointerdown',markPickerStart,{passive:true});
+  file?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')markPickerStart()});
+  file?.addEventListener('change',e=>{const f=e.target.files?.[0];if(!f)return;const receivedPerf=performance.now(),fileReceivedAt=new Date().toISOString(),pickerElapsedMs=Number.isFinite(pickerStartPerf)?Math.max(0,Math.round(receivedPerf-pickerStartPerf)):null;fileReceivedPerf=receivedPerf;if(WB.objectUrl)URL.revokeObjectURL(WB.objectUrl);WB.videoMeta={name:f.name,size:f.size,type:f.type,lastModified:f.lastModified,inputTiming:{pickerStartedAt,fileReceivedAt,pickerElapsedMs,fileToMetadataMs:null,pickerElapsedIncludesUserSelection:true}};WB.videoName=WB.safeName(f.name);WB.objectUrl=URL.createObjectURL(f);WB.video.src=WB.objectUrl;WB.resetForVideo();WB.$('#videoStatus').textContent='動画情報を読み込み中…';const t=timingEl();if(t)t.textContent=pickerElapsedMs==null?'Fileを受領しました。':`選択開始→File受領: ${(pickerElapsedMs/1000).toFixed(1)}秒（選択操作時間を含む）`;WB.log('video-selected',WB.videoMeta)});
   WB.video?.addEventListener('loadedmetadata',()=>{const fileToMetadataMs=Number.isFinite(fileReceivedPerf)?Math.max(0,Math.round(performance.now()-fileReceivedPerf)):null;if(WB.videoMeta?.inputTiming)WB.videoMeta.inputTiming.fileToMetadataMs=fileToMetadataMs;if(scrub)scrub.max=WB.video.duration;if(WB.$('#dur'))WB.$('#dur').textContent=WB.fmt(WB.video.duration);WB.$('#scanTurns').disabled=false;WB.$('#leFill').disabled=false;WB.$('#previewMulligan').disabled=!WB.turnTimeline.length;WB.$('#videoStatus').textContent=`${WB.videoMeta?.name||'動画'} / ${WB.fmt(WB.video.duration)} / ${WB.video.videoWidth}×${WB.video.videoHeight}`;const t=timingEl(),pickerMs=WB.videoMeta?.inputTiming?.pickerElapsedMs;if(t)t.textContent=[pickerMs==null?null:`選択開始→File受領 ${(pickerMs/1000).toFixed(1)}秒※操作時間含む`,fileToMetadataMs==null?null:`File受領→再生準備 ${(fileToMetadataMs/1000).toFixed(2)}秒`].filter(Boolean).join(' / ');WB.log('metadata',{duration:+WB.video.duration.toFixed(3),videoWidth:WB.video.videoWidth,videoHeight:WB.video.videoHeight,inputTiming:WB.videoMeta?.inputTiming||null});WB.emit('metadata',{videoKey:WB.videoKey()})});
   WB.video?.addEventListener('timeupdate',()=>{if(WB.$('#now'))WB.$('#now').textContent=WB.fmt(WB.video.currentTime);if(scrub&&!WB.task)scrub.value=WB.video.currentTime});
   scrub?.addEventListener('change',()=>{if(WB.task){scrub.value=WB.video.currentTime;return}WB.video.currentTime=Number(scrub.value);WB.log('scrub',{to:Number(scrub.value)})});
