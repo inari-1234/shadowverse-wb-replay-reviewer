@@ -1,11 +1,11 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.80',build:'4.13.80-20260927-clean-13-80',revision:'clean-13-80',subtitle:'Build 2026.09.27-clean-13-80 / 全ターン解析の重複seek削減'};
+const APP={version:'4.13.81',build:'4.13.81-20260927-clean-13-81',revision:'clean-13-81',subtitle:'Build 2026.09.27-clean-13-81 / 手札確定フレーム再利用'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'turn-recognition':'turn-clean-1.3',
   'mulligan-class':'mulligan-class-clean-1.5.3',
   'card-db':'card-db-clean-1.23',
-  'hand-recognition':'hand-clean-1.51',
+  'hand-recognition':'hand-clean-1.52',
   'state-recognition':'state-clean-1.8.17',
   'replay-session':'replay-session-clean-1.5',
   'review-engine':'review-clean-1.5.5',
