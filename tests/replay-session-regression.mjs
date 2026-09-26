@@ -21,7 +21,7 @@ vm.createContext(sandbox);
 new vm.Script(source,{filename:'replay-session.js'}).runInContext(sandbox);
 const R=WB.ReplaySession;
 
-assert.equal(R.version,'replay-session-clean-1.4');
+assert.equal(R.version,'replay-session-clean-1.5');
 assert.equal(R.schema,'replay-session-v2');
 assert.equal(R.persistenceMode(),'memory','no IndexedDB in regression sandbox must use memory fallback');
 
@@ -65,7 +65,8 @@ assert.equal(episodes[0].kind,'observed-episode');
 assert.equal(episodes[0].causalAttribution,false,'an observed episode must not claim causal attribution');
 assert.ok(episodes[0].summary.includes('相手HP 20→17'));
 assert.ok(episodes[0].summary.includes('PP 5→3'));
-assert.ok(episodes[0].interpretation.includes('PPを2消費した区間で相手HPが3減少'));
+assert.ok(episodes[0].interpretation.includes('PPが2減少した区間で相手HPが3減少'));
+assert.equal(episodes[0].interpretation.includes('PPを2消費'),false,'net PP change must not be described as exact causal consumption');
 assert.ok(episodes[0].interpretation.includes('同じ行動による変化とは断定せず'));
 assert.ok(episodes[0].unresolved.includes('使用カード'));
 
