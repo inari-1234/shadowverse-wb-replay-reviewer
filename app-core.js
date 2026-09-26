@@ -1,12 +1,12 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.78',build:'4.13.78-20260926-clean-13-78',revision:'clean-13-78',subtitle:'Build 2026.09.26-clean-13-78 / 観測事実表現の厳密化'};
+const APP={version:'4.13.79',build:'4.13.79-20260927-clean-13-79',revision:'clean-13-79',subtitle:'Build 2026.09.27-clean-13-79 / ターン内複数変化点の時系列化'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'turn-recognition':'turn-clean-1.3',
   'mulligan-class':'mulligan-class-clean-1.5.3',
   'card-db':'card-db-clean-1.23',
   'hand-recognition':'hand-clean-1.50',
-  'state-recognition':'state-clean-1.8.15',
+  'state-recognition':'state-clean-1.8.16',
   'replay-session':'replay-session-clean-1.5',
   'review-engine':'review-clean-1.5.5',
   'diagnostics':'diagnostics-clean-1.54'
