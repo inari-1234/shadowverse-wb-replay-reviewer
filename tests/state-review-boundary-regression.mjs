@@ -14,7 +14,7 @@ assert.ok(state.includes("WB.emit('state-input-changed',{id,value:e.value})"),'s
 assert.ok(review.includes("W.on('state-hand-recognized',detail=>applyDetectedHand(detail?.result||null))"),'review engine must consume generic hand observation event');
 assert.ok(review.includes("W.on('state-captured',()=>renderLethal())"),'review engine must refresh after generic state capture');
 assert.ok(review.includes("W.on('state-input-changed',()=>renderLethal())"),'review engine must refresh after generic state input changes');
-assert.ok(app.includes("'state-recognition':'state-clean-1.8.14'"),'app manifest must require decoupled state module');
+assert.ok(app.includes("'state-recognition':'state-clean-1.8.15'"),'app manifest must require decoupled state module');
 assert.ok(app.includes("'review-engine':'review-clean-1.5.5'"),'app manifest must require event-based review module');
 
 for(const token of ['barbaros','zetaBeatrix','quickBlader','pirateFlagCountdowns']){
@@ -32,3 +32,5 @@ assert.equal(state.includes('sea-pirate-royal'),false,'automatic stable-frame an
 
 assert.ok(state.includes("WB.emit('match-analysis-complete',result)"),'whole-match analysis must publish a generic replay observation event');
 assert.ok(state.includes("matchAnalysisScope:'target-side-turns'"),'whole-match analysis must stay scoped to the selected analysis side');
+
+assert.ok(state.includes('function resolveTurnHpSummary(pair,first,second)'),'turn summaries must reconcile exploratory HP with captured endpoints');
