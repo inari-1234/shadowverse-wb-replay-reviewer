@@ -141,6 +141,11 @@ assert.ok(stateRecognition.includes('async function captureTimelineState(ctx,tim
 assert.ok(stateRecognition.includes("reason:'timeline-lite-skips-hand'"),'lightweight intermediate capture must not repeat heavy hand-history analysis');
 assert.ok(stateRecognition.includes("turnTimelineMultipoint:true"),'state module must advertise multi-point turn analysis');
 assert.ok(handRecognition.includes("ctx?.historyScan!==false"),'hand history scan must be caller-controllable without changing current-hand recognition');
+assert.ok(handRecognition.includes("frameCanvas:canvas"),'current/forward hand layout scans must retain the exact sampled canvas for same-frame confirmation');
+assert.ok(handRecognition.includes("row?.frameCanvas?.width&&row?.frameCanvas?.height?row.frameCanvas:null"),'hand confirmation must prefer the exact cached layout frame when available');
+assert.ok(handRecognition.includes("frameSource:source"),'hand samples must record whether they came from layout cache or video seek');
+assert.ok(handRecognition.includes("layoutFrameCache:true"),'hand module must advertise layout-frame reuse');
+
 assert.ok(stateRecognition.includes("handHistory:!batchMode"),'whole-match analysis must skip only auxiliary hand-history scans at full endpoints');
 assert.ok(stateRecognition.includes("analyzeCurrentTurn({batchMode:true})"),'whole-match analysis must explicitly enable batch optimization');
 assert.ok(stateRecognition.includes("reason:'reused-stable-probe'"),'timeline-lite capture must be able to reuse already accepted PP probe evidence');
