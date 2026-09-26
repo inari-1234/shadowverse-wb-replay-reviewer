@@ -129,8 +129,13 @@ assert.ok(diagnostics.includes('stateCaptureHistory:clone(WB.stateCaptureHistory
 assert.ok(stateRecognition.includes("version:'confirmed-state-v1'"),'state recognition must expose a generic confirmed-state snapshot');
 assert.ok(index.includes('id="reviewOverviewPanel"'),'user runtime must expose the automatic review overview');
 assert.ok(index.includes('id="replaySessionStatus"')&&index.includes('id="reviewPoints"')&&index.includes('id="actionTimeline"'),'automatic review UI must expose session, review-point and action-timeline targets');
-assert.ok(index.includes('id="leCompare"'),'state UI must expose guided two-point comparison');
-assert.ok(stateRecognition.includes('async function captureStatePair(offset=2)'),'state recognition must implement the guided pair capture');
+assert.ok(index.includes('id="leAnalyzeTurn"'),'state UI must expose one-action same-turn analysis');
+assert.equal(index.includes('id="leCompare"'),false,'fixed two-second comparison must not remain in normal UI');
+assert.ok(app.includes("WB.$('#leAnalyzeTurn')"),'app control state must target the new turn-analysis button');
+assert.ok(stateRecognition.includes('async function analyzeCurrentTurn()'),'state recognition must implement automatic same-turn stable-frame analysis');
+assert.ok(stateRecognition.includes('function selectTurnStablePair(samples,cfg=TURN_ANALYZE_CFG)'),'stable-pair selection must remain explicit and regression-testable');
+assert.ok(stateRecognition.includes('async function captureStatePair(offset=2)'),'legacy fixed pair capture may remain diagnostic-only');
+assert.ok(diagnostics.includes('turnStableAnalysis:clone(WB.turnStableLast||null)'),'diagnostics must export automatic turn-analysis evidence');
 assert.ok(replaySession.includes("turnIdentity:'number+side'"),'ReplaySession must keep numeric turn and active side together when deriving changes');
 assert.ok(replaySession.includes("SESSION_SCHEMA='replay-session-v2'"),'ReplaySession must migrate away from the unsafe v1 numeric-null schema');
 assert.ok(replaySession.includes("v===null||v===undefined"),'ReplaySession numeric normalization must preserve null/undefined');
