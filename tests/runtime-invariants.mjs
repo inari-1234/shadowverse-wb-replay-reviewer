@@ -140,6 +140,12 @@ assert.ok(stateRecognition.includes('maxTimelineAnchors:10'),'multi-point timeli
 assert.ok(stateRecognition.includes('async function captureTimelineState(ctx,time)'),'intermediate timeline points must use the lightweight capture path');
 assert.ok(stateRecognition.includes("reason:'timeline-lite-skips-hand'"),'lightweight intermediate capture must not repeat heavy hand-history analysis');
 assert.ok(stateRecognition.includes("turnTimelineMultipoint:true"),'state module must advertise multi-point turn analysis');
+assert.ok(handRecognition.includes("ctx?.historyScan!==false"),'hand history scan must be caller-controllable without changing current-hand recognition');
+assert.ok(stateRecognition.includes("handHistory:!batchMode"),'whole-match analysis must skip only auxiliary hand-history scans at full endpoints');
+assert.ok(stateRecognition.includes("analyzeCurrentTurn({batchMode:true})"),'whole-match analysis must explicitly enable batch optimization');
+assert.ok(stateRecognition.includes("reason:'reused-stable-probe'"),'timeline-lite capture must be able to reuse already accepted PP probe evidence');
+assert.ok(stateRecognition.includes("probeReuse:{pp:!!ppSeed,hp:false}"),'probe reuse must remain PP-only; HP must retain guarded temporal confirmation');
+
 
 assert.ok(stateRecognition.includes('async function captureStatePair(offset=2)'),'legacy fixed pair capture may remain diagnostic-only');
 assert.ok(diagnostics.includes('turnStableAnalysis:clone(WB.turnStableLast||null)'),'diagnostics must export automatic turn-analysis evidence');
