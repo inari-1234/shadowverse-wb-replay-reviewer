@@ -41,7 +41,7 @@ const hpSandbox={window:{WB:hpWB},document:{},console,Map,Float32Array,Uint8Clam
 vm.createContext(hpSandbox);
 new vm.Script(fs.readFileSync(new URL('../state-recognition.js',import.meta.url),'utf8'),{filename:'state-recognition.js'}).runInContext(hpSandbox);
 const SR=hpWB.StateRecognition;
-assert.equal(SR.version,'state-clean-1.8.12');
+assert.equal(SR.version,'state-clean-1.8.13');
 assert.deepEqual([...SR.config.hp.directOffsets],[0,-.04,-.08,-.12],'direct HP confirmation must use current plus three past-only frames');
 const hpSingle=(value,offset,{accepted=false,votes=1}={})=>({offset,accepted,reason:accepted?'ok':'ocr-insufficient-consensus',value:accepted?value:null,frameCandidate:value,frameVotes:votes});
 const hpRealLike=[hpSingle(9,0),hpSingle(9,-.04),hpSingle(9,-.08)];
