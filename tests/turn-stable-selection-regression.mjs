@@ -69,3 +69,24 @@ assert.equal(sampled.every((x,i)=>i===0||x.time>sampled[i-1].time),true);
 assert.equal(S.config.turnAnalyze.maxGap,3);
 assert.equal(S.config.turnAnalyze.maxOcrSamples,8);
 console.log('TURN STABLE SELECTION REGRESSION PASS');
+
+const capturedSummary=S.resolveTurnHpSummary(
+  {hpFrom:null,hpTo:null},
+  {confirmed:{opponentHP:9}},
+  {confirmed:{opponentHP:9}}
+);
+assert.equal(capturedSummary.hpFrom,9,'final turn summary must prefer captured endpoint HP over exploratory OCR');
+assert.equal(capturedSummary.hpTo,9);
+assert.equal(capturedSummary.hpDelta,null,'unchanged confirmed HP must remain a non-change');
+assert.equal(capturedSummary.hpSummarySource,'captured-endpoints');
+assert.equal(capturedSummary.selectionHpFrom,null);
+
+const selectionFallback=S.resolveTurnHpSummary(
+  {hpFrom:20,hpTo:16},
+  {confirmed:{opponentHP:null}},
+  {confirmed:{opponentHP:null}}
+);
+assert.equal(selectionFallback.hpFrom,20);
+assert.equal(selectionFallback.hpTo,16);
+assert.equal(selectionFallback.hpDelta,-4);
+assert.equal(selectionFallback.hpSummarySource,'selection-probes');
