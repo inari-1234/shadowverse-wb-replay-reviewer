@@ -1,9 +1,9 @@
 (()=>{
 'use strict';
 const WB=window.WB;if(!WB)return;
-const VERSION='state-clean-1.8.15';WB.registerModule('state-recognition',VERSION);
-const TURN_ANALYZE_CFG={startMargin:.45,endMargin:.12,probeStep:.45,minGap:.45,maxGap:3,maxOcrSamples:8};
-const MATCH_ANALYZE_VERSION='match-auto-review-v1',MATCH_INPUT_IDS=['#leTurn','#leOppHp','#lePp','#leBoard','#leExtra','#leEp','#leSep','#leWard'];
+const VERSION='state-clean-1.8.16';WB.registerModule('state-recognition',VERSION);
+const TURN_ANALYZE_CFG={startMargin:.45,endMargin:.12,probeStep:.45,minGap:.45,maxGap:3,maxOcrSamples:8,timelineMaxGap:2.7,maxTimelineAnchors:10};
+const MATCH_ANALYZE_VERSION='match-auto-review-v2',MATCH_INPUT_IDS=['#leTurn','#leOppHp','#lePp','#leBoard','#leExtra','#leEp','#leSep','#leWard'];
 const PP_CFG={dx:.01125,dy:.0325,green:18,active:72,strongActive:85,strongInactive:75,strongGreen:22,strongNonGreen:17,scanStep:.25,scanWindow:1.8};
 const HP_POS={top:{x:.573,y:.087},bottom:{x:.585,y:.790}},HP_CFG={outerHalfX:.025,outerHalfY:.052,innerHalfX:.018,innerHalfY:.034,scale:5,minRed:.25,minGold:.15,maxHp:30,turnStartNear:.30,turnStartMinRed:.02,stableFrames:2,stableVotes:3,directOffsets:[0,-.04,-.08,-.12],turnStartOffsets:[0,.15,.30,.45,.60]};
 const PP_POINTS={top:{x:.8811,y:.2905},bottom:{x:.8822,y:.6065}};
@@ -77,7 +77,7 @@ function stableFrameProbe(ctx,time){
   if(!frame)return{time,stable:false,score:0,reason:'frame-missing',hpQuality:null,ppAccepted:false};
   const hp=shieldQuality(frame,side),expected=ctx?.targetSide==='bottom'?expectedMaxAt(time,'bottom'):null,pp=expected?readBottomPips(expected):null,
     stable=hp?.ok===true,score=(Number(hp?.redFrac)||0)/Math.max(.001,HP_CFG.minRed)+(Number(hp?.goldFrac)||0)/Math.max(.001,HP_CFG.minGold)+(pp?.accepted===true?1:0);
-  return{time:+Number(time).toFixed(3),stable,score:+score.toFixed(3),reason:stable?'hud-stable':'hp-shield-not-clear',hpQuality:hp,ppAccepted:pp?.accepted===true,expectedMax:expected}
+  return{time:+Number(time).toFixed(3),stable,score:+score.toFixed(3),reason:stable?'hud-stable':'hp-shield-not-clear',hpQuality:hp,ppAccepted:pp?.accepted===true,ppValue:pp?.accepted===true&&Number.isInteger(Number(pp.current))?Number(pp.current):null,ppMax:pp?.accepted===true&&Number.isInteger(Number(pp.max))?Number(pp.max):null,expectedMax:expected}
 }
 function sampleStableProbeSet(probes,maxSamples=TURN_ANALYZE_CFG.maxOcrSamples){
   const rows=(Array.isArray(probes)?probes:[]).filter(x=>x?.stable===true&&Number.isFinite(Number(x.time))).sort((a,b)=>Number(a.time)-Number(b.time)),limit=Math.max(2,Math.floor(Number(maxSamples)||TURN_ANALYZE_CFG.maxOcrSamples));
@@ -105,6 +105,85 @@ function selectTurnStablePair(samples,cfg=TURN_ANALYZE_CFG){
   candidates.sort((x,y)=>y.score-x.score||y.dt-x.dt||Number(x.a.time)-Number(y.a.time));const best=candidates[0];
   return{valid:true,reason:best.hpChanged?'hp-change-stable-pair':'stable-pair',fromTime:+Number(best.a.time).toFixed(3),toTime:+Number(best.b.time).toFixed(3),elapsed:+best.dt.toFixed(3),hpFrom:best.a.hpAccepted?best.a.hpValue:null,hpTo:best.b.hpAccepted?best.b.hpValue:null,hpDelta:best.delta,fromScore:+(Number(best.a.score)||0).toFixed(3),toScore:+(Number(best.b.score)||0).toFixed(3)}
 }
+function mergeTurnProbeEvidence(probes=[],ocrSamples=[]){
+  const byTime=new Map();
+  for(const p of Array.isArray(probes)?probes:[]){if(Number.isFinite(Number(p?.time)))byTime.set(Number(p.time),{...p})}
+  for(const p of Array.isArray(ocrSamples)?ocrSamples:[]){if(!Number.isFinite(Number(p?.time)))continue;const t=Number(p.time);byTime.set(t,{...(byTime.get(t)||{}),...p})}
+  return[...byTime.values()].filter(x=>x?.stable===true&&Number.isFinite(Number(x.time))).sort((a,b)=>Number(a.time)-Number(b.time))
+}
+function timelineCoverage(times=[]){
+  const rows=(Array.isArray(times)?times:[]).map(Number).filter(Number.isFinite).sort((a,b)=>a-b);let maxGap=0;
+  for(let i=1;i<rows.length;i++)maxGap=Math.max(maxGap,rows[i]-rows[i-1]);
+  return{maxGap:+maxGap.toFixed(3),complete:rows.length>=2&&maxGap<=TURN_ANALYZE_CFG.maxGap+.001}
+}
+function selectTurnTimelineAnchors(discovery,cfg=TURN_ANALYZE_CFG){
+  const rows=mergeTurnProbeEvidence(discovery?.probes,discovery?.ocrSamples),pair=discovery?.pair;
+  if(rows.length<2)return{valid:false,reason:'insufficient-stable-anchors',anchors:[],coverage:{maxGap:0,complete:false},truncated:false};
+  const mandatory=new Set([Number(rows[0].time),Number(rows[rows.length-1].time)]);
+  if(pair?.valid){mandatory.add(Number(pair.fromTime));mandatory.add(Number(pair.toTime))}
+  let lastPp=null,lastHp=null;
+  for(const row of rows){
+    const pp=row.ppAccepted===true&&Number.isInteger(Number(row.ppValue))?Number(row.ppValue):null,
+      hp=row.hpAccepted===true&&Number.isInteger(Number(row.hpValue))?Number(row.hpValue):null;
+    if(pp!=null){if(lastPp&&lastPp.value!==pp)mandatory.add(Number(row.time));lastPp={time:Number(row.time),value:pp}}
+    if(hp!=null){if(lastHp&&lastHp.value!==hp)mandatory.add(Number(row.time));lastHp={time:Number(row.time),value:hp}}
+  }
+  const selected=new Set(mandatory),sorted=()=>[...selected].sort((a,b)=>a-b);
+  let changed=true;
+  while(changed){
+    changed=false;const cur=sorted();
+    for(let i=1;i<cur.length;i++){
+      const a=cur[i-1],b=cur[i];if(b-a<=cfg.timelineMaxGap+.001)continue;
+      const candidates=rows.filter(r=>Number(r.time)>a+cfg.minGap-.001&&Number(r.time)<b-.001&&Number(r.time)<=a+cfg.timelineMaxGap+.001);
+      const pick=candidates[candidates.length-1]||rows.find(r=>Number(r.time)>a+.001&&Number(r.time)<b-.001);
+      if(pick){selected.add(Number(pick.time));changed=true;break}
+    }
+  }
+  let times=sorted(),truncated=false;
+  if(times.length>cfg.maxTimelineAnchors){
+    truncated=true;
+    const keep=new Set([times[0],times[times.length-1],...mandatory]),extras=times.filter(t=>!keep.has(t));
+    while(keep.size<cfg.maxTimelineAnchors&&extras.length){
+      const current=[...keep].sort((a,b)=>a-b);let bestIx=-1,bestNeed=-Infinity;
+      for(let i=0;i<extras.length;i++){
+        const t=extras[i],left=current.filter(x=>x<t).pop(),right=current.find(x=>x>t),need=(right??t)-(left??t);
+        if(need>bestNeed){bestNeed=need;bestIx=i}
+      }
+      keep.add(extras.splice(bestIx,1)[0])
+    }
+    times=[...keep].sort((a,b)=>a-b).slice(0,cfg.maxTimelineAnchors)
+    if(!times.includes(Number(rows[rows.length-1].time))){times[times.length-1]=Number(rows[rows.length-1].time);times.sort((a,b)=>a-b)}
+  }
+  const anchors=times.map(t=>{const row=rows.find(r=>Math.abs(Number(r.time)-t)<.001)||{time:t};return{
+    time:+t.toFixed(3),score:Number.isFinite(Number(row.score))?+Number(row.score).toFixed(3):null,
+    ppAccepted:row.ppAccepted===true,ppValue:row.ppAccepted===true&&Number.isInteger(Number(row.ppValue))?Number(row.ppValue):null,
+    hpAccepted:row.hpAccepted===true,hpValue:row.hpAccepted===true&&Number.isInteger(Number(row.hpValue))?Number(row.hpValue):null,
+    reason:mandatory.has(t)?'change-or-boundary':'coverage'
+  }});
+  const coverage=timelineCoverage(anchors.map(x=>x.time));
+  return{valid:anchors.length>=2,reason:anchors.length>2?'stable-multipoint-sequence':'stable-pair-sequence',anchors,coverage,truncated}
+}
+async function captureTimelineState(ctx,time){
+  const c={...ctx,time:Number(time)},started=performance.now(),stageErrors=[];
+  const pp=await safeStateStage('timeline-pp',()=>recognizePP(c),err=>{stageErrors.push('PP');return{accepted:false,reason:'stage-error',error:err?.message||String(err)}}),
+    hp=await safeStateStage('timeline-hp',()=>recognizeOpponentHp(c),err=>{stageErrors.push('相手HP');return{accepted:false,reason:'stage-error',error:err?.message||String(err)}}),
+    extra=await safeStateStage('timeline-extra',()=>recognizeExtra(c),err=>{stageErrors.push('Extra PP');return{known:false,available:null,reason:'stage-error',error:err?.message||String(err)}}),
+    evo=await safeStateStage('timeline-evolution',()=>detectEvolution(c),err=>{stageErrors.push('EP/SEP');const u={known:false,available:null,reason:'stage-error',error:err?.message||String(err)};return{ep:{...u},sep:{...u}}}),
+    ward=await safeStateStage('timeline-ward',()=>recognizeWard(c),err=>{stageErrors.push('相手守護');return{known:false,state:'unknown',reason:'stage-error',error:err?.message||String(err)}}),
+    board=await safeStateStage('timeline-board',()=>recognizeBoardAttack(c),err=>{stageErrors.push('盤面');return{accepted:false,known:false,value:null,reason:'stage-error',error:err?.message||String(err),faceDamageConfirmed:false}});
+  const ui={extra:extra?.known?(extra.available?'yes':'no'):'unknown',ep:evo?.ep?.known?(evo.ep.available?'yes':'no'):'unknown',sep:evo?.sep?.known?(evo.sep.available?'yes':'no'):'unknown',ward:ward?.known?(ward.state==='present'?'present':'none'):'unknown'},
+    confirmed={version:'confirmed-state-v1',time:Number(time),turn:Number(c.turn),absoluteSide:c.absoluteSide||null,relativeSide:c.relativeSide||null,
+      pp:pp?.accepted===true&&Number.isFinite(Number(pp.current))?Number(pp.current):null,
+      opponentHP:hp?.accepted===true&&Number.isFinite(Number(hp.value))?Number(hp.value):null,
+      extraPP:ui.extra,ep:ui.ep,sep:ui.sep,opponentWard:ui.ward,
+      boardDamage:board?.accepted===true&&Number.isFinite(Number(board.value))?Math.max(0,Number(board.value)):null,
+      boardDamageKnown:board?.accepted===true&&Number.isFinite(Number(board.value)),hand:{recognized:{}},
+      observation:{boardAccepted:board?.accepted===true,handKnown:false,captureMode:'timeline-lite'}},
+    capture={version:VERSION,at:new Date().toISOString(),context:c,confirmed,pp:{result:pp,applied:false,manualPreserved:false,conflict:false},hp:{result:hp,applied:false,manualPreserved:false,conflict:false},
+      resources:{extra,evolution:evo,ui},ward:{result:ward,state:ui.ward,unknown:ui.ward==='unknown'},hand:{result:{known:false,recognized:{},unresolved:{},samples:[],reason:'timeline-lite-skips-hand'}},
+      board:{result:board,applied:false,manualPreserved:false,conflict:false},stageErrors,partial:stageErrors.length>0,captureMode:'timeline-lite',elapsedMs:Math.round(performance.now()-started)};
+  WB.log('timeline-state-capture',capture);WB.emit('state-captured',{capture});return capture
+}
 async function discoverTurnStablePair(ctx){
   const bounds=turnAnalysisBounds(ctx),original=Number(WB.video?.currentTime),probes=[];if(!bounds.valid)return{bounds,probes,ocrSamples:[],pair:{valid:false,reason:'turn-window-too-short'}};
   let worker=null;
@@ -123,7 +202,7 @@ async function discoverTurnStablePair(ctx){
         ocrSamples.push({...p,hpAccepted:hp?.accepted===true,hpValue:hp?.accepted?Number(hp.value):null,hpReason:hp?.reason||null,hpQuality:hp?.quality||p.hpQuality||null})
       }
     }
-    return{bounds,probes,ocrSamples,pair:selectTurnStablePair(ocrSamples.length?ocrSamples:probes)}
+    const pair=selectTurnStablePair(ocrSamples.length?ocrSamples:probes),base={bounds,probes,ocrSamples,pair};return{...base,timeline:selectTurnTimelineAnchors(base)}
   }finally{
     if(worker)await WB.restoreOCRDefaults();
     if(Number.isFinite(original)&&Math.abs(Number(WB.video?.currentTime)-original)>.025)try{await WB.seekTo(original,'turn-analysis-restore')}catch{}
@@ -140,16 +219,32 @@ function resolveTurnHpSummary(pair,first,second){
 }
 async function analyzeCurrentTurn(){
   const ctx=WB.currentTurnContext(),status=WB.$('#leStatus');if(!WB.video?.videoWidth||!ctx?.row)throw new Error('解析するターン位置を確定できません');
-  if(status){status.textContent='このターン内の安定局面を探索中…';status.className='help'}
-  const discovery=await discoverTurnStablePair(ctx),pair=discovery.pair;if(!pair?.valid)throw new Error('同一ターン内に安全な比較局面を2地点確定できませんでした');
-  await WB.seekTo(pair.fromTime,'turn-analysis-capture-from');const firstCtx=WB.currentTurnContext();
-  if(Number(firstCtx?.turn)!==Number(ctx.turn)||firstCtx?.absoluteSide!==ctx.absoluteSide)throw new Error('比較元が別の手番に入りました');
-  const first=await captureState();
-  await WB.seekTo(pair.toTime,'turn-analysis-capture-to');const secondCtx=WB.currentTurnContext();
-  if(Number(secondCtx?.turn)!==Number(ctx.turn)||secondCtx?.absoluteSide!==ctx.absoluteSide)throw new Error('比較先が別の手番に入りました');
-  const second=await captureState(),hpSummary=resolveTurnHpSummary(pair,first,second),result={version:'turn-stable-analysis-v1',turn:ctx.turn,absoluteSide:ctx.absoluteSide,relativeSide:ctx.relativeSide,fromTime:pair.fromTime,toTime:pair.toTime,elapsed:pair.elapsed,selectionReason:pair.reason,...hpSummary,probeCount:discovery.probes.length,stableProbeCount:discovery.probes.filter(x=>x.stable).length,ocrProbeCount:discovery.ocrSamples.length,bounds:discovery.bounds,probes:discovery.probes.map(x=>({time:x.time,stable:x.stable,score:x.score,reason:x.reason,ppAccepted:x.ppAccepted,hpQuality:x.hpQuality})),ocrSamples:discovery.ocrSamples.map(x=>({time:x.time,score:x.score,hpAccepted:x.hpAccepted,hpValue:x.hpValue,hpReason:x.hpReason})),firstAt:first?.at||null,secondAt:second?.at||null};
+  if(status){status.textContent='このターン内の安定局面と変化候補を探索中…';status.className='help'}
+  const discovery=await discoverTurnStablePair(ctx),pair=discovery.pair,timeline=discovery.timeline;
+  if(!timeline?.valid||!Array.isArray(timeline.anchors)||timeline.anchors.length<2)throw new Error('同一ターン内に安全な時系列局面を確定できませんでした');
+  const captures=[],anchorRows=timeline.anchors;
+  for(let i=0;i<anchorRows.length;i++){
+    const anchor=anchorRows[i],t=Number(anchor.time);if(WB.cancelRequested)throw new Error('cancelled');
+    await WB.seekTo(t,i===0?'turn-analysis-capture-from':i===anchorRows.length-1?'turn-analysis-capture-to':'turn-analysis-capture-mid');
+    const atCtx=WB.currentTurnContext();
+    if(Number(atCtx?.turn)!==Number(ctx.turn)||atCtx?.absoluteSide!==ctx.absoluteSide)throw new Error('時系列取得点が別の手番に入りました');
+    const capture=i===0||i===anchorRows.length-1?await captureState():await captureTimelineState({...atCtx,time:t},t);
+    captures.push(capture)
+  }
+  const first=captures[0],last=captures[captures.length-1],firstAnchor=anchorRows[0],lastAnchor=anchorRows[anchorRows.length-1],
+    endpointProbe={hpFrom:firstAnchor?.hpAccepted?firstAnchor.hpValue:null,hpTo:lastAnchor?.hpAccepted?lastAnchor.hpValue:null},
+    hpSummary=resolveTurnHpSummary(endpointProbe,first,last),fromTime=Number(firstAnchor.time),toTime=Number(lastAnchor.time),
+    result={version:'turn-timeline-analysis-v2',turn:ctx.turn,absoluteSide:ctx.absoluteSide,relativeSide:ctx.relativeSide,fromTime:+fromTime.toFixed(3),toTime:+toTime.toFixed(3),elapsed:+(toTime-fromTime).toFixed(3),
+      selectionReason:timeline.reason,...hpSummary,anchorCount:anchorRows.length,intermediateAnchorCount:Math.max(0,anchorRows.length-2),coverage:timeline.coverage,truncated:timeline.truncated===true,
+      anchors:anchorRows.map((x,i)=>({...x,captureMode:i===0||i===anchorRows.length-1?'full':'timeline-lite',capturedAt:captures[i]?.at||null,
+        capturedPp:captures[i]?.confirmed?.pp??null,capturedHp:captures[i]?.confirmed?.opponentHP??null})),
+      pairReference:pair?.valid?{fromTime:pair.fromTime,toTime:pair.toTime,reason:pair.reason,hpFrom:pair.hpFrom??null,hpTo:pair.hpTo??null}:null,
+      probeCount:discovery.probes.length,stableProbeCount:discovery.probes.filter(x=>x.stable).length,ocrProbeCount:discovery.ocrSamples.length,bounds:discovery.bounds,
+      probes:discovery.probes.map(x=>({time:x.time,stable:x.stable,score:x.score,reason:x.reason,ppAccepted:x.ppAccepted,ppValue:x.ppValue??null,hpQuality:x.hpQuality})),
+      ocrSamples:discovery.ocrSamples.map(x=>({time:x.time,score:x.score,ppAccepted:x.ppAccepted,ppValue:x.ppValue??null,hpAccepted:x.hpAccepted,hpValue:x.hpValue,hpReason:x.hpReason})),
+      firstAt:first?.at||null,lastAt:last?.at||null,secondAt:last?.at||null};
   WB.turnStableLast=result;WB.log('turn-analysis-complete',result);WB.emit('turn-analysis-complete',result);
-  if(status){status.textContent=`このターンを解析しました：${WB.fmt(result.fromTime)} → ${WB.fmt(result.toTime)}。安定した2地点から状態変化を記録しました。`;status.className='ok'}
+  if(status){status.textContent=`このターンを解析しました：${result.anchorCount}地点 / ${WB.fmt(result.fromTime)} → ${WB.fmt(result.toTime)}。複数の安定局面を時系列で記録しました。`;status.className=result.coverage?.complete?'ok':'warn'}
   return result
 }
 
@@ -172,7 +267,7 @@ function restoreBatchInputs(rows=[]){
   for(const row of rows||[]){const el=WB.$(row?.selector);if(!el)continue;if(row.value!=null)el.value=row.value;if(row.source==null)delete el.dataset.source;else el.dataset.source=row.source;if(row.manualVideo==null)delete el.dataset.manualVideo;else el.dataset.manualVideo=row.manualVideo}
 }
 function compactTurnAnalysis(result){
-  return result?{turn:result.turn,absoluteSide:result.absoluteSide,relativeSide:result.relativeSide,fromTime:result.fromTime,toTime:result.toTime,elapsed:result.elapsed,selectionReason:result.selectionReason,hpFrom:result.hpFrom,hpTo:result.hpTo,hpDelta:result.hpDelta,hpSummarySource:result.hpSummarySource,selectionHpFrom:result.selectionHpFrom,selectionHpTo:result.selectionHpTo,selectionHpDelta:result.selectionHpDelta,probeCount:result.probeCount,stableProbeCount:result.stableProbeCount,ocrProbeCount:result.ocrProbeCount}:null
+  return result?{turn:result.turn,absoluteSide:result.absoluteSide,relativeSide:result.relativeSide,fromTime:result.fromTime,toTime:result.toTime,elapsed:result.elapsed,selectionReason:result.selectionReason,hpFrom:result.hpFrom,hpTo:result.hpTo,hpDelta:result.hpDelta,hpSummarySource:result.hpSummarySource,selectionHpFrom:result.selectionHpFrom,selectionHpTo:result.selectionHpTo,selectionHpDelta:result.selectionHpDelta,anchorCount:result.anchorCount??2,intermediateAnchorCount:result.intermediateAnchorCount??0,coverage:result.coverage||null,truncated:result.truncated===true,anchors:Array.isArray(result.anchors)?result.anchors.map(x=>({time:x.time,reason:x.reason,captureMode:x.captureMode,capturedPp:x.capturedPp,capturedHp:x.capturedHp})):[],probeCount:result.probeCount,stableProbeCount:result.stableProbeCount,ocrProbeCount:result.ocrProbeCount}:null
 }
 async function analyzeMatchTargetTurns(){
   const status=WB.$('#matchAnalysisStatus'),targetSide=WB.targetSide(),plan=matchAnalysisPlan(WB.turnTimeline,targetSide,WB.video?.duration),original=Number(WB.video?.currentTime),uiSnapshot=snapshotBatchInputs(),startedAt=new Date().toISOString(),
@@ -198,7 +293,7 @@ async function analyzeMatchTargetTurns(){
       }
     }
     const session=WB.ReplaySession?.snapshot?.()||null;
-    result.session=session?{states:Array.isArray(session.states)?session.states.length:0,actions:Array.isArray(session.actions)?session.actions.length:0,reviewPoints:Array.isArray(session.reviewPoints)?session.reviewPoints.map(x=>({id:x.id,time:x.time,turn:x.turn,priority:x.priority,kind:x.kind,title:x.title,detail:x.detail})):[]}:null;
+    result.session=session?{states:Array.isArray(session.states)?session.states.length:0,actions:Array.isArray(session.actions)?session.actions.length:0,observedEpisodes:Array.isArray(session.observedEpisodes)?session.observedEpisodes.length:0,reviewPoints:Array.isArray(session.reviewPoints)?session.reviewPoints.map(x=>({id:x.id,time:x.time,turn:x.turn,priority:x.priority,kind:x.kind,title:x.title,detail:x.detail})):[]}:null;
     result.finishedAt=new Date().toISOString();WB.matchAnalysisLast=result;WB.log('match-analysis-complete',result);WB.emit('match-analysis-complete',result);
     if(status){status.textContent=result.cancelled?`全ターン解析を中止しました：完了 ${result.completedTurns}/${result.totalTurns}、スキップ ${result.skippedTurns}。`:`全ターン解析完了：${result.completedTurns}/${result.totalTurns}ターン、スキップ ${result.skippedTurns}、振り返り候補 ${result.session?.reviewPoints?.length??0}件。`;status.className=result.cancelled?'warn':(result.skippedTurns?'warn':'ok')}
     return result
@@ -233,6 +328,6 @@ async function captureStatePair(offset=2){
   if(status){status.textContent=`状態比較を取得しました：${WB.fmt(result.fromTime)} → ${WB.fmt(result.toTime)}。下の「自動振り返り」で観測した変化を確認できます。`;status.className='ok'}
   return result
 }
-WB.StateRecognition={version:VERSION,captureState,analyzeCurrentTurn,analyzeMatchTargetTurns,matchAnalysisPlan,snapshotBatchInputs,prepareBatchInputs,restoreBatchInputs,resolveTurnHpSummary,discoverTurnStablePair,turnAnalysisBounds,turnProbeTimes,stableFrameProbe,sampleStableProbeSet,selectTurnStablePair,captureStatePair,statePairTarget,readBottomPips,expectedMaxAt,recognizePP,recognizeOpponentHp,readOpponentHpFrame,decideHpStable,decideHpDirectStable,detectExtra:detectExtraFrame,recognizeExtra,detectEvolution,eligibility,detectWardFrame,recognizeWard,classifyWardStats,decideWardSamples,wardWindowStats,wardAttackEvidence,findBottomAttackBadges,attackableRingStats,classifyAttackableRingStats,boardLayoutKey,observeBoardFrame,decideBoardSamples,boardSettleLayoutConflict,recognizeBoardAttack,makeAttackDigitCanvas,parseAttack,cropRect,safeStateStage,renderStateSummary,confirmedStateSnapshot,config:{turnAnalyze:{...TURN_ANALYZE_CFG},pp:{...PP_CFG},hp:{...HP_CFG},extra:{...EXTRA_CFG},ward:{...WARD_CFG},board:{...BOARD_CFG}},positions:{hp:HP_POS,pp:PP_POINTS}};
-WB.onReady(()=>{for(const id of ['#lePp','#leOppHp','#leBoard']){const e=WB.$(id);e?.addEventListener('input',ev=>{if(ev.isTrusted){e.dataset.source='manual';e.dataset.manualVideo=WB.videoKey()}})}for(const id of ['#leExtra','#leEp','#leSep','#leWard']){const e=WB.$(id);e?.addEventListener('change',ev=>{if(ev.isTrusted){e.dataset.source='manual';e.dataset.manualVideo=WB.videoKey();WB.log('resource-manual',{id:e.id,value:e.value,videoKey:WB.videoKey()})}WB.emit('state-input-changed',{id,value:e.value})})}WB.$('#leFill')?.addEventListener('click',async()=>{if(WB.task)return;try{await WB.runTask('状態取得',captureState,{lockText:'PP・HP・ExPP・EP/SEP・守護・手札・盤面を順番に確認しています。'})}catch(err){if(err.message!=='cancelled'){WB.$('#leStatus').textContent='状態取得エラー: '+err.message;WB.$('#leStatus').className='bad'}}});WB.$('#leAnalyzeTurn')?.addEventListener('click',async()=>{if(WB.task)return;WB.pauseVideo('turn-analysis-start');try{await WB.runTask('このターンを解析',analyzeCurrentTurn,{lockText:'同一ターン内の安定局面を探索し、前後の状態を取得しています。'})}catch(err){if(err.message!=='cancelled'){WB.$('#leStatus').textContent='ターン解析エラー: '+err.message;WB.$('#leStatus').className='bad'}}});WB.$('#analyzeMatch')?.addEventListener('click',async()=>{if(WB.task)return;WB.pauseVideo('match-analysis-start');const cancel=WB.$('#cancelMatch'),button=WB.$('#analyzeMatch');if(cancel)cancel.disabled=false;if(button)button.disabled=true;try{await WB.runTask('試合全体を解析',analyzeMatchTargetTurns,{lockText:'解析する側の全ターンを順番に確認し、振り返り候補を作成しています。'})}catch(err){if(err.message!=='cancelled'){const status=WB.$('#matchAnalysisStatus');if(status){status.textContent='全ターン解析エラー: '+err.message;status.className='bad'}}}finally{if(cancel)cancel.disabled=true;WB.updateTurnPick?.()}});WB.$('#cancelMatch')?.addEventListener('click',()=>WB.requestCancel());WB.on('video-reset',()=>{WB.stateCaptureHistory=[];WB.statePairLast=null;WB.turnStableLast=null;WB.matchAnalysisLast=null;for(const id of ['#lePp','#leOppHp','#leBoard','#leExtra','#leEp','#leSep','#leWard']){const e=WB.$(id);if(e){delete e.dataset.source;delete e.dataset.manualVideo}}const box=WB.$('#stateSummary');if(box)box.textContent='現在の状況：未取得'});WB.log('module-ready',{module:'state-recognition',version:VERSION,singleFillHandler:true,ppImagePips:true,hpConsensusOcr:true,hpTurnStartStableConfirm:true,hpTurnStartConflictReject:true,hpDirectTemporalConfirm:true,hpDirectCurrentCandidateGuard:true,hpDirectConflictFramesExcluded:true,ocrDefaultRestore:true,extraPpSemantics:'available-now',extraPpTurnStartForwardConfirm:true,resourceTriState:true,wardTriState:true,wardPresentHighConfidence:true,wardNoneOnlyEmptyBoardConsensus:true,wardTurn1FirstPlayerRule:true,boardAttackObservation:true,boardZeroAutoConfirm:true,boardPositiveCandidateOnly:true,boardAttackableRing:true,boardFollowerEvidence:true,boardGuardSeparated:true,stateStageIsolation:true,stateReviewBoundary:'events',confirmedStateV1:true,statePairCompare:'diagnostic-only',turnStableAnalysis:true,turnStableSelection:'generic-hud-quality',matchAutoAnalysis:true,matchAnalysisScope:'target-side-turns',matchTurnFailureIsolation:true,handCardRecognition:true,handPositiveOnly:true})});
+WB.StateRecognition={version:VERSION,captureState,captureTimelineState,analyzeCurrentTurn,analyzeMatchTargetTurns,matchAnalysisPlan,snapshotBatchInputs,prepareBatchInputs,restoreBatchInputs,resolveTurnHpSummary,discoverTurnStablePair,turnAnalysisBounds,turnProbeTimes,stableFrameProbe,sampleStableProbeSet,selectTurnStablePair,mergeTurnProbeEvidence,selectTurnTimelineAnchors,timelineCoverage,captureStatePair,statePairTarget,readBottomPips,expectedMaxAt,recognizePP,recognizeOpponentHp,readOpponentHpFrame,decideHpStable,decideHpDirectStable,detectExtra:detectExtraFrame,recognizeExtra,detectEvolution,eligibility,detectWardFrame,recognizeWard,classifyWardStats,decideWardSamples,wardWindowStats,wardAttackEvidence,findBottomAttackBadges,attackableRingStats,classifyAttackableRingStats,boardLayoutKey,observeBoardFrame,decideBoardSamples,boardSettleLayoutConflict,recognizeBoardAttack,makeAttackDigitCanvas,parseAttack,cropRect,safeStateStage,renderStateSummary,confirmedStateSnapshot,config:{turnAnalyze:{...TURN_ANALYZE_CFG},pp:{...PP_CFG},hp:{...HP_CFG},extra:{...EXTRA_CFG},ward:{...WARD_CFG},board:{...BOARD_CFG}},positions:{hp:HP_POS,pp:PP_POINTS}};
+WB.onReady(()=>{for(const id of ['#lePp','#leOppHp','#leBoard']){const e=WB.$(id);e?.addEventListener('input',ev=>{if(ev.isTrusted){e.dataset.source='manual';e.dataset.manualVideo=WB.videoKey()}})}for(const id of ['#leExtra','#leEp','#leSep','#leWard']){const e=WB.$(id);e?.addEventListener('change',ev=>{if(ev.isTrusted){e.dataset.source='manual';e.dataset.manualVideo=WB.videoKey();WB.log('resource-manual',{id:e.id,value:e.value,videoKey:WB.videoKey()})}WB.emit('state-input-changed',{id,value:e.value})})}WB.$('#leFill')?.addEventListener('click',async()=>{if(WB.task)return;try{await WB.runTask('状態取得',captureState,{lockText:'PP・HP・ExPP・EP/SEP・守護・手札・盤面を順番に確認しています。'})}catch(err){if(err.message!=='cancelled'){WB.$('#leStatus').textContent='状態取得エラー: '+err.message;WB.$('#leStatus').className='bad'}}});WB.$('#leAnalyzeTurn')?.addEventListener('click',async()=>{if(WB.task)return;WB.pauseVideo('turn-analysis-start');try{await WB.runTask('このターンを解析',analyzeCurrentTurn,{lockText:'同一ターン内の安定局面を探索し、変化候補を含む複数地点を時系列で取得しています。'})}catch(err){if(err.message!=='cancelled'){WB.$('#leStatus').textContent='ターン解析エラー: '+err.message;WB.$('#leStatus').className='bad'}}});WB.$('#analyzeMatch')?.addEventListener('click',async()=>{if(WB.task)return;WB.pauseVideo('match-analysis-start');const cancel=WB.$('#cancelMatch'),button=WB.$('#analyzeMatch');if(cancel)cancel.disabled=false;if(button)button.disabled=true;try{await WB.runTask('試合全体を解析',analyzeMatchTargetTurns,{lockText:'解析する側の全ターンを順番に確認し、振り返り候補を作成しています。'})}catch(err){if(err.message!=='cancelled'){const status=WB.$('#matchAnalysisStatus');if(status){status.textContent='全ターン解析エラー: '+err.message;status.className='bad'}}}finally{if(cancel)cancel.disabled=true;WB.updateTurnPick?.()}});WB.$('#cancelMatch')?.addEventListener('click',()=>WB.requestCancel());WB.on('video-reset',()=>{WB.stateCaptureHistory=[];WB.statePairLast=null;WB.turnStableLast=null;WB.matchAnalysisLast=null;for(const id of ['#lePp','#leOppHp','#leBoard','#leExtra','#leEp','#leSep','#leWard']){const e=WB.$(id);if(e){delete e.dataset.source;delete e.dataset.manualVideo}}const box=WB.$('#stateSummary');if(box)box.textContent='現在の状況：未取得'});WB.log('module-ready',{module:'state-recognition',version:VERSION,singleFillHandler:true,ppImagePips:true,hpConsensusOcr:true,hpTurnStartStableConfirm:true,hpTurnStartConflictReject:true,hpDirectTemporalConfirm:true,hpDirectCurrentCandidateGuard:true,hpDirectConflictFramesExcluded:true,ocrDefaultRestore:true,extraPpSemantics:'available-now',extraPpTurnStartForwardConfirm:true,resourceTriState:true,wardTriState:true,wardPresentHighConfidence:true,wardNoneOnlyEmptyBoardConsensus:true,wardTurn1FirstPlayerRule:true,boardAttackObservation:true,boardZeroAutoConfirm:true,boardPositiveCandidateOnly:true,boardAttackableRing:true,boardFollowerEvidence:true,boardGuardSeparated:true,stateStageIsolation:true,stateReviewBoundary:'events',confirmedStateV1:true,statePairCompare:'diagnostic-only',turnStableAnalysis:true,turnStableSelection:'generic-hud-quality',turnTimelineMultipoint:true,timelineLiteIntermediateCapture:true,timelineCoverageMaxGap:TURN_ANALYZE_CFG.timelineMaxGap,matchAutoAnalysis:true,matchAnalysisScope:'target-side-turns',matchTurnFailureIsolation:true,handCardRecognition:true,handPositiveOnly:true})});
 })();
