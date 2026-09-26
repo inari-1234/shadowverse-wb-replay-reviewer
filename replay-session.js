@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const W=window.WB;if(!W)return;
-const VERSION='replay-session-clean-1.2';
+const VERSION='replay-session-clean-1.3';
 const DB_NAME='wb-replay-session-v1',DB_VERSION=1,SESSION_STORE='sessions',SCENE_STORE='scene-images',MAX_CONTIGUOUS_GAP=3,SESSION_SCHEMA='replay-session-v2';
 W.registerModule('replay-session',VERSION);
 
@@ -97,7 +97,40 @@ function deriveReviewPoints(actions=[],signals=[]){
   }
   const weight={critical:4,high:3,medium:2,manual:1};return rows.sort((a,b)=>(finite(a.time)??Infinity)-(finite(b.time)??Infinity)||((weight[b.priority]||0)-(weight[a.priority]||0)))
 }
-function rebuildDerived(){const s=ensureCurrent();if(!s)return null;s.states.sort((a,b)=>(finite(a.time)??Infinity)-(finite(b.time)??Infinity));const actions=[];for(let i=1;i<s.states.length;i++)actions.push(...deriveActions(s.states[i-1],s.states[i]));s.actions=actions;s.reviewPoints=deriveReviewPoints(actions,s.reviewSignals||[]);return s}
+function sameTurnIdentity(a,b){
+  if(!a||!b)return false;
+  const sameNumber=a.turn!=null&&b.turn!=null&&Number(a.turn)===Number(b.turn),
+    sameSide=(a.absoluteSide&&b.absoluteSide)?a.absoluteSide===b.absoluteSide:(a.relativeSide&&b.relativeSide)?a.relativeSide===b.relativeSide:false;
+  return sameNumber&&sameSide
+}
+function deriveTimelineActions(states=[]){
+  const ordered=(Array.isArray(states)?states:[]).slice().sort((a,b)=>(finite(a.time)??Infinity)-(finite(b.time)??Infinity)),actions=[];
+  for(let i=1;i<ordered.length;i++)actions.push(...deriveActions(ordered[i-1],ordered[i]));
+  const ids=new Set(actions.map(x=>x.id));let hpAnchor=null,unknownHpAfterAnchor=0;
+  for(const cur of ordered){
+    if(cur?.opponentHP==null){
+      if(hpAnchor){
+        const dt=finite(cur?.time)!=null&&finite(hpAnchor?.time)!=null?finite(cur.time)-finite(hpAnchor.time):null;
+        if(!sameTurnIdentity(hpAnchor,cur)||dt==null||dt<0||dt>MAX_CONTIGUOUS_GAP){hpAnchor=null;unknownHpAfterAnchor=0}
+        else unknownHpAfterAnchor++
+      }
+      continue
+    }
+    if(hpAnchor){
+      const dt=finite(cur?.time)!=null&&finite(hpAnchor?.time)!=null?finite(cur.time)-finite(hpAnchor.time):null;
+      if(sameTurnIdentity(hpAnchor,cur)&&dt!=null&&dt>=0&&dt<=MAX_CONTIGUOUS_GAP&&hpAnchor.opponentHP!==cur.opponentHP){
+        const id=`${hpAnchor.id}->${cur.id}:hp`;
+        if(!ids.has(id)){
+          actions.push(action(id,'opponent-hp-change',hpAnchor,cur,{from:hpAnchor.opponentHP,to:cur.opponentHP,delta:cur.opponentHP-hpAnchor.opponentHP,bridgedUnknownObservations:unknownHpAfterAnchor},unknownHpAfterAnchor?'observed-endpoints':'observed'));
+          ids.add(id)
+        }
+      }
+    }
+    hpAnchor=cur;unknownHpAfterAnchor=0
+  }
+  return actions.sort((a,b)=>(finite(a.time)??Infinity)-(finite(b.time)??Infinity))
+}
+function rebuildDerived(){const s=ensureCurrent();if(!s)return null;s.states.sort((a,b)=>(finite(a.time)??Infinity)-(finite(b.time)??Infinity));const actions=deriveTimelineActions(s.states);s.actions=actions;s.reviewPoints=deriveReviewPoints(actions,s.reviewSignals||[]);return s}
 
 function ingestState(capture){
   const s=ensureCurrent(),row=normalizeCapture(capture);if(!s||!row)return null;
@@ -140,7 +173,7 @@ function render(){
   if(at)at.innerHTML=s?.actions?.length?s.actions.slice(-20).map(x=>`<div class="branchItem"><b>${x.turn?x.turn+'T':'-'}</b><div>${W.escape(actionLabel(x))}<br><span class="muted">${x.time==null?'--:--.-':W.fmt(x.time)} / ${W.escape(x.confidence)}</span></div></div>`).join(''):'<p class="help">連続した状態取得がまだありません。3秒以内の同一ターン観測だけを詳細な状態変化として扱います。</p>'
 }
 
-W.ReplaySession={version:VERSION,schema:SESSION_SCHEMA,dbName:DB_NAME,persistenceMode,emptySession,migrateLoadedSession,normalizeCapture,deriveActions,deriveReviewPoints,ingestState,ingestReviewSignal,ingestScene,clearScenes,ingestReviewState,restoreCurrent,snapshot,rebuildDerived,render};
+W.ReplaySession={version:VERSION,schema:SESSION_SCHEMA,dbName:DB_NAME,persistenceMode,emptySession,migrateLoadedSession,normalizeCapture,deriveActions,deriveTimelineActions,deriveReviewPoints,ingestState,ingestReviewSignal,ingestScene,clearScenes,ingestReviewState,restoreCurrent,snapshot,rebuildDerived,render};
 
 W.on('metadata',()=>{restoreCurrent().catch(err=>W.recordError('replay-session-restore',err))});
 W.on('timeline',detail=>{const s=ensureCurrent();if(s){s.turnTimeline=clone(detail?.timeline||W.turnTimeline||[]);schedulePersist()}});
@@ -152,5 +185,5 @@ W.on('review-profile-changed',()=>{const s=ensureCurrent();if(s){refreshMetadata
 W.on('scene-saved',detail=>{ingestScene(detail?.scene).catch(err=>W.recordError('replay-session-scene-save',err))});
 W.on('scenes-cleared',detail=>{clearScenes(detail?.sceneIds||[]).catch(err=>W.recordError('replay-session-scenes-clear',err))});
 W.on('video-reset',()=>{current=null;expose();render()});
-W.onReady(()=>{render();W.log('module-ready',{module:'replay-session',version:VERSION,persistence:persistenceMode(),maxContiguousGap:MAX_CONTIGUOUS_GAP,turnIdentity:'number+side',unknownSafe:true,nullNumericSafe:true,sessionSchema:SESSION_SCHEMA})});
+W.onReady(()=>{render();W.log('module-ready',{module:'replay-session',version:VERSION,persistence:persistenceMode(),maxContiguousGap:MAX_CONTIGUOUS_GAP,turnIdentity:'number+side',unknownSafe:true,nullNumericSafe:true,unknownHpBridge:'same-turn-observed-endpoints<=3s',sessionSchema:SESSION_SCHEMA})});
 })();
