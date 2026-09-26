@@ -132,12 +132,12 @@ assert.ok(index.includes('id="replaySessionStatus"')&&index.includes('id="review
 assert.ok(index.includes('id="leAnalyzeTurn"'),'state UI must expose one-action same-turn analysis');
 assert.equal(index.includes('id="leCompare"'),false,'fixed two-second comparison must not remain in normal UI');
 assert.ok(app.includes("WB.$('#leAnalyzeTurn')"),'app control state must target the new turn-analysis button');
-assert.ok(stateRecognition.includes('async function analyzeCurrentTurn()'),'state recognition must implement automatic same-turn stable-frame analysis');
+assert.ok(stateRecognition.includes('async function analyzeCurrentTurn(options={})'),'state recognition must implement automatic same-turn stable-frame analysis');
 assert.ok(stateRecognition.includes('function selectTurnStablePair(samples,cfg=TURN_ANALYZE_CFG)'),'stable-pair selection must remain explicit and regression-testable');
 assert.ok(stateRecognition.includes('function selectTurnTimelineAnchors(discovery,cfg=TURN_ANALYZE_CFG)'),'turn analysis must explicitly select bounded multi-point anchors');
 assert.ok(stateRecognition.includes('timelineMaxGap:2.7'),'multi-point timeline coverage must stay below ReplaySession three-second detail limit');
 assert.ok(stateRecognition.includes('maxTimelineAnchors:10'),'multi-point timeline must cap per-turn state capture growth');
-assert.ok(stateRecognition.includes('async function captureTimelineState(ctx,time)'),'intermediate timeline points must use the lightweight capture path');
+assert.ok(stateRecognition.includes('async function captureTimelineState(ctx,time,evidence=null)'),'intermediate timeline points must use the lightweight capture path');
 assert.ok(stateRecognition.includes("reason:'timeline-lite-skips-hand'"),'lightweight intermediate capture must not repeat heavy hand-history analysis');
 assert.ok(stateRecognition.includes("turnTimelineMultipoint:true"),'state module must advertise multi-point turn analysis');
 assert.ok(handRecognition.includes("ctx?.historyScan!==false"),'hand history scan must be caller-controllable without changing current-hand recognition');
