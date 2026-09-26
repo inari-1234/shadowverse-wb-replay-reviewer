@@ -1,17 +1,17 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.74',build:'4.13.74-20260926-clean-13-74',revision:'clean-13-74',subtitle:'Build 2026.09.26-clean-13-74 / 同一ターン安定局面の自動探索'};
+const APP={version:'4.13.75',build:'4.13.75-20260926-clean-13-75',revision:'clean-13-75',subtitle:'Build 2026.09.26-clean-13-75 / 試合全体のターン自動振り返り'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'turn-recognition':'turn-clean-1.3',
   'mulligan-class':'mulligan-class-clean-1.5.3',
   'card-db':'card-db-clean-1.23',
   'hand-recognition':'hand-clean-1.50',
-  'state-recognition':'state-clean-1.8.13',
+  'state-recognition':'state-clean-1.8.14',
   'replay-session':'replay-session-clean-1.3',
   'review-engine':'review-clean-1.5.5',
-  'diagnostics':'diagnostics-clean-1.53'
+  'diagnostics':'diagnostics-clean-1.54'
 });
-const WB=window.WB={APP,expectedModules:EXPECTED_MODULE_VERSIONS,modules:[],moduleRegistrations:[],moduleRegistrationDuplicates:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
+const WB=window.WB={APP,expectedModules:EXPECTED_MODULE_VERSIONS,modules:[],moduleRegistrations:[],moduleRegistrationDuplicates:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,matchAnalysisLast:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
 WB.$=s=>document.querySelector(s);
 WB.evaluateModuleIntegrity=(expected=WB.expectedModules,registrations=WB.moduleRegistrations)=>{
   const expectedModules={...(expected||{})},rows=Array.isArray(registrations)?registrations.map(x=>({name:String(x?.name??''),version:String(x?.version??'')})):[],byName=new Map(),moduleVersionMismatches=[];
@@ -65,7 +65,7 @@ WB.restoreOCRDefaults=async()=>{if(!WB.ocrWorker)return false;try{await WB.ocrWo
 WB.setTimeline=rows=>{WB.turnTimeline=Array.isArray(rows)?rows.slice().sort((a,b)=>a.time-b.time):[];window.turnTimeline39=WB.turnTimeline;WB.renderTimeline();WB.updateTurnPick();WB.emit('timeline',{timeline:WB.turnTimeline});};
 WB.renderTimeline=()=>{const out=WB.$('#turnTimeline');if(!out)return;if(!WB.turnTimeline.length){out.textContent='';return}out.textContent=WB.turnTimeline.map(r=>`${r.side==='top'?'上':'下'}${r.turn}T  ${WB.fmt(r.time)}  ${r.source||'turn-indicator'}${r.boardValidated?' / HUD確認':''}`).join('\n')};
 WB.turnForTarget=n=>WB.turnTimeline.find(r=>r.side===WB.targetSide()&&Number(r.turn)===Number(n))||null;
-WB.updateTurnPick=()=>{const n=Number(WB.$('#turnPick')?.value)||1,row=WB.turnForTarget(n),go=WB.$('#goTurn'),cap=WB.$('#captureScene'),cmp=WB.$('#leAnalyzeTurn');if(go)go.disabled=!row||!!WB.task;if(cap)cap.disabled=!WB.videoMeta||!!WB.task;if(cmp)cmp.disabled=!WB.videoMeta||!WB.turnTimeline.length||!!WB.task;const time=WB.$('#turnTime'),st=WB.$('#turnStatus');if(time)time.value=row?WB.fmt(row.time):'未認識';if(st)st.textContent=row?`${n}Tを ${WB.fmt(row.time)} と認識しています。`:`${n}Tはまだ認識されていません。`};
+WB.updateTurnPick=()=>{const n=Number(WB.$('#turnPick')?.value)||1,row=WB.turnForTarget(n),go=WB.$('#goTurn'),cap=WB.$('#captureScene'),cmp=WB.$('#leAnalyzeTurn'),match=WB.$('#analyzeMatch'),cancelMatch=WB.$('#cancelMatch');if(go)go.disabled=!row||!!WB.task;if(cap)cap.disabled=!WB.videoMeta||!!WB.task;if(cmp)cmp.disabled=!WB.videoMeta||!WB.turnTimeline.length||!!WB.task;if(match)match.disabled=!WB.videoMeta||!WB.turnTimeline.length||!!WB.task;if(cancelMatch)cancelMatch.disabled=WB.task!=='試合全体を解析';const time=WB.$('#turnTime'),st=WB.$('#turnStatus');if(time)time.value=row?WB.fmt(row.time):'未認識';if(st)st.textContent=row?`${n}Tを ${WB.fmt(row.time)} と認識しています。`:`${n}Tはまだ認識されていません。`};
 
 WB.resetForVideo=()=>{WB.turnTimeline=[];window.turnTimeline39=[];WB.turnValidation=null;WB.mulligan=null;WB.classDetection=null;WB.stateCapture=null;WB.seekCount=0;WB.seekReasons={};WB.cancelRequested=false;WB.setProgress(null);WB.renderTimeline();for(const s of WB.scenes)if(s.url)URL.revokeObjectURL(s.url);WB.scenes=[];WB.renderScenes();for(const id of ['#leTurn','#leOppHp','#lePp','#leBoard']){const e=WB.$(id);if(e){e.value='';delete e.dataset.source;delete e.dataset.manualVideo}}for(const id of ['#leExtra','#leEp','#leSep','#leWard']){const e=WB.$(id);if(e){e.value='unknown';delete e.dataset.source;delete e.dataset.manualVideo}}for(const id of ['#cfName','#cfNote','#asName','#asOppHp','#asSelfHp','#asFlags','#asBoard','#asOther','#asNote']){const e=WB.$(id);if(e)e.value=''}const mm=WB.$('#mulliganStill');if(mm){mm.removeAttribute('src');mm.style.display='none'}if(WB.$('#mulliganStillTime'))WB.$('#mulliganStillTime').textContent='';if(WB.$('#previewStatus'))WB.$('#previewStatus').textContent='ターン確定後にマリガンを取得し、その後にVS画面のクラスアイコンを判定します。';WB.clearClassUi();WB.updateTurnPick();WB.emit('video-reset',{videoKey:WB.videoKey()})};
 WB.clearClassUi=()=>{const c=WB.$('#classMark'),p=WB.$('#classMarkPlaceholder'),sel=WB.$('#classSelect'),st=WB.$('#classStatus');if(c){c.getContext('2d').clearRect(0,0,c.width,c.height);c.classList.add('hidden')}if(p){p.textContent='クラス画像を確認できません';p.classList.remove('hidden')}if(sel)sel.value='';if(st)st.textContent='未判定'};
