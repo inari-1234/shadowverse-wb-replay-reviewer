@@ -21,7 +21,7 @@ vm.createContext(sandbox);
 new vm.Script(source,{filename:'replay-session.js'}).runInContext(sandbox);
 const R=WB.ReplaySession;
 
-assert.equal(R.version,'replay-session-clean-1.2');
+assert.equal(R.version,'replay-session-clean-1.3');
 assert.equal(R.schema,'replay-session-v2');
 assert.equal(R.persistenceMode(),'memory','no IndexedDB in regression sandbox must use memory fallback');
 
@@ -83,6 +83,32 @@ const hpUnknown=R.normalizeCapture(capture(23,{opponentHP:null}));
 const hpKnownAgain=R.normalizeCapture(capture(24,{opponentHP:11}));
 assert.equal(R.deriveActions(hpKnown,hpUnknown).some(x=>x.type==='opponent-hp-change'),false,'known→unknown HP must not create an observed HP change');
 assert.equal(R.deriveActions(hpUnknown,hpKnownAgain).some(x=>x.type==='opponent-hp-change'),false,'unknown→known HP must not create an observed HP change');
+const turn6Capture=(time,hp)=>({
+  ...capture(time,{opponentHP:hp,pp:null,extraPP:'unknown',ep:'unknown',sep:'unknown',opponentWard:'unknown',boardDamage:null,boardDamageKnown:false}),
+  context:{time,turn:6,absoluteSide:'bottom',relativeSide:'自分'},
+  confirmed:{...capture(time,{opponentHP:hp}).confirmed,time,turn:6,absoluteSide:'bottom',relativeSide:'自分',pp:null,opponentHP:hp,extraPP:'unknown',ep:'unknown',sep:'unknown',opponentWard:'unknown',boardDamage:null,boardDamageKnown:false,hand:{recognized:{}}}
+});
+const realVideoBridge=[
+  R.normalizeCapture(turn6Capture(63.8,16)),
+  R.normalizeCapture(turn6Capture(64.299,null)),
+  R.normalizeCapture(turn6Capture(66.299,null)),
+  R.normalizeCapture(turn6Capture(66.6,11))
+];
+const bridged=R.deriveTimelineActions(realVideoBridge),bridgedHp=bridged.filter(x=>x.type==='opponent-hp-change');
+assert.equal(bridgedHp.length,1,'confirmed HP endpoints within 3 seconds must bridge intervening UNKNOWN observations');
+assert.equal(bridgedHp[0].data.from,16);
+assert.equal(bridgedHp[0].data.to,11);
+assert.equal(bridgedHp[0].data.delta,-5);
+assert.equal(bridgedHp[0].data.bridgedUnknownObservations,2);
+assert.equal(bridgedHp[0].confidence,'observed-endpoints');
+const bridgedPoints=R.deriveReviewPoints(bridged,[]);
+assert.equal(bridgedPoints.filter(x=>x.kind==='large-hp-change').length,1,'16→11 observed endpoints must create one large HP change review point');
+const tooWideBridge=R.deriveTimelineActions([
+  R.normalizeCapture(turn6Capture(63.0,16)),
+  R.normalizeCapture(turn6Capture(64.0,null)),
+  R.normalizeCapture(turn6Capture(66.2,11))
+]);
+assert.equal(tooWideBridge.some(x=>x.type==='opponent-hp-change'),false,'UNKNOWN bridge must never cross the 3 second contiguous observation limit');
 
 const points=R.deriveReviewPoints(actions,[{
   id:'ev:lethal',kind:'lethal',time:12,turn:2,status:'confirmed-lethal',lethalRoutes:['Quick route']
