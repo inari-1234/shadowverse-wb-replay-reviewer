@@ -68,6 +68,42 @@ assert.equal(sampled.every((x,i)=>i===0||x.time>sampled[i-1].time),true);
 
 assert.equal(S.config.turnAnalyze.maxGap,3);
 assert.equal(S.config.turnAnalyze.maxOcrSamples,8);
+assert.equal(S.config.turnAnalyze.timelineMaxGap,2.7);
+assert.equal(S.config.turnAnalyze.maxTimelineAnchors,10);
+
+const multiProbes=[
+  {time:1,stable:true,score:5,ppAccepted:true,ppValue:5},
+  {time:1.45,stable:true,score:5,ppAccepted:true,ppValue:5},
+  {time:1.9,stable:true,score:5,ppAccepted:true,ppValue:3},
+  {time:2.35,stable:true,score:5,ppAccepted:true,ppValue:3},
+  {time:2.8,stable:true,score:5,ppAccepted:true,ppValue:3},
+  {time:3.25,stable:true,score:5,ppAccepted:true,ppValue:1},
+  {time:3.7,stable:true,score:5,ppAccepted:true,ppValue:1},
+  {time:4.15,stable:true,score:5,ppAccepted:true,ppValue:1},
+  {time:4.6,stable:true,score:5,ppAccepted:true,ppValue:1},
+  {time:5.05,stable:true,score:5,ppAccepted:true,ppValue:1},
+  {time:5.5,stable:true,score:5,ppAccepted:true,ppValue:1},
+  {time:5.95,stable:true,score:5,ppAccepted:true,ppValue:1}
+];
+const multiOcr=[
+  {...multiProbes[0],hpAccepted:true,hpValue:20},
+  {...multiProbes[6],hpAccepted:true,hpValue:20},
+  {...multiProbes[8],hpAccepted:true,hpValue:16},
+  {...multiProbes.at(-1),hpAccepted:true,hpValue:16}
+];
+const multiPair=S.selectTurnStablePair(multiOcr);
+const timelineSelection=S.selectTurnTimelineAnchors({probes:multiProbes,ocrSamples:multiOcr,pair:multiPair});
+assert.equal(timelineSelection.valid,true);
+assert.ok(timelineSelection.anchors.length>2,'multiple stable change points must produce more than an endpoint pair');
+assert.ok(timelineSelection.anchors.some(x=>x.time===1.9),'PP change must preserve a post-change stable anchor');
+assert.ok(timelineSelection.anchors.some(x=>x.time===3.25),'second PP change must preserve its post-change anchor');
+assert.ok(timelineSelection.anchors.some(x=>x.time===4.6),'HP change must preserve its post-change anchor');
+assert.equal(timelineSelection.coverage.complete,true,'selected anchors must keep detailed observation gaps within the three-second safety limit');
+assert.ok(timelineSelection.coverage.maxGap<=2.7+.001);
+assert.ok(timelineSelection.anchors.length<=10);
+assert.equal(timelineSelection.anchors[0].time,1);
+assert.equal(timelineSelection.anchors.at(-1).time,5.95);
+
 console.log('TURN STABLE SELECTION REGRESSION PASS');
 
 const capturedSummary=S.resolveTurnHpSummary(
