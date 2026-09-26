@@ -1,13 +1,13 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.72',build:'4.13.72-20260926-clean-13-72',revision:'clean-13-72',subtitle:'Build 2026.09.26-clean-13-72 / 動画入力UI復元・受け渡し計測維持'};
+const APP={version:'4.13.73',build:'4.13.73-20260926-clean-13-73',revision:'clean-13-73',subtitle:'Build 2026.09.26-clean-13-73 / ReplaySession UNKNOWN中間観測ブリッジ修正'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'turn-recognition':'turn-clean-1.3',
   'mulligan-class':'mulligan-class-clean-1.5.3',
   'card-db':'card-db-clean-1.23',
   'hand-recognition':'hand-clean-1.50',
   'state-recognition':'state-clean-1.8.12',
-  'replay-session':'replay-session-clean-1.2',
+  'replay-session':'replay-session-clean-1.3',
   'review-engine':'review-clean-1.5.5',
   'diagnostics':'diagnostics-clean-1.52'
 });
