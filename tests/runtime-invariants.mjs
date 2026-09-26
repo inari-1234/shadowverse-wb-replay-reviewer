@@ -134,6 +134,13 @@ assert.equal(index.includes('id="leCompare"'),false,'fixed two-second comparison
 assert.ok(app.includes("WB.$('#leAnalyzeTurn')"),'app control state must target the new turn-analysis button');
 assert.ok(stateRecognition.includes('async function analyzeCurrentTurn()'),'state recognition must implement automatic same-turn stable-frame analysis');
 assert.ok(stateRecognition.includes('function selectTurnStablePair(samples,cfg=TURN_ANALYZE_CFG)'),'stable-pair selection must remain explicit and regression-testable');
+assert.ok(stateRecognition.includes('function selectTurnTimelineAnchors(discovery,cfg=TURN_ANALYZE_CFG)'),'turn analysis must explicitly select bounded multi-point anchors');
+assert.ok(stateRecognition.includes('timelineMaxGap:2.7'),'multi-point timeline coverage must stay below ReplaySession three-second detail limit');
+assert.ok(stateRecognition.includes('maxTimelineAnchors:10'),'multi-point timeline must cap per-turn state capture growth');
+assert.ok(stateRecognition.includes('async function captureTimelineState(ctx,time)'),'intermediate timeline points must use the lightweight capture path');
+assert.ok(stateRecognition.includes("reason:'timeline-lite-skips-hand'"),'lightweight intermediate capture must not repeat heavy hand-history analysis');
+assert.ok(stateRecognition.includes("turnTimelineMultipoint:true"),'state module must advertise multi-point turn analysis');
+
 assert.ok(stateRecognition.includes('async function captureStatePair(offset=2)'),'legacy fixed pair capture may remain diagnostic-only');
 assert.ok(diagnostics.includes('turnStableAnalysis:clone(WB.turnStableLast||null)'),'diagnostics must export automatic turn-analysis evidence');
 assert.ok(index.includes('id="analyzeMatch"')&&index.includes('id="cancelMatch"')&&index.includes('id="matchAnalysisStatus"'),'automatic review UI must expose whole-match analysis controls');
