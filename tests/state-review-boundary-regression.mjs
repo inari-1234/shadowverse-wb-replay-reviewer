@@ -35,7 +35,7 @@ assert.ok(state.includes("matchAnalysisScope:'target-side-turns'"),'whole-match 
 
 assert.ok(state.includes('function resolveTurnHpSummary(pair,first,second)'),'turn summaries must reconcile exploratory HP with captured endpoints');
 
-assert.ok(state.includes('async function captureTimelineState(ctx,time)'),'intermediate timeline observations must use a dedicated lightweight state capture');
+assert.ok(state.includes('async function captureTimelineState(ctx,time,evidence=null)'),'intermediate timeline observations must use a dedicated lightweight state capture');
 assert.ok(state.includes("reason:'timeline-lite-skips-hand'"),'intermediate timeline capture must explicitly skip heavy hand recognition');
 assert.ok(state.includes("captureMode:'timeline-lite'"),'intermediate timeline states must retain their capture mode');
 assert.ok(state.includes("version:'turn-timeline-analysis-v2'"),'turn analysis output must be versioned for multi-point timelines');
