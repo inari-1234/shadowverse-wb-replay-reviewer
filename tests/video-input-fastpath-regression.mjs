@@ -32,7 +32,7 @@ assert.ok(metadataBlock.includes('fileToMetadataMs'),'metadata handler must reco
 assert.ok(metadataBlock.includes('performance.now()-fileReceivedPerf'),'File-to-metadata timing must start only after the browser receives File');
 assert.ok(metadataBlock.includes("inputTiming:WB.videoMeta?.inputTiming||null"),'metadata log must retain input timing diagnostics');
 
-assert.ok(app.includes("file?.addEventListener('pointerdown',markPickerStart"),'picker timing must begin from the user opening the picker');
+assert.ok(app.includes("file?.addEventListener('pointerdown',()=>markPickerStart('standard-input')"),'standard file input must begin timing from the user opening the picker');
 
 console.log(JSON.stringify({
   filesFastPathGuidance:true,
