@@ -136,6 +136,12 @@ assert.ok(stateRecognition.includes('async function analyzeCurrentTurn()'),'stat
 assert.ok(stateRecognition.includes('function selectTurnStablePair(samples,cfg=TURN_ANALYZE_CFG)'),'stable-pair selection must remain explicit and regression-testable');
 assert.ok(stateRecognition.includes('async function captureStatePair(offset=2)'),'legacy fixed pair capture may remain diagnostic-only');
 assert.ok(diagnostics.includes('turnStableAnalysis:clone(WB.turnStableLast||null)'),'diagnostics must export automatic turn-analysis evidence');
+assert.ok(index.includes('id="analyzeMatch"')&&index.includes('id="cancelMatch"')&&index.includes('id="matchAnalysisStatus"'),'automatic review UI must expose whole-match analysis controls');
+assert.ok(app.includes("WB.$('#analyzeMatch')")&&app.includes("WB.$('#cancelMatch')"),'app control sync must include whole-match analysis controls');
+assert.ok(stateRecognition.includes('async function analyzeMatchTargetTurns()'),'state recognition must orchestrate target-side whole-match analysis');
+assert.ok(stateRecognition.includes('function matchAnalysisPlan('),'whole-match turn planning must remain explicit and regression-testable');
+assert.ok(stateRecognition.includes("matchAnalysisScope:'target-side-turns'"),'whole-match analysis must remain bounded to the selected analysis side');
+assert.ok(diagnostics.includes('matchAnalysis:clone(WB.matchAnalysisLast||null)'),'diagnostics must export whole-match analysis evidence');
 assert.ok(replaySession.includes("turnIdentity:'number+side'"),'ReplaySession must keep numeric turn and active side together when deriving changes');
 assert.ok(replaySession.includes("SESSION_SCHEMA='replay-session-v2'"),'ReplaySession must migrate away from the unsafe v1 numeric-null schema');
 assert.ok(replaySession.includes("v===null||v===undefined"),'ReplaySession numeric normalization must preserve null/undefined');
