@@ -8,7 +8,9 @@ const app=read('app-core.js');
 
 assert.ok(index.includes('id="videoFile" type="file" accept="video/*"'),'video input must remain a plain video file input');
 assert.ok(index.includes('id="videoLoadTiming"'),'video input UI must expose handoff timing');
-assert.ok(index.includes('「ファイルを選択」'),'iPhone UI must explain the verified Files fast path');
+assert.ok(index.includes('id="pickVideoFiles" class="good"'),'Files fast path must be the primary guided action');
+assert.ok(index.includes('id="pickVideoPhotos"'),'photo-library comparison must remain an explicit secondary action');
+assert.ok(index.includes('「ファイルを選択」')&&index.includes('「このiPhone内」'),'iPhone UI must explain the verified local Files fast path');
 
 const changeStart=app.indexOf("file?.addEventListener('change'");
 const metadataStart=app.indexOf("WB.video?.addEventListener('loadedmetadata'",changeStart);
@@ -19,6 +21,9 @@ assert.equal(changeBlock.includes('FileReader'),false,'video input must not read
 assert.equal(changeBlock.includes('.arrayBuffer('),false,'video input must not materialize the whole file into an ArrayBuffer');
 assert.ok(changeBlock.includes('pickerElapsedMs'),'video input must record picker-to-File elapsed time');
 assert.ok(changeBlock.includes('pickerElapsedIncludesUserSelection:true'),'picker timing must explicitly declare that user selection time is included');
+assert.ok(changeBlock.includes('pickerIntentIsGuidanceOnly:true'),'picker intent must be labeled as guidance rather than a verified source');
+assert.ok(app.includes("openPicker('files-guided')"),'primary button must record Files-guided intent');
+assert.ok(app.includes("openPicker('photos-comparison')"),'comparison button must record photo-comparison intent');
 
 const metadataEnd=app.indexOf("WB.video?.addEventListener('timeupdate'",metadataStart);
 assert.ok(metadataEnd>metadataStart,'metadata handler must be extractable');
