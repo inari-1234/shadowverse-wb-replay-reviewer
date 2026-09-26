@@ -135,7 +135,9 @@ assert.ok(replaySession.includes("turnIdentity:'number+side'"),'ReplaySession mu
 assert.ok(replaySession.includes("SESSION_SCHEMA='replay-session-v2'"),'ReplaySession must migrate away from the unsafe v1 numeric-null schema');
 assert.ok(replaySession.includes("v===null||v===undefined"),'ReplaySession numeric normalization must preserve null/undefined');
 assert.ok(replaySession.includes("legacy-unsafe-null-number-coercion"),'ReplaySession must explicitly invalidate unsafe v1 derived observations');
-assert.ok(replaySession.includes("const VERSION='replay-session-clean-1.2'"),'ReplaySession module must have an explicit version');
+assert.ok(replaySession.includes("const VERSION='replay-session-clean-1.3'"),'ReplaySession module must have an explicit version');
+assert.ok(replaySession.includes("unknownHpBridge:'same-turn-observed-endpoints<=3s'"),'ReplaySession must expose the bounded unknown-HP bridge contract');
+assert.ok(replaySession.includes('bridgedUnknownObservations'),'bridged HP actions must retain evidence that unknown observations were skipped');
 assert.ok(replaySession.includes("indexedDB.open(DB_NAME,DB_VERSION)"),'ReplaySession persistence must use IndexedDB');
 assert.ok(replaySession.includes("MAX_CONTIGUOUS_GAP=3"),'detailed state-change derivation must remain limited to a short same-turn observation gap');
 assert.ok(replaySession.includes("'observation-gap'"),'ReplaySession must preserve observation gaps instead of inventing detailed actions');
