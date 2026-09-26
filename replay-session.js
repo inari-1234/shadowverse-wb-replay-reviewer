@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const W=window.WB;if(!W)return;
-const VERSION='replay-session-clean-1.4';
+const VERSION='replay-session-clean-1.5';
 const DB_NAME='wb-replay-session-v1',DB_VERSION=1,SESSION_STORE='sessions',SCENE_STORE='scene-images',MAX_CONTIGUOUS_GAP=3,SESSION_SCHEMA='replay-session-v2';
 W.registerModule('replay-session',VERSION);
 
@@ -142,9 +142,9 @@ function observedEpisodeInterpretation(rows=[]){
   const hp=rows.find(x=>x.type==='opponent-hp-change'),pp=rows.find(x=>x.type==='pp-change'),board=rows.find(x=>x.type==='board-damage-change'),ward=rows.find(x=>x.type==='ward-change'),
     usedResources=rows.filter(x=>x.type==='resource-change'&&x.data?.from==='yes'&&x.data?.to==='no'),
     notes=[];
-  if(pp&&Number(pp.data?.delta)<0&&hp&&Number(hp.data?.delta)<0)notes.push(`PPを${Math.abs(Number(pp.data.delta))}消費した区間で相手HPが${Math.abs(Number(hp.data.delta))}減少`);
+  if(pp&&Number(pp.data?.delta)<0&&hp&&Number(hp.data?.delta)<0)notes.push(`PPが${Math.abs(Number(pp.data.delta))}減少した区間で相手HPが${Math.abs(Number(hp.data.delta))}減少`);
   else if(hp&&Number(hp.data?.delta)<0)notes.push(`相手HPが${Math.abs(Number(hp.data.delta))}減少`);
-  else if(pp&&Number(pp.data?.delta)<0)notes.push(`PPを${Math.abs(Number(pp.data.delta))}消費`);
+  else if(pp&&Number(pp.data?.delta)<0)notes.push(`PPが${Math.abs(Number(pp.data.delta))}減少`);
   if(board&&Number(board.data?.delta)!==0)notes.push(`盤面の攻撃可能打点が${board.data.from}→${board.data.to}に変化`);
   if(ward)notes.push(`守護状態が${ward.data.from}→${ward.data.to}に変化`);
   if(usedResources.length)notes.push(`${usedResources.map(x=>x.data.resource).join('・')}を使用可能→使用不可として観測`);
