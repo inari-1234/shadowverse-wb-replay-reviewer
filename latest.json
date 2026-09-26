@@ -1,8 +1,8 @@
 {
-  "version": "4.13.74",
-  "build": "4.13.74-20260926-clean-13-74",
-  "cache": "wb-review-v4-13-74-20260926-clean-13-74",
+  "version": "4.13.75",
+  "build": "4.13.75-20260926-clean-13-75",
+  "cache": "wb-review-v4-13-74-20260926-clean-13-75",
   "sw": "./sw.js",
-  "revision": "clean-13-74",
-  "updatedAt": "2026-09-26T22:30:00+09:00"
+  "revision": "clean-13-75",
+  "updatedAt": "2026-09-26T22:55:00+09:00"
 }
