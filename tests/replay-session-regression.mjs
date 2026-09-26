@@ -21,7 +21,7 @@ vm.createContext(sandbox);
 new vm.Script(source,{filename:'replay-session.js'}).runInContext(sandbox);
 const R=WB.ReplaySession;
 
-assert.equal(R.version,'replay-session-clean-1.3');
+assert.equal(R.version,'replay-session-clean-1.4');
 assert.equal(R.schema,'replay-session-v2');
 assert.equal(R.persistenceMode(),'memory','no IndexedDB in regression sandbox must use memory fallback');
 
@@ -59,9 +59,22 @@ assert.deepEqual(Array.from(actions.map(x=>x.type)),[
 assert.equal(actions.find(x=>x.type==='opponent-hp-change').data.delta,-3);
 assert.equal(actions.find(x=>x.type==='resource-change').data.resource,'ep');
 
+const episodes=R.deriveObservedEpisodes(actions);
+assert.equal(episodes.length,1,'all detailed changes from the same two observed states must be grouped into one episode');
+assert.equal(episodes[0].kind,'observed-episode');
+assert.equal(episodes[0].causalAttribution,false,'an observed episode must not claim causal attribution');
+assert.ok(episodes[0].summary.includes('相手HP 20→17'));
+assert.ok(episodes[0].summary.includes('PP 5→3'));
+assert.ok(episodes[0].interpretation.includes('PPを2消費した区間で相手HPが3減少'));
+assert.ok(episodes[0].interpretation.includes('同じ行動による変化とは断定せず'));
+assert.ok(episodes[0].unresolved.includes('使用カード'));
+
+
 const gap=R.normalizeCapture(capture(8+10,{pp:1,opponentHP:10,ep:'no',opponentWard:'present',boardDamage:0}));
 const gapActions=R.deriveActions(b,gap);
 assert.deepEqual(Array.from(gapActions.map(x=>x.type)),['observation-gap'],'more than 3 seconds must not be expanded into invented detailed actions');
+assert.equal(R.deriveObservedEpisodes(gapActions).length,0,'observation gaps must not be turned into pseudo-actions or grouped episodes');
+
 
 const nextTurn=R.normalizeCapture({...capture(19),context:{time:19,turn:3,relativeSide:'自分'},confirmed:{...capture(19).confirmed,time:19,turn:3}});
 assert.deepEqual(Array.from(R.deriveActions(gap,nextTurn).map(x=>x.type)),['turn-transition'],'turn changes must remain a transition, not inferred actions');
@@ -74,6 +87,8 @@ const sideTransition=R.deriveActions(b,sameNumberOtherSide);
 assert.deepEqual(Array.from(sideTransition.map(x=>x.type)),['turn-transition'],'same numeric turn on the opposite side must never be treated as the same turn');
 assert.equal(sideTransition[0].data.fromSide,'bottom');
 assert.equal(sideTransition[0].data.toSide,'top');
+assert.equal(R.deriveObservedEpisodes(sideTransition).length,0,'turn transitions must not be presented as within-turn observed episodes');
+
 
 const unknownA=R.normalizeCapture(capture(20,{extraPP:'unknown'}));
 const unknownB=R.normalizeCapture(capture(21,{extraPP:'no'}));
@@ -101,6 +116,11 @@ assert.equal(bridgedHp[0].data.to,11);
 assert.equal(bridgedHp[0].data.delta,-5);
 assert.equal(bridgedHp[0].data.bridgedUnknownObservations,2);
 assert.equal(bridgedHp[0].confidence,'observed-endpoints');
+const bridgedEpisodes=R.deriveObservedEpisodes(bridged);
+assert.equal(bridgedEpisodes.length,1);
+assert.equal(bridgedEpisodes[0].confidence,'observed-endpoints','bounded UNKNOWN HP bridges may be summarized only with their endpoint confidence');
+assert.equal(bridgedEpisodes[0].causalAttribution,false);
+
 const bridgedPoints=R.deriveReviewPoints(bridged,[]);
 assert.equal(bridgedPoints.filter(x=>x.kind==='large-hp-change').length,1,'16→11 observed endpoints must create one large HP change review point');
 const tooWideBridge=R.deriveTimelineActions([
@@ -124,6 +144,9 @@ R.ingestState(capture(12,{pp:3,opponentHP:17,ep:'no',opponentWard:'present',boar
 let snap=R.snapshot();
 assert.equal(snap.states.length,2);
 assert.equal(snap.actions.length,5);
+assert.equal(snap.observedEpisodes.length,1,'session rebuild must persist a non-causal observed episode summary');
+assert.equal(snap.observedEpisodes[0].actionIds.length,5);
+
 assert.equal(snap.actions.some(x=>x.type==='card-play'),false,'state differences must not invent card plays');
 
 R.ingestReviewSignal({atSeconds:12,turn:2,reviewProfile:'sea-pirate-royal',status:'confirmed-lethal',lethalRoutes:['Quick route'],unknown:[]});
