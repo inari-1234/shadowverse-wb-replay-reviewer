@@ -155,7 +155,11 @@ assert.ok(stateRecognition.includes("reason:'reused-stable-probe'"),'timeline-li
 assert.ok(stateRecognition.includes("probeReuse:{pp:!!ppSeed,hp:false}"),'probe reuse must remain PP-only; HP must retain guarded temporal confirmation');
 
 
-assert.ok(stateRecognition.includes('async function captureStatePair(offset=2)'),'legacy fixed pair capture may remain diagnostic-only');
+assert.equal(stateRecognition.includes('captureStatePair'),false,'superseded fixed-pair capture API must be removed');
+assert.equal(stateRecognition.includes('statePairTarget'),false,'superseded fixed-pair target helper must be removed');
+assert.equal(stateRecognition.includes('state-pair-complete'),false,'superseded fixed-pair event must be removed');
+assert.ok(stateRecognition.includes('legacyStatePairRemoved:true'),'state module must advertise removal of the legacy pair path');
+assert.ok(stateRecognition.includes('function turnAnalysisBounds(')&&stateRecognition.includes('function selectTurnTimelineAnchors('),'safe multi-point turn analysis must remain the replacement path');
 assert.ok(diagnostics.includes('turnStableAnalysis:clone(WB.turnStableLast||null)'),'diagnostics must export automatic turn-analysis evidence');
 assert.ok(index.includes('id="analyzeMatch"')&&index.includes('id="cancelMatch"')&&index.includes('id="matchAnalysisStatus"'),'automatic review UI must expose whole-match analysis controls');
 assert.ok(app.includes("WB.$('#analyzeMatch')")&&app.includes("WB.$('#cancelMatch')"),'app control sync must include whole-match analysis controls');
