@@ -1,7 +1,7 @@
 (()=>{'use strict';
 const W=window.WB;if(!W)return;
 const V='review-clean-1.6.0',LS='wb-lethal-v2';W.registerModule('review-engine',V);
-const rules={protocol:{beforeGrade:['主要リーサル候補を全列挙する','相手HP・PP・Extra PP・EP・SEP・守護・場の攻撃可能総打点・戦術情報を確認する','不明情報が残る場合はリーサルなしと断定しない','反実仮想は分岐直前から独立再計算する']},independentState:true,branchAssist:'branch-assist-clean',tacticalSummary:'dynamic-catalog-v1'};
+const rules={protocol:{beforeGrade:['主要リーサル候補を全列挙する','相手HP・PP・Extra PP・EP・SEP・守護・場の攻撃可能総打点・戦術情報を確認する','不明情報が残る場合はリーサルなしと断定しない','反実仮想は分岐直前から独立再計算する']},tacticalSummary:'dynamic-catalog-v1'};
 const TACTICAL_CARDS=Object.freeze((W.CardDB?.tacticalCards?.()||[]).map(x=>Object.freeze(x)));
 const LEGACY_CARD_KEYS=Object.freeze({barbaros:'barbaros',zetaBeatrix:'zetaBeatrix',quickBlader:'quickBlader'});
 const TACTICAL_RESOURCES=Object.freeze([
