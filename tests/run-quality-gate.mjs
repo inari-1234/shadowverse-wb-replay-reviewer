@@ -1,6 +1,6 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v70';
+const GATE_VERSION='recognition-quality-gate-v71';
 // v5 shadow 0.10 conservative tracking inheritance + ROI appearance identity
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
@@ -14,6 +14,7 @@ const tests=[
   'tests/purpose-boundary-regression.mjs',
   'tests/replay-session-regression.mjs',
   'tests/decision-window-real-video-regression.mjs',
+  'tests/review-window-ui-regression.mjs',
   'tests/turn-stable-selection-regression.mjs',
   'tests/match-auto-analysis-regression.mjs',
   'tests/batch-seek-optimization-regression.mjs',
