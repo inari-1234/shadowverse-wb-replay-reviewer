@@ -11,7 +11,7 @@ vm.createContext(sandbox);
 new vm.Script(fs.readFileSync(new URL('../turn-recognition.js',import.meta.url),'utf8'),{filename:'turn-recognition.js'}).runInContext(sandbox);
 const T=WB.TurnRecognition;
 
-assert.equal(T.version,'turn-clean-1.10');
+assert.equal(T.version,'turn-clean-1.11');
 assert.equal(T.terminalTailGuard.tailSeconds,3);
 assert.equal(T.terminalTailGuard.targetMinAbsDiff,65);
 assert.equal(T.terminalTailGuard.targetMinPixels,1750);
