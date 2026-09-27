@@ -21,7 +21,7 @@ vm.createContext(sandbox);
 new vm.Script(source,{filename:'replay-session.js'}).runInContext(sandbox);
 const R=WB.ReplaySession;
 
-assert.equal(R.version,'replay-session-clean-1.7');
+assert.equal(R.version,'replay-session-clean-1.8');
 assert.equal(R.schema,'replay-session-v2');
 assert.equal(R.persistenceMode(),'memory','no IndexedDB in regression sandbox must use memory fallback');
 
@@ -181,6 +181,14 @@ assert.equal(snap.observationReviewPoints.length,4,'Decision Window enrichment m
 assert.ok(snap.observationReviewPoints.every(x=>x.decisionWindowId===snap.decisionWindows[0].id));
 assert.ok(snap.observationReviewPoints.every(x=>x.beforeState.id===a.id&&x.afterState.id===b.id));
 assert.equal(snap.decisionWindows[0].causalAttribution,false);
+const uiModels=R.reviewWindowModels(snap);
+assert.equal(uiModels.length,1,'one Decision Window must become one review UI model');
+assert.equal(uiModels[0].beforeRows.find(x=>x.key==='pp').value,'5');
+assert.equal(uiModels[0].afterRows.find(x=>x.key==='pp').value,'3');
+const uiCard=R.renderDecisionWindowCard(uiModels[0]);
+assert.ok(uiCard.includes('判断直前')&&uiCard.includes('変化後'),'review card must show both observed endpoints');
+assert.ok(uiCard.includes('観測した変化')&&uiCard.includes('重要とした理由'),'review card must separate observed changes from importance reason');
+assert.ok(uiCard.includes('断定していない項目'),'review card must keep unresolved causal details explicit');
 
 assert.equal(snap.actions.some(x=>x.type==='card-play'),false,'state differences must not invent card plays');
 
