@@ -137,11 +137,11 @@ assert.equal(index.includes('id="leCompare"'),false,'fixed two-second comparison
 assert.ok(app.includes("WB.$('#leAnalyzeTurn')"),'app control state must target the new turn-analysis button');
 assert.ok(stateRecognition.includes('async function analyzeCurrentTurn(options={})'),'state recognition must implement automatic same-turn stable-frame analysis');
 assert.ok(stateRecognition.includes('function selectTurnStablePair(samples,cfg=TURN_ANALYZE_CFG)'),'stable-pair selection must remain explicit and regression-testable');
-assert.ok(turnRecognition.includes("TERMINAL_TAIL_GUARD=Object.freeze({tailSeconds:3,minAbsDiff:70,minPixels:1200"),'turn recognition must keep the terminal-tail guard narrowly bounded');
+assert.ok(turnRecognition.includes("TERMINAL_TAIL_GUARD=Object.freeze({tailSeconds:3,targetMinAbsDiff:65,targetMinPixels:1750,targetMinStrongSamples:1,opponentMinAbsDiff:80,opponentMinPixels:1800,opponentMinStrongSamples:2"),'turn recognition must keep the role-aware terminal-tail guard narrowly bounded');
 assert.ok(turnRecognition.includes('function terminalTailDecision(timeline=[],duration=null,samples=[])'),'terminal-tail decision must remain independently regression-testable');
 assert.ok(turnRecognition.includes("const terminalGuard=await validateTerminalTail(stableRaw),stable=terminalGuard.timeline"),'terminal guard must run only after the stable13 primary scan');
-assert.ok(turnRecognition.includes("terminalTailGuard:'last-row<=3s-entry-evidence-v1'"),'turn module must advertise the terminal-tail safety contract');
-assert.ok(index.includes('動画末尾3秒以内の孤立した最終ターン候補'),'UI must disclose the terminal-tail revalidation behavior');
+assert.ok(turnRecognition.includes("terminalTailGuard:'last-row<=3s-role-aware-entry-evidence-v2'"),'turn module must advertise the terminal-tail safety contract');
+assert.ok(index.includes('相手側候補なら通常の相手ターンHUD相当の強い入口シグナルが複数フレームで続く場合だけ採用'),'UI must disclose the role-aware terminal-tail revalidation behavior');
 assert.ok(stateRecognition.includes('function selectTurnTimelineAnchors(discovery,cfg=TURN_ANALYZE_CFG)'),'turn analysis must explicitly select bounded multi-point anchors');
 assert.ok(stateRecognition.includes('timelineMaxGap:2.7'),'multi-point timeline coverage must stay below ReplaySession three-second detail limit');
 assert.ok(stateRecognition.includes('maxTimelineAnchors:10'),'multi-point timeline must cap per-turn state capture growth');
