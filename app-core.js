@@ -10,7 +10,7 @@ const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'replay-session':'replay-session-clean-1.11',
   'review-engine':'review-clean-1.8.0',
   'counterfactual-review':'counterfactual-review-clean-1.0',
-  'diagnostics':'diagnostics-clean-1.56'
+  'diagnostics':'diagnostics-clean-1.57'
 });
 const WB=window.WB={APP,expectedModules:EXPECTED_MODULE_VERSIONS,modules:[],moduleRegistrations:[],moduleRegistrationDuplicates:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,matchAnalysisLast:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
 WB.$=s=>document.querySelector(s);
