@@ -194,7 +194,7 @@ assert.ok(handRecognition.includes("frameSource:source"),'hand samples must reco
 assert.ok(handRecognition.includes("layoutFrameCache:true"),'hand module must advertise layout-frame reuse');
 
 assert.ok(stateRecognition.includes("handHistory:!batchMode"),'whole-match analysis must skip only auxiliary hand-history scans at full endpoints');
-assert.ok(stateRecognition.includes("analyzeCurrentTurn({batchMode:true})"),'whole-match analysis must explicitly enable batch optimization');
+assert.ok(stateRecognition.includes("analyzeCurrentTurn({batchMode:true,contextOverride})"),'whole-match analysis must explicitly enable batch optimization');
 assert.ok(stateRecognition.includes("reason:'reused-stable-probe'"),'timeline-lite capture must be able to reuse already accepted PP probe evidence');
 assert.ok(stateRecognition.includes("probeReuse:{pp:!!ppSeed,hp:false}"),'probe reuse must remain PP-only; HP must retain guarded temporal confirmation');
 
