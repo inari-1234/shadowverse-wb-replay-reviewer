@@ -41,6 +41,9 @@ assert.ok(replay.includes('observationReviewPoints:[]'),'ReplaySession must pers
 assert.ok(replay.includes('supplementalReviewPoints:[]'),'ReplaySession must persist tactical/manual ReviewPoints separately');
 assert.ok(replay.includes('s.reviewPoints=mergeReviewPoints(s.observationReviewPoints,s.supplementalReviewPoints)'),'legacy merged reviewPoints view must be derived from separated domains');
 assert.ok(replay.includes("decisionWindows:'same-turn-state-pair<=3s-noncausal'"),'Decision Window contract must remain same-turn, bounded, and non-causal');
+assert.ok(replay.includes("reviewWindowUi:'before-after-observed-importance-unknown-noncausal'"),'Phase 16 review UI must remain observation-only and non-causal');
+assert.ok(index.includes('未確認は未確認のまま残し'),'Phase 16 UI must explicitly preserve unknown values');
+assert.ok(index.includes('使用カード・効果源・行動順を推定しません'),'Phase 16 UI must explicitly reject causal/card inference');
 assert.equal(replay.includes("'card-play'"),false,'purpose boundary must continue forbidding inferred card-play actions');
 
 console.log('PURPOSE BOUNDARY REGRESSION PASS');
