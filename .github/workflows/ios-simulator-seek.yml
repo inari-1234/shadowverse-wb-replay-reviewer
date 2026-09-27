@@ -55,8 +55,16 @@ jobs:
                       candidates.append((runtime,d['name'],d['udid']))
           if not candidates:
               raise SystemExit('No available iPhone Simulator device')
-          candidates.sort(reverse=True)
-          print(candidates[0][2])
+          preferred=['iPhone 16 Pro','iPhone 17 Pro','iPhone 16','iPhone 17']
+          candidates.sort(key=lambda x:x[0],reverse=True)
+          latest_runtime=candidates[0][0]
+          same_runtime=[x for x in candidates if x[0]==latest_runtime]
+          for name in preferred:
+              match=next((x for x in same_runtime if x[1]==name),None)
+              if match:
+                  print(match[2]);break
+          else:
+              print(same_runtime[0][2])
           PY
           )"
           echo "udid=$UDID" >> "$GITHUB_OUTPUT"
