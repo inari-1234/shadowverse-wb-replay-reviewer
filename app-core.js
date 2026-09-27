@@ -1,12 +1,12 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.91',build:'4.13.91-20260928-clean-13-91-turncache1',revision:'clean-13-91-turncache1',subtitle:'Build 2026.09.28-clean-13-91-turncache1 / マリガン既読フレーム再利用'};
+const APP={version:'4.13.91',build:'4.13.91-20260928-clean-13-91-matchsafe1',revision:'clean-13-91-matchsafe1',subtitle:'Build 2026.09.28-clean-13-91-matchsafe1 / 全ターン解析seek再利用'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'turn-recognition':'turn-clean-1.11',
   'mulligan-class':'mulligan-class-clean-1.5.4',
   'card-db':'card-db-clean-1.23',
   'hand-recognition':'hand-clean-1.52',
-  'state-recognition':'state-clean-1.8.18',
+  'state-recognition':'state-clean-1.8.19',
   'replay-session':'replay-session-clean-1.12',
   'review-engine':'review-clean-1.8.0',
   'counterfactual-review':'counterfactual-review-clean-1.0',
