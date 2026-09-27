@@ -166,6 +166,13 @@ assert.equal(turnRecognition.includes('fastSeek'),false,'turn recognition must n
 assert.equal(turnRecognition.includes('requestVideoFrameCallback'),false,'turn recognition must not use the failed continuous-playback experiment');
 assert.ok(turnRecognition.includes("EARLY_VALIDATION_HARD_ERRORS=new Set(['side-offset-mismatch','turn-sequence-gap','non-alternating-merged-timeline'])"),'structural early/stable contradictions must be hard-gated');
 assert.ok(turnRecognition.includes("if(val?.error&&isHardEarlyValidationError(val.message))"),'hard validation errors must stop before timeline and play-order publication');
+assert.ok(mulliganClass.includes("onSample=null"),'mulligan preflight must expose a zero-seek sample reuse hook');
+assert.ok(mulliganClass.includes("onSample({time:row.time,src,row})"),'mulligan hook must receive the already-decoded 1200px frame');
+assert.ok(turnRecognition.includes("validatedSignal(frame=null)"),'turn validation must accept the already-decoded mulligan frame without redrawing the full frame');
+assert.ok(turnRecognition.includes("verifyValidatedSeedCache(cache,counter)"),'preflight turn samples must be exact-canary verified before reuse');
+assert.ok(turnRecognition.includes("'turn-preflight-seed-verify'"),'seed verification must use exact production seeking');
+assert.ok(turnRecognition.includes("let val=await validateEarlyOnly(stable,earlySeedCache)"),'early validation must receive only the current turn-analysis preflight cache');
+assert.ok(turnRecognition.includes("preflightValidationCache:{captured:"),'seed capture/verification/reuse counts must remain diagnosable');
 assert.ok(turnRecognition.includes("terminalTailGuard:'last-row<=3s-role-aware-entry-evidence-v2'"),'turn module must advertise the terminal-tail safety contract');
 assert.ok(index.includes('相手側候補なら通常の相手ターンHUD相当の強い入口シグナルが複数フレームで続く場合だけ採用'),'UI must disclose the role-aware terminal-tail revalidation behavior');
 assert.ok(stateRecognition.includes('function selectTurnTimelineAnchors(discovery,cfg=TURN_ANALYZE_CFG)'),'turn analysis must explicitly select bounded multi-point anchors');
