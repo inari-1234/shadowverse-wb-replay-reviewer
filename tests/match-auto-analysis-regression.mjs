@@ -46,6 +46,7 @@ assert.equal(t6.eligible,true);
 assert.equal(t6.bounds.start,59.77);
 assert.equal(t6.bounds.end,66.631);
 assert.equal(t6.bounds.nextTurnTime,66.751);
+assert.equal(t6.row.time,59.32,'plan must retain the already-confirmed turn row for zero-anchor context handoff');
 
 plan=Array.from(S.matchAnalysisPlan(timeline,'top',123.338));
 assert.equal(plan.length,10,'top target must process exactly the recognized top turns');
@@ -76,7 +77,7 @@ assert.equal(elements['#leWard'].value,'present');
 assert.equal(elements['#leOppHp'].dataset.source,'manual');
 assert.equal(elements['#leOppHp'].dataset.manualVideo,'test');
 
-assert.equal(S.version,'state-clean-1.8.18');
+assert.equal(S.version,'state-clean-1.8.19');
 assert.equal(typeof S.analyzeMatchTargetTurns,'function');
 assert.equal(typeof S.selectTurnTimelineAnchors,'function');
 assert.equal(typeof S.captureTimelineState,'function');
