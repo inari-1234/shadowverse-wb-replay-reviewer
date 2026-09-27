@@ -17,7 +17,7 @@ new vm.Script(fs.readFileSync(new URL('../card-db.js',import.meta.url),'utf8')).
 new vm.Script(fs.readFileSync(new URL('../review-engine.js',import.meta.url),'utf8')).runInContext(sandbox);
 const R=WB.ReviewEngine;
 
-assert.equal(R.version,'review-clean-1.7.0');
+assert.equal(R.version,'review-clean-1.8.0');
 
 const mk=(id,turn,start,end,changes,before,after,unknown=[])=>({
   id,turn,reviewStart:start,reviewEnd:end,observedChanges:changes,beforeState:before,afterState:after,
