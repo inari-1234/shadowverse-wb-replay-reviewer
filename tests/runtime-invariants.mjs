@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import {createHash} from 'node:crypto';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 
@@ -123,6 +124,13 @@ assert.deepEqual(swScripts,expectedRuntime,'service worker must cache the same a
 assert.equal(swScripts.some(x=>/fix-v/i.test(x)),false,'service worker must not cache historical fix-v runtime scripts');
 
 assert.equal(review.includes('historyObserved'),false,'review-engine must never consume historyObserved');
+const repoRoot=new URL('../',import.meta.url),rootFiles=fs.readdirSync(repoRoot);
+assert.deepEqual(rootFiles.filter(name=>/^fix-v.*\.js$/i.test(name)).sort(),['fix-v3.9.2.js'],'main tree must keep only the stable13 provenance patch');
+assert.equal(rootFiles.some(name=>/^sw-v4108-.*\.js$/i.test(name)),false,'obsolete service-worker snapshots must not return to main');
+assert.equal(fs.existsSync(new URL('../strategy/',import.meta.url)),false,'unwired legacy strategy JSON must not return to production tree');
+const stable13Source=fs.readFileSync(new URL('../fix-v3.9.2.js',import.meta.url));
+const stable13BlobSha=createHash('sha1').update(Buffer.from(`blob ${stable13Source.length}\0`)).update(stable13Source).digest('hex');
+assert.equal(stable13BlobSha,'8543ddc47c0b6648f4151a61d3a5d060eb39ba3f','retained stable13 provenance source must match the production STABLE_SHA');
 assert.equal(/shadowverse-wb-(?:diagnostic|review)-v\d+\.\d+\.\d+-clean/.test(diagnostics),false,'diagnostic and review format IDs must not hard-code an app version');
 assert.ok(diagnostics.includes('shadowverse-wb-diagnostic-v${WB.APP.version}-clean'),'diagnostic format ID must derive from WB.APP.version');
 assert.ok(diagnostics.includes('shadowverse-wb-review-v${WB.APP.version}-clean'),'review format ID must derive from WB.APP.version');

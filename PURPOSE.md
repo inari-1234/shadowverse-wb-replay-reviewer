@@ -1,6 +1,6 @@
 # Shadowverse: Worlds Beyond Replay Reviewer — Purpose Boundary
 
-基準: v4.13.82 / 2026-09-27
+基準: v4.13.91 / 2026-09-27
 
 ## 1. 中核目的
 
@@ -14,7 +14,10 @@
 4. 同一ターン内の複数の安定観測点から Action Timeline を構成する。
 5. 因果を断定せず、観測した状態変化を observed episode としてまとめる。
 6. 大きなHP変化、資源変化、盤面変化、守護変化などを ReviewPoint として抽出する。
-7. ユーザーが保存した局面・メモと合わせて振り返りに使う。
+7. 同じ観測区間の ReviewPoint を Decision Window としてまとめ、判断直前 / 変化後 / 観測した変化 / 未確認項目を同じ単位で表示する。
+8. Decision Window から観測事実だけを材料に一般的な戦術コーチを生成する。カード・効果源・行動順が未確定なら評価は hold とする。
+9. 候補カード使用は「判断直前の高信頼カード認識」と「同一3秒以内の Decision Window での PP 消費量と許容コスト一致」が一意に揃った場合だけ candidate-only として表示し、Action Timeline には追加しない。
+10. ユーザーが保存した局面・メモと合わせて振り返りに使う。
 
 ## 2. 絶対に守る認識境界
 
@@ -118,7 +121,8 @@
 - state unknown safety
 - hand recognition safety invariants
 - ReplaySession states / actions / observedEpisodes
-- ReviewPoint
+- ReviewPoint / Decision Window / review-window coach
+- card-use candidate-only / no-action boundary
 - tactical review profile boundary
 - counterfactual independent-state boundary
 - diagnostics / fixture isolation

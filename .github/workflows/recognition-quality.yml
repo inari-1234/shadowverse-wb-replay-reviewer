@@ -22,6 +22,10 @@ on:
       - 'tests/**'
       - '.github/workflows/recognition-quality.yml'
 
+concurrency:
+  group: recognition-quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 

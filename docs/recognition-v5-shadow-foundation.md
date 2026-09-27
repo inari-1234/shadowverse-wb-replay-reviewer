@@ -4,7 +4,7 @@
 
 This is an **offline / shadow-only** foundation. It is not part of the eight runtime scripts and it must not change the live recognition result.
 
-Current production remains v4.13.56.
+Current production remains v4.13.91. The shadow implementation is `recognition-v5-shadow-0.10` with dataset schema `recognition-v5-dataset-0.7`; it remains offline / diagnostic-only and is not connected to production decisions.
 
 ## Why v5 exists
 
@@ -120,6 +120,10 @@ A v5 component can influence live recognition only when all are true:
 - Offline cross-video calibration using the five-card success frame and an eight-card fixture showed the Barbaros candidate improving from about 0.51 normal / 0.77 adaptive-mask to about 0.81-0.82 with fixed left-side evidence.
 - The fixed strips are not production thresholds and are not used by decideHandSamples.
 - v5 shadow 0.5 aggregates left40 and left50 separately and keeps agreement, temporal consistency and margins as diagnostics.
+
+## Shadow 0.10 current status
+
+The later shadow revisions extend the same diagnostic-only boundary with stronger frame identity, ROI appearance identity, temporal fusion, and tracking-ROI evidence. These outputs remain research evidence only and are not allowed to change the production hand decision.
 
 ## Shadow 0.6 cross-slot uniqueness
 
