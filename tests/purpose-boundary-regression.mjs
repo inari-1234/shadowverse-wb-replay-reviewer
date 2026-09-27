@@ -53,7 +53,7 @@ assert.ok(review.includes("judgement:'hold'"),'generic coach must hold good/bad 
 assert.ok(index.includes('デッキ固有カード、使用カード、効果源、行動順を推測してプレイの良否を断定しません'),'Phase 17 UI must disclose its inference boundary');
 assert.ok(review.includes("const CARD_USE_CANDIDATE_VERSION='card-use-candidate-v1'"),'Phase 18 card-use candidate layer must be explicit');
 assert.ok(review.includes("ambiguityPolicy:'unique-among-positively-observed-supported-cards'"),'Phase 18 must reject ambiguous same-cost candidates');
-assert.ok(review.includes("afterAbsenceUsed:false,historyObservedUsed:false,effectAttributionUsed:false"),'Phase 18 must not treat disappearance/history/effects as card-use proof');
+assert.ok(review.includes("afterAbsenceUsed:false,pastHandTraceUsed:false,effectAttributionUsed:false"),'Phase 18 must not treat disappearance/history/effects as card-use proof');
 assert.ok(review.includes("causalAttribution:false,cardAttribution:'candidate-only'"),'Phase 18 may expose only candidate attribution, never causal confirmation');
 assert.ok(review.includes("createsAction:false"),'Phase 18 candidate must not create Action Timeline events');
 assert.ok(index.includes('候補はカード使用の確定ではなく、Action Timelineにも追加しません。'),'Phase 18 UI must disclose candidate-only/no-action semantics');
