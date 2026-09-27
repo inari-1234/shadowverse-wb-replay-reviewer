@@ -21,7 +21,7 @@ vm.createContext(sandbox);
 new vm.Script(source,{filename:'replay-session.js'}).runInContext(sandbox);
 const R=WB.ReplaySession;
 
-assert.equal(R.version,'replay-session-clean-1.8');
+assert.equal(R.version,'replay-session-clean-1.9');
 assert.equal(R.schema,'replay-session-v2');
 assert.equal(R.persistenceMode(),'memory','no IndexedDB in regression sandbox must use memory fallback');
 
@@ -185,6 +185,8 @@ const uiModels=R.reviewWindowModels(snap);
 assert.equal(uiModels.length,1,'one Decision Window must become one review UI model');
 assert.equal(uiModels[0].beforeRows.find(x=>x.key==='pp').value,'5');
 assert.equal(uiModels[0].afterRows.find(x=>x.key==='pp').value,'3');
+assert.equal(uiModels[0].beforeRows.find(x=>x.key==='pp').changed,true,'observed PP change must mark the PP row as changed');
+assert.equal(uiModels[0].beforeRows.find(x=>x.key==='opponentHP').changed,true,'observed HP change must mark the HP row as changed');
 const uiCard=R.renderDecisionWindowCard(uiModels[0]);
 assert.ok(uiCard.includes('判断直前')&&uiCard.includes('変化後'),'review card must show both observed endpoints');
 assert.ok(uiCard.includes('観測した変化')&&uiCard.includes('重要とした理由'),'review card must separate observed changes from importance reason');
