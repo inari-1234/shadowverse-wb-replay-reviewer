@@ -197,7 +197,7 @@ assert.ok(replaySession.includes("SESSION_SCHEMA='replay-session-v2'"),'ReplaySe
 assert.ok(replaySession.includes("decisionWindows:[]"),'ReplaySession must expose derived Decision Windows without changing recognition state');
 assert.ok(replaySession.includes("v===null||v===undefined"),'ReplaySession numeric normalization must preserve null/undefined');
 assert.ok(replaySession.includes("legacy-unsafe-null-number-coercion"),'ReplaySession must explicitly invalidate unsafe v1 derived observations');
-assert.ok(replaySession.includes("const VERSION='replay-session-clean-1.11'"),'ReplaySession module must have an explicit version');
+assert.ok(replaySession.includes("const VERSION='replay-session-clean-1.12'"),'ReplaySession module must have an explicit version');
 assert.ok(replaySession.includes("unknownHpBridge:'same-turn-observed-endpoints<=3s'"),'ReplaySession must expose the bounded unknown-HP bridge contract');
 assert.ok(replaySession.includes('bridgedUnknownObservations'),'bridged HP actions must retain evidence that unknown observations were skipped');
 assert.ok(index.includes('id="observedEpisodes"'),'automatic review UI must expose observed-episode Action Timeline output');
@@ -235,6 +235,10 @@ assert.ok(replaySession.includes('PPが${Math.abs(Number(pp.data.delta))}減少'
 assert.equal(replaySession.includes('PPを${Math.abs(Number(pp.data.delta))}消費'),false,'observed episode wording must not claim exact PP consumption');
 
 assert.ok(replaySession.includes("indexedDB.open(DB_NAME,DB_VERSION)"),'ReplaySession persistence must use IndexedDB');
+assert.ok(app.includes("WB.emit('task-finished',{name,cancelRequested:cancelled})"),'task runner must publish a finish boundary after clearing the active task');
+assert.ok(replaySession.includes('if(W.task)renderDeferred=true;else render()'),'ReplaySession must defer expensive DOM rendering while a task lock is active');
+assert.ok(replaySession.includes("W.on('task-finished',()=>flushDeferredRender())"),'ReplaySession must flush one deferred render when the task finishes');
+assert.ok(replaySession.includes('taskRenderCoalescing:true'),'ReplaySession must advertise task-time render coalescing');
 assert.ok(replaySession.includes("MAX_CONTIGUOUS_GAP=3"),'detailed state-change derivation must remain limited to a short same-turn observation gap');
 assert.ok(replaySession.includes("'observation-gap'"),'ReplaySession must preserve observation gaps instead of inventing detailed actions');
 assert.equal(replaySession.includes("'card-play'"),false,'ReplaySession must not infer a card play from state differences alone');
