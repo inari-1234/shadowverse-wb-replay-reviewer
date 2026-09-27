@@ -36,9 +36,11 @@ assert.equal(state.includes('captureStatePair'),false,'purpose cleanup must remo
 assert.equal(state.includes('statePairTarget'),false,'purpose cleanup must remove superseded fixed-pair helper');
 
 assert.ok(replay.includes('states:[],actions:[],observedEpisodes:[]'),'ReplaySession observation core must remain explicit');
+assert.ok(replay.includes('decisionWindows:[]'),'Decision Window must remain a derived Observation Core structure');
 assert.ok(replay.includes('observationReviewPoints:[]'),'ReplaySession must persist observation-derived ReviewPoints separately');
 assert.ok(replay.includes('supplementalReviewPoints:[]'),'ReplaySession must persist tactical/manual ReviewPoints separately');
 assert.ok(replay.includes('s.reviewPoints=mergeReviewPoints(s.observationReviewPoints,s.supplementalReviewPoints)'),'legacy merged reviewPoints view must be derived from separated domains');
+assert.ok(replay.includes("decisionWindows:'same-turn-state-pair<=3s-noncausal'"),'Decision Window contract must remain same-turn, bounded, and non-causal');
 assert.equal(replay.includes("'card-play'"),false,'purpose boundary must continue forbidding inferred card-play actions');
 
 console.log('PURPOSE BOUNDARY REGRESSION PASS');
