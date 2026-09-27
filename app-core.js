@@ -1,8 +1,8 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.87',build:'4.13.87-20260927-clean-13-87',revision:'clean-13-87',subtitle:'Build 2026.09.27-clean-13-87 / 工程16 局面レビュー・末尾ターン誤検出ガード'};
+const APP={version:'4.13.88',build:'4.13.88-20260927-clean-13-88',revision:'clean-13-88',subtitle:'Build 2026.09.27-clean-13-88 / 工程16 局面レビュー・末尾ターン誤検出ガードv2'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
-  'turn-recognition':'turn-clean-1.4',
+  'turn-recognition':'turn-clean-1.5',
   'mulligan-class':'mulligan-class-clean-1.5.3',
   'card-db':'card-db-clean-1.23',
   'hand-recognition':'hand-clean-1.52',
