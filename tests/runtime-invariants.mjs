@@ -186,9 +186,9 @@ assert.ok(replaySession.includes('function reviewWindowModels(session=current)')
 assert.ok(replaySession.includes('function renderDecisionWindowCard(model)'),'ReplaySession must render the safe review window model');
 assert.ok(replaySession.includes('function renderWindowCoach(coach)'),'ReplaySession must render the Phase 17 tactical coach separately from observation facts');
 assert.ok(replaySession.includes('window.__wbReviewCoachV1'),'Phase 17 coach must be inspectable in diagnostics without mutating ReplaySession observations');
-assert.ok(reviewEngine.includes("const WINDOW_COACH_VERSION='review-window-coach-v1'"),'ReviewEngine must own the Phase 17 coach derivation');
-assert.ok(reviewEngine.includes('function deriveWindowCoach(model={})'),'ReviewEngine must derive coaching from one Decision Window');
-assert.ok(reviewEngine.includes("basis:'observation-only'"),'ReviewEngine coach must advertise observation-only basis');
+assert.ok(review.includes("const WINDOW_COACH_VERSION='review-window-coach-v1'"),'ReviewEngine must own the Phase 17 coach derivation');
+assert.ok(review.includes('function deriveWindowCoach(model={})'),'ReviewEngine must derive coaching from one Decision Window');
+assert.ok(review.includes("basis:'observation-only'"),'ReviewEngine coach must advertise observation-only basis');
 assert.ok(diagnostics.includes('reviewCoachV1:clone(window.__wbReviewCoachV1||null)'),'diagnostics must expose the derived Phase 17 coach separately');
 assert.ok(replaySession.includes('function seekReviewWindow(time,phase=\'before\')'),'Phase 16 review UI must support direct safe navigation to observed endpoints');
 assert.ok(replaySession.includes('function reviewChangedKeys(changes=[])'),'Phase 16 review UI must highlight only fields backed by observed changes');
