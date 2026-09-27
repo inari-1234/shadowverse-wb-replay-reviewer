@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const W=window.WB;if(!W)return;
-const V='review-clean-1.7.0',LS='wb-lethal-v2';W.registerModule('review-engine',V);
+const V='review-clean-1.8.0',LS='wb-lethal-v2';W.registerModule('review-engine',V);
 const rules={protocol:{beforeGrade:['主要リーサル候補を全列挙する','相手HP・PP・Extra PP・EP・SEP・守護・場の攻撃可能総打点・戦術情報を確認する','不明情報が残る場合はリーサルなしと断定しない','反実仮想は分岐直前から独立再計算する']},tacticalSummary:'dynamic-catalog-v1'};
 const TACTICAL_CARDS=Object.freeze((W.CardDB?.tacticalCards?.()||[]).map(x=>Object.freeze(x)));
 const LEGACY_CARD_KEYS=Object.freeze({barbaros:'barbaros',zetaBeatrix:'zetaBeatrix',quickBlader:'quickBlader'});
@@ -131,6 +131,51 @@ function deriveWindowCoach(model={}){
     causalAttribution:false,cardAttribution:false};
 }
 function deriveWindowCoaches(models=[]){return(Array.isArray(models)?models:[]).map(deriveWindowCoach)}
+const CARD_USE_CANDIDATE_VERSION='card-use-candidate-v1';
+function cardUseWindowPpSpend(model={}){
+  const rows=(Array.isArray(model.observedChanges)?model.observedChanges:[]).filter(a=>a?.type==='pp-change').map(a=>({from:coachFinite(a?.data?.from),to:coachFinite(a?.data?.to)})).filter(x=>x.from!=null&&x.to!=null&&x.from>x.to);
+  if(rows.length!==1)return null;
+  const row=rows[0],spent=row.from-row.to;
+  return Number.isInteger(spent)&&spent>0?{from:row.from,to:row.to,spent}:null
+}
+function cardUseWindowEligible(model={}){
+  const start=coachFinite(model.reviewStart),end=coachFinite(model.reviewEnd),before=model.beforeState||{},after=model.afterState||{},turn=coachFinite(model.turn),
+    beforeTurn=coachFinite(before.turn),afterTurn=coachFinite(after.turn),elapsed=start!=null&&end!=null?end-start:null;
+  return start!=null&&end!=null&&elapsed>=0&&elapsed<=3&&turn!=null&&beforeTurn===turn&&afterTurn===turn&&String(before.relativeSide||'')==='自分'&&String(after.relativeSide||'')==='自分'
+}
+function positivelyObservedBeforeCards(model={}){
+  const recognized=model.beforeState?.hand?.recognized||{},defs=new Map((W.CardDB?.recognitionCards?.()||[]).map(x=>[x.id,x])),out=[];
+  for(const [id,row] of Object.entries(recognized)){
+    const def=defs.get(id),count=Number(row?.count),confidence=coachFinite(row?.confidence),threshold=coachFinite(def?.candidateThreshold??def?.threshold);
+    if(!def||!Number.isFinite(count)||count<=0||confidence==null||threshold==null||confidence<threshold)continue;
+    const acceptedCosts=(Array.isArray(def.acceptedCosts)?def.acceptedCosts:[def.expectedCost]).map(Number).filter(Number.isFinite);
+    out.push({cardId:id,label:row?.label||def.label||id,count,confidence,threshold,acceptedCosts:[...new Set(acceptedCosts)]})
+  }
+  return out
+}
+function deriveCardUseCandidates(model={}){
+  if(!cardUseWindowEligible(model))return[];
+  const pp=cardUseWindowPpSpend(model);if(!pp)return[];
+  const observed=positivelyObservedBeforeCards(model),matches=observed.filter(x=>x.acceptedCosts.includes(pp.spent));
+  if(matches.length!==1)return[];
+  const card=matches[0];
+  return[{
+    version:CARD_USE_CANDIDATE_VERSION,id:model.id?`card-use-candidate:${model.id}:${card.cardId}`:null,status:'candidate-only',
+    turn:coachFinite(model.turn),reviewStart:coachFinite(model.reviewStart),reviewEnd:coachFinite(model.reviewEnd),
+    cardId:card.cardId,label:card.label,scope:'verified-recognition-subset-only',confirmed:false,createsAction:false,
+    evidenceCount:2,evidence:[
+      {type:'positive-before-hand-recognition',cardId:card.cardId,count:card.count,confidence:card.confidence,requiredThreshold:card.threshold},
+      {type:'same-window-pp-spend-match',from:pp.from,to:pp.to,spent:pp.spent,acceptedCosts:card.acceptedCosts}
+    ],
+    ambiguityPolicy:'unique-among-positively-observed-supported-cards',afterAbsenceUsed:false,historyObservedUsed:false,effectAttributionUsed:false,
+    causalAttribution:false,cardAttribution:'candidate-only',
+    warning:'候補カードです。このカードを使用した確定ではなく、未認識カードや別行動の可能性を残します。'
+  }]
+}
+function deriveCardUseCandidateReport(models=[]){
+  const items=(Array.isArray(models)?models:[]).flatMap(deriveCardUseCandidates);
+  return{version:CARD_USE_CANDIDATE_VERSION,basis:'positive-before-hand+same-window-pp-cost-match',count:items.length,items}
+}
 function publishEvaluation(x,d=null){if(!W.videoMeta||!x)return;W.emit('review-evaluated',{atSeconds:Number.isFinite(Number(W.video?.currentTime))?+Number(W.video.currentTime).toFixed(3):null,turn:Number.isFinite(Number(x.turn))?Number(x.turn):null,reviewProfile:x.reviewProfile||activeProfile(),status:x.status||'unknown',lethalRoutes:clone(x.lethalRoutes||[]),unknown:clone(x.unknown||[]),decision:d?clone(d):null})}
 function renderLethal(){const o=W.$('#leResult');if(!o)return null;if(!profileEnabled()){const x=calculate();window.__wbDecisionInputV1=null;window.__wbTacticalV1={profile:activeProfile(),db:clone(W.CardDB?.meta||null),catalog:clone(TACTICAL_CARDS),current:clone(x.tactical),handRecognition:clone(W.tacticalHandRecognition||null),routes:[],decisionInput:null};o.textContent='戦術レビューは使用していません。上の「現在の状況」で認識結果を確認できます。';publishEvaluation(x,null);return x}const x=calculate(),d=decisionSnapshot(x);window.__wbDecisionInputV1=clone(d);window.__wbTacticalV1={db:clone(W.CardDB?.meta||null),catalog:clone(TACTICAL_CARDS),current:clone(x.tactical),handRecognition:clone(W.tacticalHandRecognition||null),routes:clone(x.routes.filter(r=>r.category==='hand')),decisionInput:clone(d)};o.textContent=`${decisionSummary(d)}
 
@@ -145,5 +190,5 @@ function publishReviewState(){const lethal=clone(window.__wbLethalV2||{sourceKey
 function expose(){const l=ses(ld,false);window.__wbLethalV2={sourceKey:key(),snapshots:clone(l?.snapshots||[]),protocol:rules.protocol};publishReviewState()}
 function saveL(){const s=state(),critical=['extraPP','ep','sep','opponentWard'].filter(k=>s[k]==='unknown');if(critical.length){W.$('#leStatus').textContent=`保存しません：${critical.join(' / ')} が未確認です。`;return}const x=calculate(s),q=ses(ld);x.id='l'+Date.now().toString(36);x.createdAt=new Date().toISOString();q.snapshots.push(x);save(LS,ld);expose();W.$('#leStatus').textContent=`${x.turn??'?'}Tの状態を保存しました。`;renderSaved()}
 function renderSaved(){const o=W.$('#leSaved'),q=ses(ld,false)?.snapshots||[];if(o)o.innerHTML=q.slice(-6).map(x=>`<div class="branchItem"><b>${x.turn??'?'}T</b><div>${x.lethalRoutes?.length?'候補：'+W.escape(x.lethalRoutes.join(' / ')):x.unknown?.length?'未確認：'+W.escape(x.unknown.join(' / ')):'主要候補内リーサルなし'}</div></div>`).join('')}
-W.ReviewEngine={version:V,rules,ruleset:SEA_PIRATE_RULESET,profiles:REVIEW_PROFILES,activeProfile,profileEnabled,catalog:{cards:TACTICAL_CARDS,resources:TACTICAL_RESOURCES},calculate,state,normalizeTactical,readTactical,tacticalSummary,decisionSnapshot,decisionSummary,deriveWindowCoach,deriveWindowCoaches,renderLethal,expose,publishReviewState,renderTacticalEditor,resetTacticalEditor,applyDetectedHand,syncProfileUi};
-W.onReady(()=>{renderTacticalEditor();syncProfileUi();W.on('state-hand-recognized',detail=>applyDetectedHand(detail?.result||null));W.on('state-captured',()=>renderLethal());W.on('state-input-changed',()=>renderLethal());W.$('#reviewProfile')?.addEventListener('change',()=>{syncProfileUi();if(profileEnabled()&&W.tacticalHandRecognition)applyDetectedHand(W.tacticalHandRecognition);else renderLethal();W.log('review-profile-change',{profile:activeProfile(),videoKey:W.videoKey()});W.emit('review-profile-changed',{profile:activeProfile()})});const tacticalChanged=e=>{if(e?.isTrusted){const el=e.target,id=el?.dataset?.tacticalCard||el?.dataset?.tacticalResource||null;if(id){el.dataset.source='manual';el.dataset.manualVideo=W.videoKey()}W.log('tactical-manual',{kind:el?.dataset?.tacticalCard?'card':'resource',id,value:el?.value??null,videoKey:W.videoKey()})}renderLethal()};W.$('#leTacticalCards')?.addEventListener('change',tacticalChanged);W.$('#leTacticalResources')?.addEventListener('input',tacticalChanged);W.$('#leTacticalResources')?.addEventListener('change',tacticalChanged);W.$('#leCalc')?.addEventListener('click',renderLethal);W.$('#leSave')?.addEventListener('click',saveL);W.on('video-reset',()=>{resetTacticalEditor();expose();renderSaved()});expose();renderLethal();renderSaved();W.log('module-ready',{module:'review-engine',version:V,reviewProfiles:true,defaultProfile:'none',stateBoundaryEvents:true,replaySessionEvents:true,tacticalRuleset:SEA_PIRATE_RULESET.id,counterfactualModule:'counterfactual-review',tacticalCatalog:true,tacticalDynamicUi:true,quickBladerRoute:true,cardDbBacked:true,handAutoApply:true,decisionInputV1:true,reviewWindowCoach:'observation-only-v1',historyIsolation:true})})})();
+W.ReviewEngine={version:V,rules,ruleset:SEA_PIRATE_RULESET,profiles:REVIEW_PROFILES,activeProfile,profileEnabled,catalog:{cards:TACTICAL_CARDS,resources:TACTICAL_RESOURCES},calculate,state,normalizeTactical,readTactical,tacticalSummary,decisionSnapshot,decisionSummary,deriveWindowCoach,deriveWindowCoaches,deriveCardUseCandidates,deriveCardUseCandidateReport,renderLethal,expose,publishReviewState,renderTacticalEditor,resetTacticalEditor,applyDetectedHand,syncProfileUi};
+W.onReady(()=>{renderTacticalEditor();syncProfileUi();W.on('state-hand-recognized',detail=>applyDetectedHand(detail?.result||null));W.on('state-captured',()=>renderLethal());W.on('state-input-changed',()=>renderLethal());W.$('#reviewProfile')?.addEventListener('change',()=>{syncProfileUi();if(profileEnabled()&&W.tacticalHandRecognition)applyDetectedHand(W.tacticalHandRecognition);else renderLethal();W.log('review-profile-change',{profile:activeProfile(),videoKey:W.videoKey()});W.emit('review-profile-changed',{profile:activeProfile()})});const tacticalChanged=e=>{if(e?.isTrusted){const el=e.target,id=el?.dataset?.tacticalCard||el?.dataset?.tacticalResource||null;if(id){el.dataset.source='manual';el.dataset.manualVideo=W.videoKey()}W.log('tactical-manual',{kind:el?.dataset?.tacticalCard?'card':'resource',id,value:el?.value??null,videoKey:W.videoKey()})}renderLethal()};W.$('#leTacticalCards')?.addEventListener('change',tacticalChanged);W.$('#leTacticalResources')?.addEventListener('input',tacticalChanged);W.$('#leTacticalResources')?.addEventListener('change',tacticalChanged);W.$('#leCalc')?.addEventListener('click',renderLethal);W.$('#leSave')?.addEventListener('click',saveL);W.on('video-reset',()=>{resetTacticalEditor();expose();renderSaved()});expose();renderLethal();renderSaved();W.log('module-ready',{module:'review-engine',version:V,reviewProfiles:true,defaultProfile:'none',stateBoundaryEvents:true,replaySessionEvents:true,tacticalRuleset:SEA_PIRATE_RULESET.id,counterfactualModule:'counterfactual-review',tacticalCatalog:true,tacticalDynamicUi:true,quickBladerRoute:true,cardDbBacked:true,handAutoApply:true,decisionInputV1:true,reviewWindowCoach:'observation-only-v1',cardUseCandidate:'two-evidence-candidate-only-no-action-v1',historyIsolation:true})})})();
