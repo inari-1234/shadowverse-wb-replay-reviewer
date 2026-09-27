@@ -14,7 +14,7 @@ assert.ok(state.includes("WB.emit('state-input-changed',{id,value:e.value})"),'s
 assert.ok(review.includes("W.on('state-hand-recognized',detail=>applyDetectedHand(detail?.result||null))"),'review engine must consume generic hand observation event');
 assert.ok(review.includes("W.on('state-captured',()=>renderLethal())"),'review engine must refresh after generic state capture');
 assert.ok(review.includes("W.on('state-input-changed',()=>renderLethal())"),'review engine must refresh after generic state input changes');
-assert.ok(app.includes("'state-recognition':'state-clean-1.8.18'"),'app manifest must require decoupled state module');
+assert.ok(app.includes("'state-recognition':'state-clean-1.8.19'"),'app manifest must require decoupled state module');
 assert.ok(app.includes("'review-engine':'review-clean-1.8.0'"),'app manifest must require event-based review module');
 
 for(const token of ['barbaros','zetaBeatrix','quickBlader','pirateFlagCountdowns']){
@@ -41,4 +41,4 @@ assert.ok(state.includes("captureMode:'timeline-lite'"),'intermediate timeline s
 assert.ok(state.includes("version:'turn-timeline-analysis-v2'"),'turn analysis output must be versioned for multi-point timelines');
 
 assert.ok(state.includes("handHistory:!batchMode"),'whole-match endpoint capture must disable only auxiliary hand history');
-assert.ok(state.includes("analyzeCurrentTurn({batchMode:true})"),'whole-match orchestration must explicitly opt into batch optimization');
+assert.ok(state.includes("analyzeCurrentTurn({batchMode:true,contextOverride})"),'whole-match orchestration must explicitly opt into batch optimization');
