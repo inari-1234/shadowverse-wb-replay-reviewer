@@ -167,7 +167,7 @@ function deriveCardUseCandidates(model={}){
       {type:'positive-before-hand-recognition',cardId:card.cardId,count:card.count,confidence:card.confidence,requiredThreshold:card.threshold},
       {type:'same-window-pp-spend-match',from:pp.from,to:pp.to,spent:pp.spent,acceptedCosts:card.acceptedCosts}
     ],
-    ambiguityPolicy:'unique-among-positively-observed-supported-cards',afterAbsenceUsed:false,historyObservedUsed:false,effectAttributionUsed:false,
+    ambiguityPolicy:'unique-among-positively-observed-supported-cards',afterAbsenceUsed:false,pastHandTraceUsed:false,effectAttributionUsed:false,
     causalAttribution:false,cardAttribution:'candidate-only',
     warning:'候補カードです。このカードを使用した確定ではなく、未認識カードや別行動の可能性を残します。'
   }]
