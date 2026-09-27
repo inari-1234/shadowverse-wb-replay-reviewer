@@ -160,6 +160,9 @@ assert.ok(stateRecognition.includes('function selectTurnStablePair(samples,cfg=T
 assert.ok(turnRecognition.includes("TERMINAL_TAIL_GUARD=Object.freeze({tailSeconds:3,targetMinAbsDiff:65,targetMinPixels:1750,targetMinStrongSamples:1,opponentMinAbsDiff:80,opponentMinPixels:1800,opponentMinStrongSamples:2"),'turn recognition must keep the role-aware terminal-tail guard narrowly bounded');
 assert.ok(turnRecognition.includes('function terminalTailDecision(timeline=[],duration=null,samples=[])'),'terminal-tail decision must remain independently regression-testable');
 assert.ok(turnRecognition.includes("const terminalGuard=await validateTerminalTail(stableRaw),stable=terminalGuard.timeline"),'terminal guard must run only after the stable13 primary scan');
+assert.ok(app.includes('WB.fastSampleSeek=async'),'app core must expose guarded fastSeek sampling for coarse turn scans');
+assert.ok(turnRecognition.includes("coarseSeekMode:'fast-seek-guarded<=120ms-drift-with-exact-fallback'"),'turn recognition must advertise guarded fast coarse seeking');
+assert.ok(turnRecognition.includes("primaryAt(t,{coarse:true})"),'only the stable13 coarse pass may opt into fastSeek sampling');
 assert.ok(turnRecognition.includes("terminalTailGuard:'last-row<=3s-role-aware-entry-evidence-v2'"),'turn module must advertise the terminal-tail safety contract');
 assert.ok(index.includes('相手側候補なら通常の相手ターンHUD相当の強い入口シグナルが複数フレームで続く場合だけ採用'),'UI must disclose the role-aware terminal-tail revalidation behavior');
 assert.ok(stateRecognition.includes('function selectTurnTimelineAnchors(discovery,cfg=TURN_ANALYZE_CFG)'),'turn analysis must explicitly select bounded multi-point anchors');
