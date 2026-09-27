@@ -21,7 +21,7 @@ vm.createContext(sandbox);
 new vm.Script(source,{filename:'replay-session.js'}).runInContext(sandbox);
 const R=WB.ReplaySession;
 
-assert.equal(R.version,'replay-session-clean-1.6');
+assert.equal(R.version,'replay-session-clean-1.7');
 assert.equal(R.schema,'replay-session-v2');
 assert.equal(R.persistenceMode(),'memory','no IndexedDB in regression sandbox must use memory fallback');
 
@@ -75,6 +75,8 @@ const gap=R.normalizeCapture(capture(8+10,{pp:1,opponentHP:10,ep:'no',opponentWa
 const gapActions=R.deriveActions(b,gap);
 assert.deepEqual(Array.from(gapActions.map(x=>x.type)),['observation-gap'],'more than 3 seconds must not be expanded into invented detailed actions');
 assert.equal(R.deriveObservedEpisodes(gapActions).length,0,'observation gaps must not be turned into pseudo-actions or grouped episodes');
+const unsafeGapPoint={id:'rp:'+gapActions[0].id,source:'action',sourceId:gapActions[0].id,time:gapActions[0].time,turn:gapActions[0].turn,priority:'high',kind:'unsafe-test'};
+assert.equal(R.deriveDecisionWindows([unsafeGapPoint],gapActions,[],[b,gap]).length,0,'Decision Window must never be created across an observation gap');
 
 
 const nextTurn=R.normalizeCapture({...capture(19),context:{time:19,turn:3,relativeSide:'自分'},confirmed:{...capture(19).confirmed,time:19,turn:3}});
@@ -124,6 +126,11 @@ assert.equal(bridgedEpisodes[0].causalAttribution,false);
 
 const bridgedPoints=R.deriveReviewPoints(bridged,[]);
 assert.equal(bridgedPoints.filter(x=>x.kind==='large-hp-change').length,1,'16→11 observed endpoints must create one large HP change review point');
+const bridgedWindows=R.deriveDecisionWindows(R.deriveObservationReviewPoints(bridged),bridged,bridgedEpisodes,realVideoBridge);
+assert.equal(bridgedWindows.length,1,'bounded UNKNOWN endpoint bridge may create one Decision Window');
+assert.equal(bridgedWindows[0].confidence,'observed-endpoints');
+assert.ok(bridgedWindows[0].unknownFields.includes('pp'),'unknown endpoint fields must stay explicitly unknown in Decision Window');
+assert.equal(bridgedWindows[0].causalAttribution,false);
 const tooWideBridge=R.deriveTimelineActions([
   R.normalizeCapture(turn6Capture(63.0,16)),
   R.normalizeCapture(turn6Capture(64.0,null)),
@@ -145,6 +152,23 @@ assert.equal(observationPoints.some(x=>x.source!=='action'),false,'observation R
 assert.equal(supplementalPoints.some(x=>!['review','manual'].includes(x.source)),false,'supplemental ReviewPoints must contain only review/manual signals');
 assert.deepEqual(Array.from(R.mergeReviewPoints(observationPoints,supplementalPoints).map(x=>x.id)),Array.from(points.map(x=>x.id)),'domain merge must preserve legacy ReviewPoint ordering');
 
+const decisionWindows=R.deriveDecisionWindows(observationPoints,actions,episodes,[a,b]);
+assert.equal(decisionWindows.length,1,'multiple ReviewPoints from one observed state pair must share one Decision Window');
+assert.equal(decisionWindows[0].reviewStart,10);
+assert.equal(decisionWindows[0].reviewEnd,12);
+assert.equal(decisionWindows[0].beforeState.id,a.id,'Decision Window must start from the observed state before the change');
+assert.equal(decisionWindows[0].afterState.id,b.id,'Decision Window must end at the observed state after the change');
+assert.equal(decisionWindows[0].relatedActionIds.length,5,'Decision Window must retain all observed changes in the same state pair');
+assert.deepEqual(Array.from(decisionWindows[0].relatedObservedEpisodeIds),[episodes[0].id]);
+assert.equal(decisionWindows[0].causalAttribution,false,'Decision Window must stay non-causal');
+assert.equal(decisionWindows[0].unknownFields.length,0,'fully known endpoints must not invent unknown fields');
+assert.equal(decisionWindows[0].reviewPointIds.length,observationPoints.length,'all observation ReviewPoints for the pair must be grouped without deleting them');
+const attachedDecisionPoints=R.attachDecisionWindows(observationPoints,decisionWindows);
+assert.equal(attachedDecisionPoints.length,observationPoints.length,'Decision Window enrichment must not change ReviewPoint count');
+assert.ok(attachedDecisionPoints.every(x=>x.decisionWindowId===decisionWindows[0].id));
+assert.ok(attachedDecisionPoints.every(x=>x.beforeState.id===a.id&&x.afterState.id===b.id));
+assert.ok(attachedDecisionPoints.every(x=>x.causalAttribution===false));
+
 R.ingestState(capture(10));
 R.ingestState(capture(12,{pp:3,opponentHP:17,ep:'no',opponentWard:'present',boardDamage:5}));
 let snap=R.snapshot();
@@ -152,6 +176,11 @@ assert.equal(snap.states.length,2);
 assert.equal(snap.actions.length,5);
 assert.equal(snap.observedEpisodes.length,1,'session rebuild must persist a non-causal observed episode summary');
 assert.equal(snap.observedEpisodes[0].actionIds.length,5);
+assert.equal(snap.decisionWindows.length,1,'session rebuild must persist one grouped Decision Window for the state pair');
+assert.equal(snap.observationReviewPoints.length,4,'Decision Window enrichment must preserve all four observation ReviewPoints');
+assert.ok(snap.observationReviewPoints.every(x=>x.decisionWindowId===snap.decisionWindows[0].id));
+assert.ok(snap.observationReviewPoints.every(x=>x.beforeState.id===a.id&&x.afterState.id===b.id));
+assert.equal(snap.decisionWindows[0].causalAttribution,false);
 
 assert.equal(snap.actions.some(x=>x.type==='card-play'),false,'state differences must not invent card plays');
 
@@ -193,6 +222,8 @@ assert.equal(migrated.session.scenes.length,1,'saved scene metadata must be pres
 
 assert.ok(source.includes("indexedDB.open(DB_NAME,DB_VERSION)"));
 assert.ok(source.includes("MAX_CONTIGUOUS_GAP=3"));
+assert.ok(source.includes("decisionWindows:[]"),'ReplaySession must keep Decision Windows as a derived observation structure');
+assert.ok(source.includes("causalAttribution:false"),'Decision Windows and observed episodes must remain explicitly non-causal');
 assert.equal(source.includes("'card-play'"),false);
 assert.ok(review.includes("W.emit('review-evaluated'"),'ReviewEngine must publish evaluation results');
 assert.ok(review.includes("W.emit('review-state-changed'"),'ReviewEngine must publish saved tactical review state');
