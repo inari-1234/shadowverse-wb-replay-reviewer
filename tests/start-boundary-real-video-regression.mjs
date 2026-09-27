@@ -19,7 +19,7 @@ function loadTurn(){
 
 const M=loadMulligan(),T=loadTurn();
 assert.equal(M.version,'mulligan-class-clean-1.5.3');
-assert.equal(T.version,'turn-clean-1.9');
+assert.equal(T.version,'turn-clean-1.10');
 
 // Real-video calibration from ScreenRecording_09-24-2026 05-00-39_1:
 // 3.5s is VS/prebattle and must not be accepted as a mulligan screen.
@@ -57,6 +57,10 @@ assert.equal(w.fourCardTimes.includes(.5),false,'prebattle false four-card patte
 
 assert.equal(T.turnScanStartFromMulligan(w,123.345),13.5,'turn scan must start after confirmed mulligan UI has ended');
 assert.equal(T.turnScanStartFromMulligan({confirmed:false,end:13},123.345),3.5,'unconfirmed mulligan evidence must not move the legacy scan boundary');
+assert.equal(T.isHardEarlyValidationError('side-offset-mismatch'),true,'side-offset contradiction must never be downgraded by mulligan confirmation');
+assert.equal(T.isHardEarlyValidationError('turn-sequence-gap'),true,'turn sequence gaps must hard fail before play-order UI is updated');
+assert.equal(T.isHardEarlyValidationError('non-alternating-merged-timeline'),true,'non-alternating timelines must hard fail');
+assert.equal(T.isHardEarlyValidationError('insufficient-early-hud-segments'),false,'missing early evidence may still use the legacy mulligan-guarded stable fallback');
 
 // The old false prefix at 3.5s is before the guarded scan start. The first surviving row is the real reviewed-side turn.
 const oldStable=[
