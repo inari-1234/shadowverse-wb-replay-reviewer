@@ -156,6 +156,12 @@ assert.ok(reviewPanelHtml.includes('<summary>自動振り返りの判定・安�
 assert.equal(index.includes('id="leCompare"'),false,'fixed two-second comparison must not remain in normal UI');
 assert.ok(app.includes("WB.$('#leAnalyzeTurn')"),'app control state must target the new turn-analysis button');
 assert.ok(stateRecognition.includes('async function analyzeCurrentTurn(options={})'),'state recognition must implement automatic same-turn stable-frame analysis');
+assert.equal(stateRecognition.includes("'match-analysis-turn-anchor'"),false,'whole-match analysis must not retain the redundant context-only anchor seek');
+assert.ok(stateRecognition.includes("contextOverride={row:item.row"),'whole-match analysis must derive context from the already-confirmed turn timeline');
+assert.ok(stateRecognition.includes("prepareHpProbeFrame(frame,side,hp)"),'stable probes must retain prepared HP OCR evidence for reuse');
+assert.ok(stateRecognition.includes("'turn-analysis-hp-cache-verify'"),'HP probe cache must be protected by an exact seek canary');
+assert.ok(stateRecognition.includes("if(!match){usePrepared=false;hpProbeCache.fallback=true}"),'canary mismatch must force the full legacy HP seek path');
+assert.ok(stateRecognition.includes("mode='direct',prepared=null"),'HP frame reader must support prepared exact-frame OCR without changing OCR consensus rules');
 assert.ok(stateRecognition.includes('function selectTurnStablePair(samples,cfg=TURN_ANALYZE_CFG)'),'stable-pair selection must remain explicit and regression-testable');
 assert.ok(turnRecognition.includes("TERMINAL_TAIL_GUARD=Object.freeze({tailSeconds:3,targetMinAbsDiff:65,targetMinPixels:1750,targetMinStrongSamples:1,opponentMinAbsDiff:80,opponentMinPixels:1800,opponentMinStrongSamples:2"),'turn recognition must keep the role-aware terminal-tail guard narrowly bounded');
 assert.ok(turnRecognition.includes('function terminalTailDecision(timeline=[],duration=null,samples=[])'),'terminal-tail decision must remain independently regression-testable');
