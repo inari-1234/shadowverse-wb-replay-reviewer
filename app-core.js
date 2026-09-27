@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.91',build:'4.13.91-20260927-clean-13-91',revision:'clean-13-91',subtitle:'Build 2026.09.27-clean-13-91 / 工程18 候補カード使用・複数証拠ゲート'};
+const APP={version:'4.13.91',build:'4.13.91-20260927-clean-13-91-ui1',revision:'clean-13-91-ui1',subtitle:'Build 2026.09.27-clean-13-91-ui1 / 第2最適化 UI整理'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'turn-recognition':'turn-clean-1.5',
   'mulligan-class':'mulligan-class-clean-1.5.3',
