@@ -192,7 +192,7 @@ assert.ok(review.includes("basis:'observation-only'"),'ReviewEngine coach must a
 assert.ok(review.includes("const CARD_USE_CANDIDATE_VERSION='card-use-candidate-v1'"),'ReviewEngine must own Phase 18 card-use candidate derivation');
 assert.ok(review.includes('function deriveCardUseCandidates(model={})'),'Phase 18 must derive candidates from one bounded Decision Window');
 assert.ok(review.includes("evidenceCount:2"),'Phase 18 card-use candidate must require two independent evidence types');
-assert.ok(review.includes("afterAbsenceUsed:false,historyObservedUsed:false,effectAttributionUsed:false"),'Phase 18 must not use absence, history hand, or inferred effects as card-use evidence');
+assert.ok(review.includes("afterAbsenceUsed:false,pastHandTraceUsed:false,effectAttributionUsed:false"),'Phase 18 must not use absence, history hand, or inferred effects as card-use evidence');
 assert.ok(review.includes("createsAction:false"),'Phase 18 candidate must never create an observation Action');
 assert.ok(replaySession.includes('function renderCardUseCandidates(candidates=[])'),'ReplaySession must render candidate-only card evidence separately');
 assert.ok(replaySession.includes('window.__wbCardUseCandidateV1'),'Phase 18 candidate report must be inspectable separately from ReplaySession observations');
