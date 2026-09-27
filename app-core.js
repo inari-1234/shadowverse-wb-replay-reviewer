@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.81',build:'4.13.81-20260927-clean-13-81',revision:'clean-13-81',subtitle:'Build 2026.09.27-clean-13-81 / 手札確定フレーム再利用'};
+const APP={version:'4.13.82',build:'4.13.82-20260927-clean-13-82',revision:'clean-13-82',subtitle:'Build 2026.09.27-clean-13-82 / 目的境界・戦術分岐モジュール分離'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'turn-recognition':'turn-clean-1.3',
   'mulligan-class':'mulligan-class-clean-1.5.3',
@@ -8,7 +8,8 @@ const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'hand-recognition':'hand-clean-1.52',
   'state-recognition':'state-clean-1.8.17',
   'replay-session':'replay-session-clean-1.5',
-  'review-engine':'review-clean-1.5.5',
+  'review-engine':'review-clean-1.6.0',
+  'counterfactual-review':'counterfactual-review-clean-1.0',
   'diagnostics':'diagnostics-clean-1.54'
 });
 const WB=window.WB={APP,expectedModules:EXPECTED_MODULE_VERSIONS,modules:[],moduleRegistrations:[],moduleRegistrationDuplicates:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,matchAnalysisLast:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
