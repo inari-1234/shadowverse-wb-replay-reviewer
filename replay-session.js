@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const W=window.WB;if(!W)return;
-const VERSION='replay-session-clean-1.6';
+const VERSION='replay-session-clean-1.7';
 const DB_NAME='wb-replay-session-v1',DB_VERSION=1,SESSION_STORE='sessions',SCENE_STORE='scene-images',MAX_CONTIGUOUS_GAP=3,SESSION_SCHEMA='replay-session-v2';
 W.registerModule('replay-session',VERSION);
 
@@ -13,7 +13,7 @@ function sourceKey(){return W.videoMeta?W.videoKey():null}
 function emptySession(key=sourceKey()){return{
   version:SESSION_SCHEMA,sourceKey:key,video:clone(W.videoMeta||null),createdAt:nowIso(),updatedAt:nowIso(),
   turnTimeline:clone(W.turnTimeline||[]),mulligan:clone(W.mulligan||null),classDetection:clone(W.classDetection||null),
-  reviewProfile:W.ReviewEngine?.activeProfile?.()||'none',states:[],actions:[],observedEpisodes:[],observationReviewPoints:[],reviewSignals:[],supplementalReviewPoints:[],reviewPoints:[],scenes:[],tacticalReview:null
+  reviewProfile:W.ReviewEngine?.activeProfile?.()||'none',states:[],actions:[],observedEpisodes:[],decisionWindows:[],observationReviewPoints:[],reviewSignals:[],supplementalReviewPoints:[],reviewPoints:[],scenes:[],tacticalReview:null
 }}
 function ensureCurrent(){const key=sourceKey();if(!key)return null;if(!current||current.sourceKey!==key)current=emptySession(key);return current}
 function migrateLoadedSession(loaded,key){
@@ -180,7 +180,73 @@ function deriveObservedEpisodes(actions=[]){
   }
   return rows.sort((a,b)=>(finite(a.time)??Infinity)-(finite(b.time)??Infinity))
 }
-function rebuildDerived(){const s=ensureCurrent();if(!s)return null;s.states.sort((a,b)=>(finite(a.time)??Infinity)-(finite(b.time)??Infinity));const actions=deriveTimelineActions(s.states);s.actions=actions;s.observedEpisodes=deriveObservedEpisodes(actions);s.observationReviewPoints=deriveObservationReviewPoints(actions);s.supplementalReviewPoints=deriveSupplementalReviewPoints(s.reviewSignals||[]);s.reviewPoints=mergeReviewPoints(s.observationReviewPoints,s.supplementalReviewPoints);return s}
+const DECISION_WINDOW_ACTION_TYPES=new Set(['opponent-hp-change','pp-change','resource-change','ward-change','board-damage-change']);
+function decisionUnknownFields(state){
+  if(!state)return['state'];
+  const out=[];
+  if(state.pp==null)out.push('pp');
+  if(state.opponentHP==null)out.push('opponentHP');
+  for(const key of ['extraPP','ep','sep'])if((state.resources?.[key]??'unknown')==='unknown')out.push(key);
+  if((state.opponentWard??'unknown')==='unknown')out.push('opponentWard');
+  if(state.boardDamageKnown!==true||state.boardDamage==null)out.push('boardDamage');
+  return out
+}
+function decisionObservedChange(a){return{actionId:a.id,type:a.type,confidence:a.confidence||'observed',data:clone(a.data||{})}}
+function deriveDecisionWindows(reviewPoints=[],actions=[],episodes=[],states=[]){
+  const actionById=new Map((actions||[]).map(x=>[x.id,x])),stateById=new Map((states||[]).map(x=>[x.id,x])),windows=new Map();
+  for(const point of reviewPoints||[]){
+    if(point?.source!=='action')continue;
+    const primary=actionById.get(point.sourceId);
+    if(!primary||!DECISION_WINDOW_ACTION_TYPES.has(primary.type)||!primary.fromStateId||!primary.toStateId)continue;
+    const before=stateById.get(primary.fromStateId),after=stateById.get(primary.toStateId),start=finite(before?.time),end=finite(after?.time);
+    if(!before||!after||!sameTurnIdentity(before,after)||start==null||end==null||end<start||end-start>MAX_CONTIGUOUS_GAP)continue;
+    const key=`${primary.fromStateId}->${primary.toStateId}`;
+    let row=windows.get(key);
+    if(!row){
+      const relatedActions=(actions||[]).filter(x=>x?.fromStateId===primary.fromStateId&&x?.toStateId===primary.toStateId&&DECISION_WINDOW_ACTION_TYPES.has(x?.type)),
+        relatedEpisodes=(episodes||[]).filter(x=>x?.fromStateId===primary.fromStateId&&x?.toStateId===primary.toStateId),
+        endpointOnly=relatedActions.some(x=>x?.confidence==='observed-endpoints'),
+        unknownFields=[...new Set([...decisionUnknownFields(before),...decisionUnknownFields(after)])],
+        unresolved=[...new Set(relatedEpisodes.flatMap(x=>Array.isArray(x?.unresolved)?x.unresolved:[]))];
+      row={
+        id:'dw:'+key,kind:'decision-window',reviewStart:start,reviewEnd:end,time:finite(point.time)??end,turn:finite(point.turn)??finite(after.turn)??finite(before.turn),
+        beforeState:clone(before),afterState:clone(after),observedChanges:relatedActions.map(decisionObservedChange),
+        importanceReasons:[],confidence:endpointOnly?'observed-endpoints':'observed',unknownFields,
+        relatedActionIds:relatedActions.map(x=>x.id),relatedObservedEpisodeIds:relatedEpisodes.map(x=>x.id),reviewPointIds:[],
+        causalAttribution:false,unresolved:unresolved.length?unresolved:['同一行動か','使用カード','効果源・ダメージ源','行動順']
+      };
+      windows.set(key,row)
+    }
+    if(!row.reviewPointIds.includes(point.id))row.reviewPointIds.push(point.id);
+    const reason=point.detail||point.title||point.kind||'振り返り候補';
+    if(!row.importanceReasons.includes(reason))row.importanceReasons.push(reason)
+  }
+  return[...windows.values()].sort((a,b)=>(finite(a.reviewStart)??Infinity)-(finite(b.reviewStart)??Infinity))
+}
+function attachDecisionWindows(reviewPoints=[],decisionWindows=[]){
+  const byPoint=new Map();
+  for(const window of decisionWindows||[])for(const id of window?.reviewPointIds||[])if(!byPoint.has(id))byPoint.set(id,window);
+  return(reviewPoints||[]).map(point=>{
+    const window=byPoint.get(point.id);
+    if(!window)return point;
+    return{...point,decisionWindowId:window.id,reviewStart:window.reviewStart,reviewEnd:window.reviewEnd,beforeState:clone(window.beforeState),afterState:clone(window.afterState),
+      observedChanges:clone(window.observedChanges),importanceReason:point.detail||point.title||point.kind||null,confidence:window.confidence,
+      unknownFields:clone(window.unknownFields),relatedActionIds:clone(window.relatedActionIds),relatedObservedEpisodeIds:clone(window.relatedObservedEpisodeIds),
+      causalAttribution:false,unresolved:clone(window.unresolved)}
+  })
+}
+function rebuildDerived(){
+  const s=ensureCurrent();if(!s)return null;
+  s.states.sort((a,b)=>(finite(a.time)??Infinity)-(finite(b.time)??Infinity));
+  const actions=deriveTimelineActions(s.states),rawObservationReviewPoints=deriveObservationReviewPoints(actions);
+  s.actions=actions;
+  s.observedEpisodes=deriveObservedEpisodes(actions);
+  s.decisionWindows=deriveDecisionWindows(rawObservationReviewPoints,actions,s.observedEpisodes,s.states);
+  s.observationReviewPoints=attachDecisionWindows(rawObservationReviewPoints,s.decisionWindows);
+  s.supplementalReviewPoints=deriveSupplementalReviewPoints(s.reviewSignals||[]);
+  s.reviewPoints=mergeReviewPoints(s.observationReviewPoints,s.supplementalReviewPoints);
+  return s
+}
 
 function ingestState(capture){
   const s=ensureCurrent(),row=normalizeCapture(capture);if(!s||!row)return null;
@@ -224,7 +290,7 @@ function render(){
   if(at)at.innerHTML=s?.actions?.length?s.actions.slice(-20).map(x=>`<div class="branchItem"><b>${x.turn?x.turn+'T':'-'}</b><div>${W.escape(actionLabel(x))}<br><span class="muted">${x.time==null?'--:--.-':W.fmt(x.time)} / ${W.escape(x.confidence)}</span></div></div>`).join(''):'<p class="help">連続した状態取得がまだありません。3秒以内の同一ターン観測だけを詳細な状態変化として扱います。</p>'
 }
 
-W.ReplaySession={version:VERSION,schema:SESSION_SCHEMA,dbName:DB_NAME,persistenceMode,emptySession,migrateLoadedSession,normalizeCapture,deriveActions,deriveTimelineActions,deriveObservedEpisodes,observedEpisodeInterpretation,deriveObservationReviewPoints,deriveSupplementalReviewPoints,mergeReviewPoints,deriveReviewPoints,ingestState,ingestReviewSignal,ingestScene,clearScenes,ingestReviewState,restoreCurrent,snapshot,rebuildDerived,render};
+W.ReplaySession={version:VERSION,schema:SESSION_SCHEMA,dbName:DB_NAME,persistenceMode,emptySession,migrateLoadedSession,normalizeCapture,deriveActions,deriveTimelineActions,deriveObservedEpisodes,observedEpisodeInterpretation,deriveObservationReviewPoints,deriveSupplementalReviewPoints,mergeReviewPoints,deriveReviewPoints,deriveDecisionWindows,attachDecisionWindows,ingestState,ingestReviewSignal,ingestScene,clearScenes,ingestReviewState,restoreCurrent,snapshot,rebuildDerived,render};
 
 W.on('metadata',()=>{restoreCurrent().catch(err=>W.recordError('replay-session-restore',err))});
 W.on('timeline',detail=>{const s=ensureCurrent();if(s){s.turnTimeline=clone(detail?.timeline||W.turnTimeline||[]);schedulePersist()}});
@@ -236,5 +302,5 @@ W.on('review-profile-changed',()=>{const s=ensureCurrent();if(s){refreshMetadata
 W.on('scene-saved',detail=>{ingestScene(detail?.scene).catch(err=>W.recordError('replay-session-scene-save',err))});
 W.on('scenes-cleared',detail=>{clearScenes(detail?.sceneIds||[]).catch(err=>W.recordError('replay-session-scenes-clear',err))});
 W.on('video-reset',()=>{current=null;expose();render()});
-W.onReady(()=>{render();W.log('module-ready',{module:'replay-session',version:VERSION,persistence:persistenceMode(),maxContiguousGap:MAX_CONTIGUOUS_GAP,turnIdentity:'number+side',unknownSafe:true,nullNumericSafe:true,unknownHpBridge:'same-turn-observed-endpoints<=3s',observedEpisodes:'same-state-pair-noncausal-summary',causalAttribution:false,reviewPointDomains:'observation+supplemental-merged',sessionSchema:SESSION_SCHEMA})});
+W.onReady(()=>{render();W.log('module-ready',{module:'replay-session',version:VERSION,persistence:persistenceMode(),maxContiguousGap:MAX_CONTIGUOUS_GAP,turnIdentity:'number+side',unknownSafe:true,nullNumericSafe:true,unknownHpBridge:'same-turn-observed-endpoints<=3s',observedEpisodes:'same-state-pair-noncausal-summary',causalAttribution:false,reviewPointDomains:'observation+supplemental-merged',decisionWindows:'same-turn-state-pair<=3s-noncausal',sessionSchema:SESSION_SCHEMA})});
 })();
