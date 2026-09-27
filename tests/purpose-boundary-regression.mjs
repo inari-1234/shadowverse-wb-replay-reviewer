@@ -19,6 +19,8 @@ for(const fn of ['function cf()','function saveCf()','function assist()']){
   assert.ok(counter.includes(fn),`${fn} must live in counterfactual-review`);
 }
 assert.ok(review.includes("counterfactualModule:'counterfactual-review'"));
+assert.equal(review.includes("branchAssist:'branch-assist-clean'"),false,'branch-assist responsibility metadata must not remain in review-engine');
+assert.equal(review.includes('independentState:true'),false,'counterfactual independent-state responsibility must not remain in review-engine');
 assert.ok(counter.includes("const VERSION='counterfactual-review-clean-1.0'"));
 assert.ok(counter.includes("CS='wb-counterfactual-v1'"),'existing counterfactual storage key must be preserved');
 assert.ok(counter.includes("W.ReviewEngine?.calculate?.(s)"),'counterfactual must consume tactical evaluation through the public ReviewEngine boundary');
