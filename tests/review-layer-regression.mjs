@@ -55,6 +55,7 @@ const sandbox={
 vm.createContext(sandbox);
 new vm.Script(fs.readFileSync(new URL('../card-db.js',import.meta.url),'utf8')).runInContext(sandbox);
 new vm.Script(fs.readFileSync(new URL('../review-engine.js',import.meta.url),'utf8')).runInContext(sandbox);
+new vm.Script(fs.readFileSync(new URL('../counterfactual-review.js',import.meta.url),'utf8')).runInContext(sandbox);
 for(const fn of ready.splice(0)) fn();
 
 const fire=(id,type='click')=>{
