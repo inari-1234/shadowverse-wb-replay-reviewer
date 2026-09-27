@@ -21,7 +21,7 @@ vm.createContext(sandbox);
 new vm.Script(source,{filename:'replay-session.js'}).runInContext(sandbox);
 const R=WB.ReplaySession;
 
-assert.equal(R.version,'replay-session-clean-1.5');
+assert.equal(R.version,'replay-session-clean-1.6');
 assert.equal(R.schema,'replay-session-v2');
 assert.equal(R.persistenceMode(),'memory','no IndexedDB in regression sandbox must use memory fallback');
 
@@ -139,6 +139,11 @@ assert.ok(points.some(x=>x.kind==='resource-used'&&x.priority==='high'));
 assert.ok(points.some(x=>x.kind==='board-swing'&&x.priority==='medium'));
 assert.ok(points.some(x=>x.kind==='ward-change'));
 assert.ok(points.some(x=>x.kind==='lethal-available'&&x.priority==='critical'));
+const observationPoints=R.deriveObservationReviewPoints(actions);
+const supplementalPoints=R.deriveSupplementalReviewPoints([{id:'ev:lethal',kind:'lethal',time:12,turn:2,status:'confirmed-lethal',lethalRoutes:['Quick route']}]);
+assert.equal(observationPoints.some(x=>x.source!=='action'),false,'observation ReviewPoints must contain only observation-derived actions');
+assert.equal(supplementalPoints.some(x=>!['review','manual'].includes(x.source)),false,'supplemental ReviewPoints must contain only review/manual signals');
+assert.deepEqual(Array.from(R.mergeReviewPoints(observationPoints,supplementalPoints).map(x=>x.id)),Array.from(points.map(x=>x.id)),'domain merge must preserve legacy ReviewPoint ordering');
 
 R.ingestState(capture(10));
 R.ingestState(capture(12,{pp:3,opponentHP:17,ep:'no',opponentWard:'present',boardDamage:5}));
@@ -153,6 +158,11 @@ assert.equal(snap.actions.some(x=>x.type==='card-play'),false,'state differences
 R.ingestReviewSignal({atSeconds:12,turn:2,reviewProfile:'sea-pirate-royal',status:'confirmed-lethal',lethalRoutes:['Quick route'],unknown:[]});
 snap=R.snapshot();
 assert.ok(snap.reviewPoints.some(x=>x.kind==='lethal-available'));
+assert.ok(Array.isArray(snap.observationReviewPoints));
+assert.ok(Array.isArray(snap.supplementalReviewPoints));
+assert.ok(snap.observationReviewPoints.every(x=>x.source==='action'));
+assert.ok(snap.supplementalReviewPoints.every(x=>x.source==='review'||x.source==='manual'));
+assert.deepEqual(Array.from(snap.reviewPoints.map(x=>x.id)),Array.from(R.mergeReviewPoints(snap.observationReviewPoints,snap.supplementalReviewPoints).map(x=>x.id)));
 
 const beforeDisabled=snap.reviewSignals.length;
 assert.equal(R.ingestReviewSignal({atSeconds:12,turn:2,reviewProfile:'none',status:'profile-disabled',lethalRoutes:[]}),null);
