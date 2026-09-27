@@ -1,0 +1,35 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+
+const purpose=fs.readFileSync(new URL('../PURPOSE.md',import.meta.url),'utf8');
+const index=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const review=fs.readFileSync(new URL('../review-engine.js',import.meta.url),'utf8');
+const counter=fs.readFileSync(new URL('../counterfactual-review.js',import.meta.url),'utf8');
+const replay=fs.readFileSync(new URL('../replay-session.js',import.meta.url),'utf8');
+
+assert.ok(purpose.includes('録画済みリプレイから観測できる情報を安全に抽出し、試合後の振り返りを支援する'));
+assert.ok(purpose.includes('Observation Core — 本体'));
+assert.ok(purpose.includes('Tactical Review — 補助'));
+assert.ok(purpose.includes('Counterfactual Simulation — 補助'));
+assert.ok(purpose.includes('Diagnostics / Research — 開発専用'));
+assert.ok(purpose.includes('false CONFIRMED'));
+
+for(const fn of ['function cf()','function saveCf()','function assist()']){
+  assert.equal(review.includes(fn),false,`${fn} must not remain in review-engine`);
+  assert.ok(counter.includes(fn),`${fn} must live in counterfactual-review`);
+}
+assert.ok(review.includes("counterfactualModule:'counterfactual-review'"));
+assert.ok(counter.includes("const VERSION='counterfactual-review-clean-1.0'"));
+assert.ok(counter.includes("CS='wb-counterfactual-v1'"),'existing counterfactual storage key must be preserved');
+assert.ok(counter.includes("W.ReviewEngine?.calculate?.(s)"),'counterfactual must consume tactical evaluation through the public ReviewEngine boundary');
+assert.ok(counter.includes("W.ReviewEngine?.publishReviewState?.()"),'counterfactual persistence must publish through the shared review-state boundary');
+
+assert.ok(index.includes('戦術シミュレーション（補助）'));
+assert.ok(index.includes('録画から得た観測事実とは別の手入力シミュレーション'));
+assert.ok(index.includes('Action Timelineの観測事実へは混ぜません'));
+assert.ok(index.includes('後から得た公開情報を自動遮断する仕組みではありません。'));
+
+assert.ok(replay.includes('states:[],actions:[],observedEpisodes:[]'),'ReplaySession observation core must remain explicit');
+assert.equal(replay.includes("'card-play'"),false,'purpose boundary must continue forbidding inferred card-play actions');
+
+console.log('PURPOSE BOUNDARY REGRESSION PASS');
