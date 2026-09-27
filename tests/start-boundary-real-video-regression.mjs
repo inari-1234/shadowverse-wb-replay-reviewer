@@ -19,7 +19,7 @@ function loadTurn(){
 
 const M=loadMulligan(),T=loadTurn();
 assert.equal(M.version,'mulligan-class-clean-1.5.3');
-assert.equal(T.version,'turn-clean-1.4');
+assert.equal(T.version,'turn-clean-1.5');
 
 // Real-video calibration from ScreenRecording_09-24-2026 05-00-39_1:
 // 3.5s is VS/prebattle and must not be accepted as a mulligan screen.
