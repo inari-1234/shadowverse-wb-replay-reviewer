@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const W=window.WB;if(!W)return;
-const VERSION='replay-session-clean-1.8';
+const VERSION='replay-session-clean-1.9';
 const DB_NAME='wb-replay-session-v1',DB_VERSION=1,SESSION_STORE='sessions',SCENE_STORE='scene-images',MAX_CONTIGUOUS_GAP=3,SESSION_SCHEMA='replay-session-v2';
 W.registerModule('replay-session',VERSION);
 
@@ -286,41 +286,79 @@ function actionLabel(a){if(a.type==='opponent-hp-change')return`相手HP ${a.dat
 const REVIEW_FIELD_LABELS=Object.freeze({pp:'PP',opponentHP:'相手HP',extraPP:'ExPP',ep:'EP',sep:'SEP',opponentWard:'相手守護',boardDamage:'盤面打点',state:'状態'});
 function reviewFlag(v){return v==='yes'?'使用可':v==='no'?'使用不可':'未確認'}
 function reviewWard(v){return v==='present'?'あり確認':v==='none'?'なし確認':'未確認'}
-function reviewStateRows(state){
-  const s=state||{},r=s.resources||{},boardKnown=s.boardDamageKnown===true&&finite(s.boardDamage)!=null;
+function reviewChangedKeys(changes=[]){
+  const out=new Set();
+  for(const a of Array.isArray(changes)?changes:[]){
+    if(a?.type==='pp-change')out.add('pp');
+    else if(a?.type==='opponent-hp-change')out.add('opponentHP');
+    else if(a?.type==='ward-change')out.add('opponentWard');
+    else if(a?.type==='board-damage-change')out.add('boardDamage');
+    else if(a?.type==='resource-change'){
+      const k=String(a?.data?.resource||'').toLowerCase();
+      if(k==='extrapp'||k==='extra-pp'||k==='extra_pp')out.add('extraPP');
+      else if(k==='ep')out.add('ep');
+      else if(k==='sep')out.add('sep');
+    }
+  }
+  return out
+}
+function reviewStateRows(state,changedKeys=[]){
+  const s=state||{},r=s.resources||{},boardKnown=s.boardDamageKnown===true&&finite(s.boardDamage)!=null,changed=new Set(changedKeys||[]);
   return[
-    {key:'pp',label:'PP',value:finite(s.pp)==null?'未確認':String(finite(s.pp))},
-    {key:'opponentHP',label:'相手HP',value:finite(s.opponentHP)==null?'未確認':String(finite(s.opponentHP))},
-    {key:'extraPP',label:'ExPP',value:reviewFlag(r.extraPP)},
-    {key:'ep',label:'EP',value:reviewFlag(r.ep)},
-    {key:'sep',label:'SEP',value:reviewFlag(r.sep)},
-    {key:'opponentWard',label:'相手守護',value:reviewWard(s.opponentWard)},
-    {key:'boardDamage',label:'盤面打点',value:boardKnown?String(finite(s.boardDamage)):'未確認'}
+    {key:'pp',label:'PP',value:finite(s.pp)==null?'未確認':String(finite(s.pp)),changed:changed.has('pp')},
+    {key:'opponentHP',label:'相手HP',value:finite(s.opponentHP)==null?'未確認':String(finite(s.opponentHP)),changed:changed.has('opponentHP')},
+    {key:'extraPP',label:'ExPP',value:reviewFlag(r.extraPP),changed:changed.has('extraPP')},
+    {key:'ep',label:'EP',value:reviewFlag(r.ep),changed:changed.has('ep')},
+    {key:'sep',label:'SEP',value:reviewFlag(r.sep),changed:changed.has('sep')},
+    {key:'opponentWard',label:'相手守護',value:reviewWard(s.opponentWard),changed:changed.has('opponentWard')},
+    {key:'boardDamage',label:'盤面打点',value:boardKnown?String(finite(s.boardDamage)):'未確認',changed:changed.has('boardDamage')}
   ]
 }
 function reviewWindowModels(session=current){
   const s=session||{},pointById=new Map((s.observationReviewPoints||[]).map(x=>[x.id,x]));
   return(s.decisionWindows||[]).map(window=>{
-    const points=(window.reviewPointIds||[]).map(id=>pointById.get(id)).filter(Boolean),first=points[0]||null;
+    const points=(window.reviewPointIds||[]).map(id=>pointById.get(id)).filter(Boolean),first=points[0]||null,
+      observedChanges=clone(window.observedChanges||[]),changedKeys=[...reviewChangedKeys(observedChanges)];
     return{
       id:window.id,turn:window.turn??first?.turn??null,reviewStart:finite(window.reviewStart),reviewEnd:finite(window.reviewEnd),
       title:first?.title||'重要な状態変化',priority:first?.priority||'review',
       beforeState:clone(window.beforeState),afterState:clone(window.afterState),
-      beforeRows:reviewStateRows(window.beforeState),afterRows:reviewStateRows(window.afterState),
-      observedChanges:clone(window.observedChanges||[]),importanceReasons:clone(window.importanceReasons||[]),
+      beforeRows:reviewStateRows(window.beforeState,changedKeys),afterRows:reviewStateRows(window.afterState,changedKeys),
+      observedChanges,changedKeys,importanceReasons:clone(window.importanceReasons||[]),
       confidence:window.confidence||'observed',unknownFields:clone(window.unknownFields||[]),
       unresolved:clone(window.unresolved||[]),causalAttribution:false,reviewPointIds:clone(window.reviewPointIds||[])
     }
   })
 }
-function renderReviewState(rows=[]){return`<div class="reviewStateRows">${rows.map(r=>`<div><span>${W.escape(r.label)}</span><b class="${r.value==='未確認'?'stateUnknown':''}">${W.escape(r.value)}</b></div>`).join('')}</div>`}
+function renderReviewState(rows=[]){return`<div class="reviewStateRows">${rows.map(r=>`<div class="${r.changed?'reviewStateChanged':''}"><span>${W.escape(r.label)}</span><b class="${r.value==='未確認'?'stateUnknown':''}">${W.escape(r.value)}</b></div>`).join('')}</div>`}
+function reviewSeekButton(label,time,phase){const t=finite(time);return t==null?'':`<button type="button" class="reviewSeekButton" data-review-time="${t}" data-review-phase="${W.escape(phase)}">${W.escape(label)}</button>`}
 function renderDecisionWindowCard(model){
   const changes=model.observedChanges?.length?model.observedChanges.map(x=>`<li>${W.escape(actionLabel(x))}</li>`).join(''):'<li>詳細な状態変化は確定していません。</li>',
     reasons=model.importanceReasons?.length?model.importanceReasons.map(x=>`<li>${W.escape(x)}</li>`).join(''):'<li>振り返り候補として抽出</li>',
     unknown=(model.unknownFields||[]).map(x=>REVIEW_FIELD_LABELS[x]||x),
     unresolved=(model.unresolved||[]),
-    confidence=model.confidence==='observed-endpoints'?'端点観測':model.confidence==='observed'?'観測':'確認値';
-  return`<article class="reviewWindow"><div class="reviewWindowHeader"><div><span class="badge">${W.escape(model.priority)}</span><b>${W.escape(model.title)}</b></div><div class="reviewWindowTime">${model.turn?W.escape(model.turn+'T'):'局面'} / ${model.reviewStart==null?'--:--.-':W.fmt(model.reviewStart)} → ${model.reviewEnd==null?'--:--.-':W.fmt(model.reviewEnd)}</div></div><div class="reviewStateGrid"><div class="reviewState"><b>判断直前</b>${renderReviewState(model.beforeRows)}</div><div class="reviewState"><b>変化後</b>${renderReviewState(model.afterRows)}</div></div><div class="reviewWindowGrid"><div class="reviewBlock"><b>観測した変化</b><ul>${changes}</ul></div><div class="reviewBlock"><b>重要とした理由</b><ul>${reasons}</ul></div></div><div class="reviewWindowMeta"><span>確度: ${W.escape(confidence)}</span><span class="${unknown.length?'stateUnknown':''}">未確認: ${W.escape(unknown.length?unknown.join(' / '):'なし')}</span></div>${unresolved.length?`<div class="reviewUnresolved">断定していない項目: ${W.escape(unresolved.join(' / '))}</div>`:''}</article>`
+    confidence=model.confidence==='observed-endpoints'?'端点観測':model.confidence==='observed'?'観測':'確認値',
+    navigation=`<div class="reviewWindowActions">${reviewSeekButton('判断直前を見る',model.reviewStart,'before')}${reviewSeekButton('変化後を見る',model.reviewEnd,'after')}</div>`;
+  return`<article class="reviewWindow" data-review-window-id="${W.escape(model.id||'')}"><div class="reviewWindowHeader"><div><span class="badge">${W.escape(model.priority)}</span><b>${W.escape(model.title)}</b></div><div class="reviewWindowTime">${model.turn?W.escape(model.turn+'T'):'局面'} / ${model.reviewStart==null?'--:--.-':W.fmt(model.reviewStart)} → ${model.reviewEnd==null?'--:--.-':W.fmt(model.reviewEnd)}</div></div>${navigation}<div class="reviewStateGrid"><div class="reviewState"><b>判断直前</b>${renderReviewState(model.beforeRows)}</div><div class="reviewState"><b>変化後</b>${renderReviewState(model.afterRows)}</div></div><div class="reviewWindowGrid"><div class="reviewBlock"><b>観測した変化</b><ul>${changes}</ul></div><div class="reviewBlock"><b>重要とした理由</b><ul>${reasons}</ul></div></div><div class="reviewWindowMeta"><span>確度: ${W.escape(confidence)}</span><span class="${unknown.length?'stateUnknown':''}">未確認: ${W.escape(unknown.length?unknown.join(' / '):'なし')}</span></div>${unresolved.length?`<div class="reviewUnresolved">断定していない項目: ${W.escape(unresolved.join(' / '))}</div>`:''}</article>`
+}
+async function seekReviewWindow(time,phase='before'){
+  const t=finite(time),label=phase==='after'?'変化後':'判断直前',status=W.$('#reviewNavigationStatus');
+  if(t==null||!W.video||!Number.isFinite(W.video.duration)||W.task){if(status)status.textContent='動画を読み込み、処理完了後に局面へ移動できます。';return false}
+  W.pauseVideo?.('review-window-'+phase);
+  try{
+    if(typeof W.runTask==='function')await W.runTask('局面レビュー移動',()=>W.seekTo(t,'review-window-'+phase),{lockText:`${label}へ移動しています。`});
+    else await W.seekTo(t,'review-window-'+phase);
+    if(status)status.textContent=`${label} ${W.fmt(t)} へ移動しました。`;
+    W.video.scrollIntoView?.({behavior:'smooth',block:'center'});
+    W.log?.('review-window-seek',{phase,time:+t.toFixed(3)});
+    return true
+  }catch(err){if(status)status.textContent='局面移動エラー: '+(err?.message||String(err));return false}
+}
+function bindReviewNavigation(){
+  const root=W.$('#reviewPoints');if(!root||root.dataset.reviewNavigationBound==='1')return false;
+  root.dataset.reviewNavigationBound='1';
+  root.addEventListener('click',e=>{const b=e.target?.closest?.('[data-review-time]');if(!b||!root.contains(b))return;seekReviewWindow(b.dataset.reviewTime,b.dataset.reviewPhase||'before')});
+  return true
 }
 function renderSupplementalPoint(x){return`<div class="branchItem"><b>${x.turn?x.turn+'T':'局面'}</b><div><span class="badge">${W.escape(x.priority)}</span>${W.escape(x.title)}<br><span class="muted">${x.time==null?'--:--.-':W.fmt(x.time)} / ${W.escape(x.detail||'')}</span></div></div>`}
 function render(){
@@ -329,13 +367,13 @@ function render(){
     const windows=reviewWindowModels(s).slice(-12),supplemental=(s?.supplementalReviewPoints||[]).slice(-8);
     const windowHtml=windows.length?windows.map(renderDecisionWindowCard).join(''):'<p class="help">まだ安全に確定したDecision Windowはありません。</p>',
       supplementalHtml=supplemental.length?`<details class="tacticalEditor"><summary>補助の振り返り候補 ${supplemental.length}件</summary><div class="tacticalBody">${supplemental.map(renderSupplementalPoint).join('')}</div></details>`:'';
-    rp.innerHTML=(windows.length||supplemental.length)?windowHtml+supplementalHtml:'<p class="help">まだ自動抽出された振り返り候補はありません。状態取得や局面保存を行うと追加されます。</p>'
+    rp.innerHTML=(windows.length||supplemental.length)?windowHtml+supplementalHtml:'<p class="help">まだ自動抽出された振り返り候補はありません。状態取得や局面保存を行うと追加されます。</p>';bindReviewNavigation()
   }
   if(ep)ep.innerHTML=s?.observedEpisodes?.length?s.observedEpisodes.slice(-12).map(x=>`<div class="branchItem"><b>${x.turn?x.turn+'T':'-'}</b><div><b>${W.escape(x.summary||'観測区間')}</b><br><span class="muted">${x.time==null?'--:--.-':W.fmt(x.time)} / ${W.escape(x.interpretation||'')}</span></div></div>`).join(''):'<p class="help">同一ターン内で複数の確定状態を取得すると、観測区間ごとの変化をまとめます。</p>';
   if(at)at.innerHTML=s?.actions?.length?s.actions.slice(-20).map(x=>`<div class="branchItem"><b>${x.turn?x.turn+'T':'-'}</b><div>${W.escape(actionLabel(x))}<br><span class="muted">${x.time==null?'--:--.-':W.fmt(x.time)} / ${W.escape(x.confidence)}</span></div></div>`).join(''):'<p class="help">連続した状態取得がまだありません。3秒以内の同一ターン観測だけを詳細な状態変化として扱います。</p>'
 }
 
-W.ReplaySession={version:VERSION,schema:SESSION_SCHEMA,dbName:DB_NAME,persistenceMode,emptySession,migrateLoadedSession,normalizeCapture,deriveActions,deriveTimelineActions,deriveObservedEpisodes,observedEpisodeInterpretation,deriveObservationReviewPoints,deriveSupplementalReviewPoints,mergeReviewPoints,deriveReviewPoints,deriveDecisionWindows,attachDecisionWindows,reviewStateRows,reviewWindowModels,renderDecisionWindowCard,ingestState,ingestReviewSignal,ingestScene,clearScenes,ingestReviewState,restoreCurrent,snapshot,rebuildDerived,render};
+W.ReplaySession={version:VERSION,schema:SESSION_SCHEMA,dbName:DB_NAME,persistenceMode,emptySession,migrateLoadedSession,normalizeCapture,deriveActions,deriveTimelineActions,deriveObservedEpisodes,observedEpisodeInterpretation,deriveObservationReviewPoints,deriveSupplementalReviewPoints,mergeReviewPoints,deriveReviewPoints,deriveDecisionWindows,attachDecisionWindows,reviewChangedKeys,reviewStateRows,reviewWindowModels,renderDecisionWindowCard,seekReviewWindow,bindReviewNavigation,ingestState,ingestReviewSignal,ingestScene,clearScenes,ingestReviewState,restoreCurrent,snapshot,rebuildDerived,render};
 
 W.on('metadata',()=>{restoreCurrent().catch(err=>W.recordError('replay-session-restore',err))});
 W.on('timeline',detail=>{const s=ensureCurrent();if(s){s.turnTimeline=clone(detail?.timeline||W.turnTimeline||[]);schedulePersist()}});
@@ -347,5 +385,5 @@ W.on('review-profile-changed',()=>{const s=ensureCurrent();if(s){refreshMetadata
 W.on('scene-saved',detail=>{ingestScene(detail?.scene).catch(err=>W.recordError('replay-session-scene-save',err))});
 W.on('scenes-cleared',detail=>{clearScenes(detail?.sceneIds||[]).catch(err=>W.recordError('replay-session-scenes-clear',err))});
 W.on('video-reset',()=>{current=null;expose();render()});
-W.onReady(()=>{render();W.log('module-ready',{module:'replay-session',version:VERSION,persistence:persistenceMode(),maxContiguousGap:MAX_CONTIGUOUS_GAP,turnIdentity:'number+side',unknownSafe:true,nullNumericSafe:true,unknownHpBridge:'same-turn-observed-endpoints<=3s',observedEpisodes:'same-state-pair-noncausal-summary',causalAttribution:false,reviewPointDomains:'observation+supplemental-merged',decisionWindows:'same-turn-state-pair<=3s-noncausal',reviewWindowUi:'before-after-observed-importance-unknown-noncausal',sessionSchema:SESSION_SCHEMA})});
+W.onReady(()=>{render();W.log('module-ready',{module:'replay-session',version:VERSION,persistence:persistenceMode(),maxContiguousGap:MAX_CONTIGUOUS_GAP,turnIdentity:'number+side',unknownSafe:true,nullNumericSafe:true,unknownHpBridge:'same-turn-observed-endpoints<=3s',observedEpisodes:'same-state-pair-noncausal-summary',causalAttribution:false,reviewPointDomains:'observation+supplemental-merged',decisionWindows:'same-turn-state-pair<=3s-noncausal',reviewWindowUi:'before-after-observed-importance-unknown-noncausal-navigation',sessionSchema:SESSION_SCHEMA})});
 })();
