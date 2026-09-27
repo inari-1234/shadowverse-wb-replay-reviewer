@@ -32,6 +32,9 @@ assert.ok(index.includes('Action Timelineの観測事実へは混ぜません'))
 assert.ok(index.includes('後から得た公開情報を自動遮断する仕組みではありません。'));
 
 assert.ok(replay.includes('states:[],actions:[],observedEpisodes:[]'),'ReplaySession observation core must remain explicit');
+assert.ok(replay.includes('observationReviewPoints:[]'),'ReplaySession must persist observation-derived ReviewPoints separately');
+assert.ok(replay.includes('supplementalReviewPoints:[]'),'ReplaySession must persist tactical/manual ReviewPoints separately');
+assert.ok(replay.includes('s.reviewPoints=mergeReviewPoints(s.observationReviewPoints,s.supplementalReviewPoints)'),'legacy merged reviewPoints view must be derived from separated domains');
 assert.equal(replay.includes("'card-play'"),false,'purpose boundary must continue forbidding inferred card-play actions');
 
 console.log('PURPOSE BOUNDARY REGRESSION PASS');
