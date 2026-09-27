@@ -1,13 +1,13 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.91',build:'4.13.91-20260927-clean-13-91-ui1',revision:'clean-13-91-ui1',subtitle:'Build 2026.09.27-clean-13-91-ui1 / 第2最適化 UI整理'};
+const APP={version:'4.13.91',build:'4.13.91-20260927-clean-13-91-opt2',revision:'clean-13-91-opt2',subtitle:'Build 2026.09.27-clean-13-91-opt2 / 第2最適化 UI・再描画整理'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'turn-recognition':'turn-clean-1.5',
   'mulligan-class':'mulligan-class-clean-1.5.3',
   'card-db':'card-db-clean-1.23',
   'hand-recognition':'hand-clean-1.52',
   'state-recognition':'state-clean-1.8.18',
-  'replay-session':'replay-session-clean-1.11',
+  'replay-session':'replay-session-clean-1.12',
   'review-engine':'review-clean-1.8.0',
   'counterfactual-review':'counterfactual-review-clean-1.0',
   'diagnostics':'diagnostics-clean-1.57'
@@ -48,7 +48,7 @@ WB.downloadJSON=(obj,name)=>{const b=new Blob([JSON.stringify(obj,null,2)],{type
 WB.shareJsonFile=async(obj,name)=>{const file=new File([JSON.stringify(obj,null,2)],name,{type:'application/json',lastModified:Date.now()});if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]}))){try{await navigator.share({files:[file]});return}catch(e){if(e?.name==='AbortError')return}}WB.downloadJSON(obj,name)};
 
 WB.setTaskLock=(on,title='',text='')=>{const box=WB.$('#taskLock');if(!box)return;if(on){WB.$('#taskLockTitle').textContent=title||'処理中';WB.$('#taskLockText').textContent=text||'動画位置を自動操作しています。';box.classList.remove('hidden')}else box.classList.add('hidden')};
-WB.runTask=async(name,fn,{lockText='動画位置を自動操作しています。'}={})=>{if(WB.task)throw new Error(`別処理を実行中です: ${WB.task}`);WB.task=name;WB.cancelRequested=false;WB.setTaskLock(true,name,lockText);WB.log('task-start',{name});try{return await fn()}catch(err){WB.recordError(name,err);throw err}finally{WB.log('task-finish',{name,cancelRequested:WB.cancelRequested});WB.task=null;WB.cancelRequested=false;WB.setTaskLock(false);if(typeof WB.updateTurnPick==='function')WB.updateTurnPick();WB.log('task-controls-synced',{name,turn:Number(WB.$('#turnPick')?.value)||1})}};
+WB.runTask=async(name,fn,{lockText='動画位置を自動操作しています。'}={})=>{if(WB.task)throw new Error(`別処理を実行中です: ${WB.task}`);WB.task=name;WB.cancelRequested=false;WB.setTaskLock(true,name,lockText);WB.log('task-start',{name});try{return await fn()}catch(err){WB.recordError(name,err);throw err}finally{const cancelled=WB.cancelRequested;WB.log('task-finish',{name,cancelRequested:cancelled});WB.task=null;WB.cancelRequested=false;WB.setTaskLock(false);WB.emit('task-finished',{name,cancelRequested:cancelled});if(typeof WB.updateTurnPick==='function')WB.updateTurnPick();WB.log('task-controls-synced',{name,turn:Number(WB.$('#turnPick')?.value)||1})}};
 WB.requestCancel=()=>{if(WB.task){WB.cancelRequested=true;WB.log('task-cancel-request',{name:WB.task})}};
 WB.setProgress=p=>{const w=WB.$('#progressWrap'),b=WB.$('#progress');if(!w||!b)return;if(p==null){w.classList.add('hidden');b.style.width='0%'}else{w.classList.remove('hidden');b.style.width=Math.max(0,Math.min(100,p))+'%'}};
 WB.setScanStatus=(msg,cls='help')=>{const e=WB.$('#scanStatus');if(e){e.className=cls;e.textContent=msg}};
