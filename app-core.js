@@ -1,13 +1,13 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.88',build:'4.13.88-20260927-clean-13-88',revision:'clean-13-88',subtitle:'Build 2026.09.27-clean-13-88 / 工程16 局面レビュー・末尾ターン誤検出ガードv2'};
+const APP={version:'4.13.89',build:'4.13.89-20260927-clean-13-89',revision:'clean-13-89',subtitle:'Build 2026.09.27-clean-13-89 / 工程16 局面レビュー・実用ナビゲーション'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'turn-recognition':'turn-clean-1.5',
   'mulligan-class':'mulligan-class-clean-1.5.3',
   'card-db':'card-db-clean-1.23',
   'hand-recognition':'hand-clean-1.52',
   'state-recognition':'state-clean-1.8.18',
-  'replay-session':'replay-session-clean-1.8',
+  'replay-session':'replay-session-clean-1.9',
   'review-engine':'review-clean-1.6.0',
   'counterfactual-review':'counterfactual-review-clean-1.0',
   'diagnostics':'diagnostics-clean-1.54'
