@@ -1,13 +1,13 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.82',build:'4.13.82-20260927-clean-13-82',revision:'clean-13-82',subtitle:'Build 2026.09.27-clean-13-82 / 目的境界・戦術分岐モジュール分離'};
+const APP={version:'4.13.83',build:'4.13.83-20260927-clean-13-83',revision:'clean-13-83',subtitle:'Build 2026.09.27-clean-13-83 / ReplaySessionレビュー候補ドメイン分離'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'turn-recognition':'turn-clean-1.3',
   'mulligan-class':'mulligan-class-clean-1.5.3',
   'card-db':'card-db-clean-1.23',
   'hand-recognition':'hand-clean-1.52',
   'state-recognition':'state-clean-1.8.17',
-  'replay-session':'replay-session-clean-1.5',
+  'replay-session':'replay-session-clean-1.6',
   'review-engine':'review-clean-1.6.0',
   'counterfactual-review':'counterfactual-review-clean-1.0',
   'diagnostics':'diagnostics-clean-1.54'
