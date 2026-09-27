@@ -43,7 +43,7 @@ assert.equal(q[0].evidenceCount,2);
 assert.deepEqual(Array.from(q[0].evidence.map(x=>x.type)),['positive-before-hand-recognition','same-window-pp-spend-match']);
 assert.equal(q[0].evidence[1].spent,1);
 assert.equal(q[0].afterAbsenceUsed,false);
-assert.equal(q[0].historyObservedUsed,false);
+assert.equal(q[0].pastHandTraceUsed,false);
 assert.equal(q[0].effectAttributionUsed,false);
 assert.equal(q[0].causalAttribution,false);
 assert.equal(q[0].cardAttribution,'candidate-only');
@@ -88,6 +88,6 @@ const review=fs.readFileSync(new URL('../review-engine.js',import.meta.url),'utf
 const replay=fs.readFileSync(new URL('../replay-session.js',import.meta.url),'utf8');
 assert.equal(review.includes("'card-play'"),false);
 assert.equal(replay.includes("'card-play'"),false);
-assert.ok(review.includes("afterAbsenceUsed:false,historyObservedUsed:false,effectAttributionUsed:false"));
+assert.ok(review.includes("afterAbsenceUsed:false,pastHandTraceUsed:false,effectAttributionUsed:false"));
 
 console.log('CARD USE CANDIDATE REGRESSION PASS');
