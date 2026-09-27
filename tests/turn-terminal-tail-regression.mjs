@@ -11,10 +11,14 @@ vm.createContext(sandbox);
 new vm.Script(fs.readFileSync(new URL('../turn-recognition.js',import.meta.url),'utf8'),{filename:'turn-recognition.js'}).runInContext(sandbox);
 const T=WB.TurnRecognition;
 
-assert.equal(T.version,'turn-clean-1.4');
+assert.equal(T.version,'turn-clean-1.5');
 assert.equal(T.terminalTailGuard.tailSeconds,3);
-assert.equal(T.terminalTailGuard.minAbsDiff,70);
-assert.equal(T.terminalTailGuard.minPixels,1200);
+assert.equal(T.terminalTailGuard.targetMinAbsDiff,65);
+assert.equal(T.terminalTailGuard.targetMinPixels,1750);
+assert.equal(T.terminalTailGuard.targetMinStrongSamples,1);
+assert.equal(T.terminalTailGuard.opponentMinAbsDiff,80);
+assert.equal(T.terminalTailGuard.opponentMinPixels,1800);
+assert.equal(T.terminalTailGuard.opponentMinStrongSamples,2);
 
 // Real v4.13.86 diagnostic timeline from ScreenRecording_09-24-2026 05-00-39_1.mov.
 // The user confirmed that the final top 10T does not exist; the replay goes from bottom 9T into lethal/Game Set.
@@ -33,18 +37,23 @@ assert.equal(candidate.row.side,'top');
 assert.equal(candidate.row.turn,10);
 assert.equal(candidate.remaining,2.463);
 
-// Primary-signal measurements reproduced from the same replay tail.
-// They look top-colored, but never reach the stronger entry signature seen at genuine later-game turn starts.
+// v4.13.87 real-device diagnostic proved that the first guard was too weak:
+// all six samples crossed the old 70/1200 rule, while the maximum observed |diff| was only 72.33.
+// Preserve that failure mode as the regression fixture.
 const falseTailSamples=[
-  {time:120.875,side:'top',diff:63.73,pixels:900},
-  {time:120.955,side:'top',diff:64.31,pixels:936},
-  {time:121.055,side:'top',diff:64.53,pixels:929},
-  {time:121.225,side:'top',diff:64.59,pixels:929},
-  {time:121.375,side:'top',diff:64.12,pixels:1017},
-  {time:121.525,side:'top',diff:63.75,pixels:1280}
+  {time:120.875,side:'top',diff:70.41,pixels:1315},
+  {time:120.955,side:'top',diff:70.88,pixels:1398},
+  {time:121.055,side:'top',diff:71.12,pixels:1450},
+  {time:121.225,side:'top',diff:71.84,pixels:1518},
+  {time:121.375,side:'top',diff:72.33,pixels:1602},
+  {time:121.525,side:'top',diff:71.96,pixels:1588}
 ];
 const falseEvidence=T.terminalEntryEvidence('top',falseTailSamples);
-assert.equal(falseEvidence.supported,false,'weak end-animation color must not confirm a real top turn');
+assert.equal(falseEvidence.requirements.role,'opponent');
+assert.equal(falseEvidence.requirements.minAbsDiff,80);
+assert.equal(falseEvidence.requirements.minPixels,1800);
+assert.equal(falseEvidence.requirements.minStrongSamples,2);
+assert.equal(falseEvidence.supported,false,'v4.13.87 end-animation cluster must not confirm a real opponent turn');
 
 const trimmed=T.terminalTailDecision(timeline,duration,falseTailSamples);
 assert.equal(trimmed.guarded,true);
@@ -61,6 +70,13 @@ const genuineTailSamples=[
   {time:120.875,side:'top',diff:90.8,pixels:2150},
   {time:120.955,side:'top',diff:84.2,pixels:2050}
 ];
+const genuineEvidence=T.terminalEntryEvidence('top',genuineTailSamples);
+assert.equal(genuineEvidence.supported,true,'two strong opponent-entry samples must preserve a genuine near-EOF turn');
+const oneSpike=T.terminalEntryEvidence('top',[{time:120.875,side:'top',diff:91,pixels:2200}]);
+assert.equal(oneSpike.supported,false,'one isolated opponent-color spike must not preserve a terminal turn');
+const targetEvidence=T.terminalEntryEvidence('bottom',[{time:120.875,side:'bottom',diff:-67.2,pixels:1799}]);
+assert.equal(targetEvidence.supported,true,'role-aware guard must not over-tighten a genuine reviewed-side turn');
+
 const kept=T.terminalTailDecision(timeline,duration,genuineTailSamples);
 assert.equal(kept.reason,'terminal-entry-confirmed');
 assert.equal(kept.trimmed.length,0);
