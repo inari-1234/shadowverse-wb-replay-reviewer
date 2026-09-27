@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const W=window.WB;if(!W)return;
-const VERSION='replay-session-clean-1.5';
+const VERSION='replay-session-clean-1.6';
 const DB_NAME='wb-replay-session-v1',DB_VERSION=1,SESSION_STORE='sessions',SCENE_STORE='scene-images',MAX_CONTIGUOUS_GAP=3,SESSION_SCHEMA='replay-session-v2';
 W.registerModule('replay-session',VERSION);
 
@@ -13,7 +13,7 @@ function sourceKey(){return W.videoMeta?W.videoKey():null}
 function emptySession(key=sourceKey()){return{
   version:SESSION_SCHEMA,sourceKey:key,video:clone(W.videoMeta||null),createdAt:nowIso(),updatedAt:nowIso(),
   turnTimeline:clone(W.turnTimeline||[]),mulligan:clone(W.mulligan||null),classDetection:clone(W.classDetection||null),
-  reviewProfile:W.ReviewEngine?.activeProfile?.()||'none',states:[],actions:[],observedEpisodes:[],reviewSignals:[],reviewPoints:[],scenes:[],tacticalReview:null
+  reviewProfile:W.ReviewEngine?.activeProfile?.()||'none',states:[],actions:[],observedEpisodes:[],observationReviewPoints:[],reviewSignals:[],supplementalReviewPoints:[],reviewPoints:[],scenes:[],tacticalReview:null
 }}
 function ensureCurrent(){const key=sourceKey();if(!key)return null;if(!current||current.sourceKey!==key)current=emptySession(key);return current}
 function migrateLoadedSession(loaded,key){
@@ -83,7 +83,9 @@ function deriveActions(prev,curr){
   if(prev.boardDamageKnown&&curr.boardDamageKnown&&prev.boardDamage!=null&&curr.boardDamage!=null&&prev.boardDamage!==curr.boardDamage)out.push(action(`${prev.id}->${curr.id}:board`,'board-damage-change',prev,curr,{from:prev.boardDamage,to:curr.boardDamage,delta:curr.boardDamage-prev.boardDamage}));
   return out
 }
-function deriveReviewPoints(actions=[],signals=[]){
+const REVIEW_POINT_WEIGHT=Object.freeze({critical:4,high:3,medium:2,manual:1});
+function sortReviewPoints(rows=[]){return(Array.isArray(rows)?rows:[]).slice().sort((a,b)=>(finite(a.time)??Infinity)-(finite(b.time)??Infinity)||((REVIEW_POINT_WEIGHT[b.priority]||0)-(REVIEW_POINT_WEIGHT[a.priority]||0)))}
+function deriveObservationReviewPoints(actions=[]){
   const rows=[];
   for(const a of actions){
     if(a.type==='opponent-hp-change'&&Math.abs(Number(a.data?.delta)||0)>=2)rows.push({id:'rp:'+a.id,source:'action',sourceId:a.id,time:a.time,turn:a.turn,priority:'high',kind:'large-hp-change',title:'大きなHP変化',detail:`相手HP ${a.data.from} → ${a.data.to}`});
@@ -91,12 +93,18 @@ function deriveReviewPoints(actions=[],signals=[]){
     if(a.type==='board-damage-change'&&Math.abs(Number(a.data?.delta)||0)>=2)rows.push({id:'rp:'+a.id,source:'action',sourceId:a.id,time:a.time,turn:a.turn,priority:'medium',kind:'board-swing',title:'盤面打点の大きな変化',detail:`攻撃可能打点 ${a.data.from} → ${a.data.to}`});
     if(a.type==='ward-change')rows.push({id:'rp:'+a.id,source:'action',sourceId:a.id,time:a.time,turn:a.turn,priority:'medium',kind:'ward-change',title:'守護状態の変化',detail:`${a.data.from} → ${a.data.to}`});
   }
+  return sortReviewPoints(rows)
+}
+function deriveSupplementalReviewPoints(signals=[]){
+  const rows=[];
   for(const s of signals){
     if(s.kind==='lethal'&&s.status==='confirmed-lethal')rows.push({id:'rp:'+s.id,source:'review',sourceId:s.id,time:s.time,turn:s.turn,priority:'critical',kind:'lethal-available',title:'リーサル候補を確認',detail:(s.lethalRoutes||[]).join(' / ')||'既知ルートでリーサル'});
     if(s.kind==='manual-scene')rows.push({id:'rp:'+s.id,source:'manual',sourceId:s.id,time:s.time,turn:s.turn,priority:'manual',kind:'saved-scene',title:'保存した局面',detail:s.note||'ユーザーが見返し対象として保存'});
   }
-  const weight={critical:4,high:3,medium:2,manual:1};return rows.sort((a,b)=>(finite(a.time)??Infinity)-(finite(b.time)??Infinity)||((weight[b.priority]||0)-(weight[a.priority]||0)))
+  return sortReviewPoints(rows)
 }
+function mergeReviewPoints(observation=[],supplemental=[]){return sortReviewPoints([...(observation||[]),...(supplemental||[])])}
+function deriveReviewPoints(actions=[],signals=[]){return mergeReviewPoints(deriveObservationReviewPoints(actions),deriveSupplementalReviewPoints(signals))}
 function sameTurnIdentity(a,b){
   if(!a||!b)return false;
   const sameNumber=a.turn!=null&&b.turn!=null&&Number(a.turn)===Number(b.turn),
@@ -172,7 +180,7 @@ function deriveObservedEpisodes(actions=[]){
   }
   return rows.sort((a,b)=>(finite(a.time)??Infinity)-(finite(b.time)??Infinity))
 }
-function rebuildDerived(){const s=ensureCurrent();if(!s)return null;s.states.sort((a,b)=>(finite(a.time)??Infinity)-(finite(b.time)??Infinity));const actions=deriveTimelineActions(s.states);s.actions=actions;s.observedEpisodes=deriveObservedEpisodes(actions);s.reviewPoints=deriveReviewPoints(actions,s.reviewSignals||[]);return s}
+function rebuildDerived(){const s=ensureCurrent();if(!s)return null;s.states.sort((a,b)=>(finite(a.time)??Infinity)-(finite(b.time)??Infinity));const actions=deriveTimelineActions(s.states);s.actions=actions;s.observedEpisodes=deriveObservedEpisodes(actions);s.observationReviewPoints=deriveObservationReviewPoints(actions);s.supplementalReviewPoints=deriveSupplementalReviewPoints(s.reviewSignals||[]);s.reviewPoints=mergeReviewPoints(s.observationReviewPoints,s.supplementalReviewPoints);return s}
 
 function ingestState(capture){
   const s=ensureCurrent(),row=normalizeCapture(capture);if(!s||!row)return null;
@@ -210,13 +218,13 @@ function snapshot(){return current?sessionForStorage(current):null}
 
 function actionLabel(a){if(a.type==='opponent-hp-change')return`相手HP ${a.data.from} → ${a.data.to}`;if(a.type==='pp-change')return`PP ${a.data.from} → ${a.data.to}`;if(a.type==='resource-change')return`${a.data.resource}: ${a.data.from} → ${a.data.to}`;if(a.type==='ward-change')return`守護: ${a.data.from} → ${a.data.to}`;if(a.type==='board-damage-change')return`盤面打点 ${a.data.from} → ${a.data.to}`;if(a.type==='turn-transition')return`${a.data.fromTurn??'?'}T → ${a.data.toTurn??'?'}T`;return'観測間隔が空いているため詳細は推定しません'}
 function render(){
-  const s=current,status=W.$('#replaySessionStatus'),rp=W.$('#reviewPoints'),ep=W.$('#observedEpisodes'),at=W.$('#actionTimeline');if(status)status.textContent=s?`保存: ${persistenceMode()==='indexeddb'?'端末内': 'この画面のみ'} / 状態 ${s.states.length} / 観測区間 ${(s.observedEpisodes||[]).length} / 状態変化 ${s.actions.length} / 振り返り候補 ${s.reviewPoints.length}`:'動画を読み込むと試合単位で記録します。';
+  const s=current,status=W.$('#replaySessionStatus'),rp=W.$('#reviewPoints'),ep=W.$('#observedEpisodes'),at=W.$('#actionTimeline');if(status)status.textContent=s?`保存: ${persistenceMode()==='indexeddb'?'端末内': 'この画面のみ'} / 状態 ${s.states.length} / 観測区間 ${(s.observedEpisodes||[]).length} / 状態変化 ${s.actions.length} / 振り返り候補 ${s.reviewPoints.length}（観測 ${(s.observationReviewPoints||[]).length} / 補助 ${(s.supplementalReviewPoints||[]).length}）`:'動画を読み込むと試合単位で記録します。';
   if(rp)rp.innerHTML=s?.reviewPoints?.length?s.reviewPoints.slice(-12).map(x=>`<div class="branchItem"><b>${x.turn?x.turn+'T':'局面'}</b><div><span class="badge">${W.escape(x.priority)}</span>${W.escape(x.title)}<br><span class="muted">${x.time==null?'--:--.-':W.fmt(x.time)} / ${W.escape(x.detail||'')}</span></div></div>`).join(''):'<p class="help">まだ自動抽出された振り返り候補はありません。状態取得や局面保存を行うと追加されます。</p>';
   if(ep)ep.innerHTML=s?.observedEpisodes?.length?s.observedEpisodes.slice(-12).map(x=>`<div class="branchItem"><b>${x.turn?x.turn+'T':'-'}</b><div><b>${W.escape(x.summary||'観測区間')}</b><br><span class="muted">${x.time==null?'--:--.-':W.fmt(x.time)} / ${W.escape(x.interpretation||'')}</span></div></div>`).join(''):'<p class="help">同一ターン内で複数の確定状態を取得すると、観測区間ごとの変化をまとめます。</p>';
   if(at)at.innerHTML=s?.actions?.length?s.actions.slice(-20).map(x=>`<div class="branchItem"><b>${x.turn?x.turn+'T':'-'}</b><div>${W.escape(actionLabel(x))}<br><span class="muted">${x.time==null?'--:--.-':W.fmt(x.time)} / ${W.escape(x.confidence)}</span></div></div>`).join(''):'<p class="help">連続した状態取得がまだありません。3秒以内の同一ターン観測だけを詳細な状態変化として扱います。</p>'
 }
 
-W.ReplaySession={version:VERSION,schema:SESSION_SCHEMA,dbName:DB_NAME,persistenceMode,emptySession,migrateLoadedSession,normalizeCapture,deriveActions,deriveTimelineActions,deriveObservedEpisodes,observedEpisodeInterpretation,deriveReviewPoints,ingestState,ingestReviewSignal,ingestScene,clearScenes,ingestReviewState,restoreCurrent,snapshot,rebuildDerived,render};
+W.ReplaySession={version:VERSION,schema:SESSION_SCHEMA,dbName:DB_NAME,persistenceMode,emptySession,migrateLoadedSession,normalizeCapture,deriveActions,deriveTimelineActions,deriveObservedEpisodes,observedEpisodeInterpretation,deriveObservationReviewPoints,deriveSupplementalReviewPoints,mergeReviewPoints,deriveReviewPoints,ingestState,ingestReviewSignal,ingestScene,clearScenes,ingestReviewState,restoreCurrent,snapshot,rebuildDerived,render};
 
 W.on('metadata',()=>{restoreCurrent().catch(err=>W.recordError('replay-session-restore',err))});
 W.on('timeline',detail=>{const s=ensureCurrent();if(s){s.turnTimeline=clone(detail?.timeline||W.turnTimeline||[]);schedulePersist()}});
@@ -228,5 +236,5 @@ W.on('review-profile-changed',()=>{const s=ensureCurrent();if(s){refreshMetadata
 W.on('scene-saved',detail=>{ingestScene(detail?.scene).catch(err=>W.recordError('replay-session-scene-save',err))});
 W.on('scenes-cleared',detail=>{clearScenes(detail?.sceneIds||[]).catch(err=>W.recordError('replay-session-scenes-clear',err))});
 W.on('video-reset',()=>{current=null;expose();render()});
-W.onReady(()=>{render();W.log('module-ready',{module:'replay-session',version:VERSION,persistence:persistenceMode(),maxContiguousGap:MAX_CONTIGUOUS_GAP,turnIdentity:'number+side',unknownSafe:true,nullNumericSafe:true,unknownHpBridge:'same-turn-observed-endpoints<=3s',observedEpisodes:'same-state-pair-noncausal-summary',causalAttribution:false,sessionSchema:SESSION_SCHEMA})});
+W.onReady(()=>{render();W.log('module-ready',{module:'replay-session',version:VERSION,persistence:persistenceMode(),maxContiguousGap:MAX_CONTIGUOUS_GAP,turnIdentity:'number+side',unknownSafe:true,nullNumericSafe:true,unknownHpBridge:'same-turn-observed-endpoints<=3s',observedEpisodes:'same-state-pair-noncausal-summary',causalAttribution:false,reviewPointDomains:'observation+supplemental-merged',sessionSchema:SESSION_SCHEMA})});
 })();
