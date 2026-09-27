@@ -21,7 +21,7 @@ vm.createContext(sandbox);
 new vm.Script(source,{filename:'replay-session.js'}).runInContext(sandbox);
 const R=WB.ReplaySession;
 
-assert.equal(R.version,'replay-session-clean-1.11');
+assert.equal(R.version,'replay-session-clean-1.12');
 assert.equal(R.schema,'replay-session-v2');
 assert.equal(R.persistenceMode(),'memory','no IndexedDB in regression sandbox must use memory fallback');
 
@@ -231,6 +231,9 @@ assert.equal(migrated.session.reviewSignals.length,1,'independent review signals
 assert.equal(migrated.session.scenes.length,1,'saved scene metadata must be preserved during migration');
 
 assert.ok(source.includes("indexedDB.open(DB_NAME,DB_VERSION)"));
+assert.ok(source.includes('if(W.task)renderDeferred=true;else render()'),'task-time persistence must avoid repeated ReplaySession DOM rendering');
+assert.ok(source.includes("W.on('task-finished',()=>flushDeferredRender())"),'deferred ReplaySession rendering must flush at the task boundary');
+assert.ok(app.includes("WB.emit('task-finished',{name,cancelRequested:cancelled})"),'task runner must emit the render flush boundary');
 assert.ok(source.includes("MAX_CONTIGUOUS_GAP=3"));
 assert.ok(source.includes("decisionWindows:[]"),'ReplaySession must keep Decision Windows as a derived observation structure');
 assert.ok(source.includes("causalAttribution:false"),'Decision Windows and observed episodes must remain explicitly non-causal');
