@@ -8,6 +8,7 @@ const index=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const WB={
   videoMeta:null,turnTimeline:[],mulligan:null,classDetection:null,scenes:[],
   registerModule(){},videoKey(){return 'ui-fixture'},log(){},recordError(){},on(){},onReady(){},
+  ReviewEngine:{deriveWindowCoach(model){return{version:'review-window-coach-v1',basis:'observation-only',summary:'盤面とPPの変化を重点確認します。',focus:['PPと盤面打点を見比べる。'],questions:['別の手順を残せたか？'],cautions:['同一カード・同一行動とは結び付けません。'],judgement:'hold',judgementReason:'観測だけではプレイの良否を断定しません。',causalAttribution:false,cardAttribution:false}}},
   $(){return null},fmt:v=>Number(v).toFixed(1)+'s',
   escape:s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))
 };
@@ -16,7 +17,7 @@ vm.createContext(sandbox);
 new vm.Script(replay,{filename:'replay-session.js'}).runInContext(sandbox);
 const R=WB.ReplaySession;
 
-assert.equal(R.version,'replay-session-clean-1.9');
+assert.equal(R.version,'replay-session-clean-1.10');
 
 const before={
   id:'st:5:bottom:47.641',time:47.641,turn:5,absoluteSide:'bottom',relativeSide:'自分',
@@ -56,6 +57,10 @@ assert.equal(models[0].beforeRows.find(x=>x.key==='pp').changed,true,'PP row mus
 assert.equal(models[0].beforeRows.find(x=>x.key==='boardDamage').changed,true,'board row must be visually marked because an observed board change exists');
 assert.equal(models[0].beforeRows.find(x=>x.key==='opponentHP').changed,false,'unchanged HP must not be highlighted');
 assert.deepEqual(Array.from(models[0].unknownFields),['extraPP','opponentWard']);
+assert.equal(models[0].coach.version,'review-window-coach-v1');
+assert.equal(models[0].coach.basis,'observation-only');
+assert.equal(models[0].coach.causalAttribution,false);
+assert.equal(models[0].coach.cardAttribution,false);
 
 const html=R.renderDecisionWindowCard(models[0]);
 for(const phrase of ['判断直前','変化後','観測した変化','重要とした理由','未確認: ExPP / 相手守護','断定していない項目','PP 2 → 1','盤面打点 4 → 0']){
@@ -67,6 +72,9 @@ assert.equal(html.includes('効果源:'),false,'UI must not invent a specific ca
 assert.ok(html.includes('data-review-time="47.641"')&&html.includes('判断直前を見る'),'review card must provide a direct before-state video navigation control');
 assert.ok(html.includes('data-review-time="48.091"')&&html.includes('変化後を見る'),'review card must provide a direct after-state video navigation control');
 assert.ok(html.includes('reviewStateChanged'),'only observed changed state rows should receive changed-state emphasis');
+assert.ok(html.includes('戦術コーチ'),'Decision Window card must expose the Phase 17 coach');
+assert.ok(html.includes('考えるポイント')&&html.includes('確認質問')&&html.includes('評価保留'),'coach UI must separate prompts from held judgement');
+assert.ok(html.includes('観測だけではプレイの良否を断定しません。'));
 
 const navStatus={textContent:''};
 let sought=null,paused=false,scrolled=false,taskName=null,taskLockText=null;
@@ -87,7 +95,7 @@ assert.ok(index.includes('使用カード・効果源・行動順を推定しま
 assert.ok(index.includes('.reviewStateGrid,.reviewWindowGrid'));
 assert.ok(index.includes('id="reviewNavigationStatus"'),'review panel must expose navigation feedback');
 assert.ok(index.includes('「判断直前を見る」「変化後を見る」から動画の該当時刻へ直接移動できます。'));
-assert.ok(replay.includes("reviewWindowUi:'before-after-observed-importance-unknown-noncausal-navigation'"));
+assert.ok(replay.includes("reviewWindowUi:'before-after-observed-importance-unknown-noncausal-navigation+coach-v1'"));
 assert.ok(replay.includes('causalAttribution:false'));
 assert.equal(replay.includes("'card-play'"),false);
 
