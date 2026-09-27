@@ -167,11 +167,15 @@ assert.ok(replaySession.includes("turnIdentity:'number+side'"),'ReplaySession mu
 assert.ok(replaySession.includes("SESSION_SCHEMA='replay-session-v2'"),'ReplaySession must migrate away from the unsafe v1 numeric-null schema');
 assert.ok(replaySession.includes("v===null||v===undefined"),'ReplaySession numeric normalization must preserve null/undefined');
 assert.ok(replaySession.includes("legacy-unsafe-null-number-coercion"),'ReplaySession must explicitly invalidate unsafe v1 derived observations');
-assert.ok(replaySession.includes("const VERSION='replay-session-clean-1.5'"),'ReplaySession module must have an explicit version');
+assert.ok(replaySession.includes("const VERSION='replay-session-clean-1.6'"),'ReplaySession module must have an explicit version');
 assert.ok(replaySession.includes("unknownHpBridge:'same-turn-observed-endpoints<=3s'"),'ReplaySession must expose the bounded unknown-HP bridge contract');
 assert.ok(replaySession.includes('bridgedUnknownObservations'),'bridged HP actions must retain evidence that unknown observations were skipped');
 assert.ok(index.includes('id="observedEpisodes"'),'automatic review UI must expose observed-episode Action Timeline output');
 assert.ok(replaySession.includes('function deriveObservedEpisodes(actions=[])'),'ReplaySession must group detailed changes by the same observed state pair');
+assert.ok(replaySession.includes('function deriveObservationReviewPoints(actions=[])'),'ReplaySession must separate observation-derived review points');
+assert.ok(replaySession.includes('function deriveSupplementalReviewPoints(signals=[])'),'ReplaySession must separate tactical/manual review points');
+assert.ok(replaySession.includes('function mergeReviewPoints(observation=[],supplemental=[])'),'ReplaySession must preserve one merged compatibility view');
+assert.ok(replaySession.includes("reviewPointDomains:'observation+supplemental-merged'"),'ReplaySession must advertise the review-point domain boundary');
 assert.ok(replaySession.includes("observedEpisodes:'same-state-pair-noncausal-summary'"),'ReplaySession must advertise the non-causal grouping contract');
 assert.ok(replaySession.includes('causalAttribution:false'),'observed episodes must explicitly deny causal attribution');
 assert.ok(replaySession.includes('使用カード・効果源・ダメージ源・行動順は未確定'),'observed episode interpretation must preserve unresolved causal details');
