@@ -160,10 +160,13 @@ assert.ok(stateRecognition.includes('function selectTurnStablePair(samples,cfg=T
 assert.ok(turnRecognition.includes("TERMINAL_TAIL_GUARD=Object.freeze({tailSeconds:3,targetMinAbsDiff:65,targetMinPixels:1750,targetMinStrongSamples:1,opponentMinAbsDiff:80,opponentMinPixels:1800,opponentMinStrongSamples:2"),'turn recognition must keep the role-aware terminal-tail guard narrowly bounded');
 assert.ok(turnRecognition.includes('function terminalTailDecision(timeline=[],duration=null,samples=[])'),'terminal-tail decision must remain independently regression-testable');
 assert.ok(turnRecognition.includes("const terminalGuard=await validateTerminalTail(stableRaw),stable=terminalGuard.timeline"),'terminal guard must run only after the stable13 primary scan');
-assert.ok(turnRecognition.includes("step=1;primaryCache=new Map()"),'stable13 coarse scan must use exact one-second sampling on iPhone-friendly seek spacing');
-assert.ok(turnRecognition.includes("coarseSeekMode:'exact-1s',refinementIterations:4,boundaryResolutionMaxSeconds:.0625"),'one-second coarse scan must preserve the legacy ~62.5ms boundary-resolution contract with four refinements');
-assert.equal(turnRecognition.includes('fastSampleSeek'),false,'failed fastSeek coarse path must not remain in turn recognition');
-assert.equal(app.includes('WB.fastSampleSeek=async'),false,'failed fastSeek helper must be removed from production runtime');
+assert.ok(turnRecognition.includes("requestVideoFrameCallback"),'turn coarse scan must support continuous-frame playback sampling');
+assert.ok(turnRecognition.includes("coarseSeekMode:'rvfc-playback'"),'successful continuous playback scan must be diagnosable');
+assert.ok(turnRecognition.includes("coarseSeekMode:'exact-2s-fallback'"),'continuous scan failure must retain the formal two-second exact stable13 fallback');
+assert.ok(turnRecognition.includes("minEffectiveRate=7"),'continuous scan must reject playback that is too slow to beat the exact baseline');
+assert.ok(turnRecognition.includes("maxSampleGap=1.05"),'continuous scan must reject sparse frame delivery');
+assert.ok(turnRecognition.includes("function refinementIterations(span,maxResolution=.0625)"),'boundary refinement must preserve the ~62.5ms resolution contract adaptively');
+assert.equal(turnRecognition.includes('fastSampleSeek'),false,'failed fastSeek experiment must remain removed');
 assert.ok(turnRecognition.includes("terminalTailGuard:'last-row<=3s-role-aware-entry-evidence-v2'"),'turn module must advertise the terminal-tail safety contract');
 assert.ok(index.includes('相手側候補なら通常の相手ターンHUD相当の強い入口シグナルが複数フレームで続く場合だけ採用'),'UI must disclose the role-aware terminal-tail revalidation behavior');
 assert.ok(stateRecognition.includes('function selectTurnTimelineAnchors(discovery,cfg=TURN_ANALYZE_CFG)'),'turn analysis must explicitly select bounded multi-point anchors');
