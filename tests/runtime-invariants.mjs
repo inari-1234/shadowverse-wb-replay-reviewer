@@ -10,6 +10,7 @@ const sw=read('sw.js');
 const turnRecognition=read('turn-recognition.js');
 const mulliganClass=read('mulligan-class.js');
 const review=read('review-engine.js');
+const counterfactualReview=read('counterfactual-review.js');
 const handRecognition=read('hand-recognition.js');
 const stateRecognition=read('state-recognition.js');
 const replaySession=read('replay-session.js');
@@ -26,10 +27,11 @@ const expectedRuntime=[
   'state-recognition.js',
   'replay-session.js',
   'review-engine.js',
+  'counterfactual-review.js',
   'diagnostics.js'
 ];
 const runtime=[...index.matchAll(/<script[^>]+src="\.\/([^"]+\.js)"/g)].map(m=>m[1]);
-assert.deepEqual(runtime,expectedRuntime,'index runtime must remain exactly the approved nine scripts in order');
+assert.deepEqual(runtime,expectedRuntime,'index runtime must remain exactly the approved ten scripts in order');
 assert.equal(runtime.some(x=>/fix-v/i.test(x)),false,'historical fix-v scripts must never load at runtime');
 assert.equal(index.includes('recognition-v5-shadow'),false,'v5 shadow experiments must not load in the production runtime');
 assert.equal(index.includes('v5-dataset-extractor'),false,'v5 dataset tooling must not load in the production runtime');
@@ -52,6 +54,7 @@ const moduleSources={
   'state-recognition':stateRecognition,
   'replay-session':replaySession,
   'review-engine':review,
+  'counterfactual-review':counterfactualReview,
   'diagnostics':diagnostics
 };
 assert.deepEqual(Object.keys(expectedModuleVersions),Object.keys(moduleSources),'expected module manifest must list exactly all registered runtime modules');
