@@ -1,0 +1,62 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WB iOS Simulator Seek Benchmark</title>
+<style>
+body{font-family:-apple-system,sans-serif;background:#0b1020;color:#fff;padding:18px}pre{white-space:pre-wrap}video{width:100%;max-width:720px;background:#000}
+</style>
+<h1>WB iOS Simulator Seek Benchmark</h1>
+<p id="status">starting…</p>
+<video id="video" muted playsinline preload="auto"></video>
+<pre id="out"></pre>
+<script>
+(async()=>{
+'use strict';
+const status=document.querySelector('#status'),out=document.querySelector('#out'),v=document.querySelector('#video');
+const qs=new URLSearchParams(location.search),src=qs.get('video')||'/tests/ios-simulator/fixture.mp4';
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function waitEvent(target,name,timeout=10000){return new Promise((resolve,reject)=>{let done=false;const finish=(ok,e)=>{if(done)return;done=true;clearTimeout(timer);target.removeEventListener(name,on);ok?resolve(e):reject(new Error(name+' timeout'))};const on=e=>finish(true,e);const timer=setTimeout(()=>finish(false),timeout);target.addEventListener(name,on,{once:true})})}
+async function exactSeek(target){
+  const started=performance.now();let completion='seeked',timedOut=false;
+  return await new Promise(resolve=>{
+    let done=false,poll=null;
+    const cleanup=()=>{v.removeEventListener('seeked',onSeek);clearTimeout(timer);if(poll)clearInterval(poll)};
+    const finish=why=>{if(done)return;const actual=Number(v.currentTime),ok=!v.seeking&&v.readyState>=2&&Math.abs(actual-target)<=.08;if(!ok&&why!=='timeout')return;done=true;cleanup();resolve({target:+target.toFixed(3),actual:+actual.toFixed(3),drift:+Math.abs(actual-target).toFixed(3),elapsedMs:+(performance.now()-started).toFixed(1),completion:why,ok,timedOut:why==='timeout'})};
+    const onSeek=()=>finish('seeked');
+    const timer=setTimeout(()=>finish('timeout'),3500);
+    v.addEventListener('seeked',onSeek,{once:true});
+    poll=setInterval(()=>finish('poll'),50);
+    try{v.currentTime=target}catch(e){done=true;cleanup();resolve({target,error:String(e),ok:false})}
+  });
+}
+async function fastSeek(target){
+  const started=performance.now();
+  if(typeof v.fastSeek!=='function')return{target:+target.toFixed(3),supported:false};
+  return await new Promise(resolve=>{
+    let done=false,poll=null;
+    const cleanup=()=>{v.removeEventListener('seeked',onSeek);clearTimeout(timer);if(poll)clearInterval(poll)};
+    const finish=why=>{if(done||v.seeking||v.readyState<2)return;done=true;cleanup();const actual=Number(v.currentTime);resolve({target:+target.toFixed(3),actual:+actual.toFixed(3),drift:+Math.abs(actual-target).toFixed(3),elapsedMs:+(performance.now()-started).toFixed(1),completion:why,supported:true})};
+    const onSeek=()=>finish('seeked');
+    const timer=setTimeout(()=>{if(done)return;done=true;cleanup();resolve({target:+target.toFixed(3),supported:true,timeout:true,actual:+Number(v.currentTime).toFixed(3),elapsedMs:+(performance.now()-started).toFixed(1)})},2500);
+    v.addEventListener('seeked',onSeek,{once:true});
+    poll=setInterval(()=>finish('poll'),50);
+    try{v.fastSeek(target)}catch(e){done=true;cleanup();resolve({target:+target.toFixed(3),supported:true,error:String(e)})}
+  });
+}
+function summary(rows){const good=rows.filter(x=>x.ok!==false&&!x.error&&!x.timeout&&Number.isFinite(x.elapsedMs));return{count:rows.length,good:good.length,meanMs:good.length?+(good.reduce((a,x)=>a+x.elapsedMs,0)/good.length).toFixed(1):null,maxMs:good.length?+Math.max(...good.map(x=>x.elapsedMs)).toFixed(1):null,maxDrift:good.length&&good.some(x=>Number.isFinite(x.drift))?+Math.max(...good.filter(x=>Number.isFinite(x.drift)).map(x=>x.drift)).toFixed(3):null}}
+try{
+  v.src=src;v.load();await waitEvent(v,'loadedmetadata');if(v.readyState<2)await Promise.race([waitEvent(v,'loadeddata'),sleep(5000)]);
+  const d=Number(v.duration);if(!Number.isFinite(d)||d<2)throw new Error('fixture duration too short: '+d);
+  const targets=[.15,.55,.85,.35,.72,.2,.65,.9].map(p=>Math.min(d-.12,Math.max(.1,d*p)));
+  const exact=[];for(const t of targets)exact.push(await exactSeek(t));
+  const fast=[];for(const t of targets.slice(0,6))fast.push(await fastSeek(t));
+  const result={schema:'wb-ios-simulator-seek-v1',createdAt:new Date().toISOString(),userAgent:navigator.userAgent,platform:navigator.platform||null,src,duration:+d.toFixed(3),videoWidth:v.videoWidth,videoHeight:v.videoHeight,fastSeekSupported:typeof v.fastSeek==='function',exact,fast,summary:{exact:summary(exact),fast:summary(fast)}};
+  out.textContent=JSON.stringify(result,null,2);status.textContent='complete';
+  await fetch('/result',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(result)});
+}catch(err){
+  const result={schema:'wb-ios-simulator-seek-v1',createdAt:new Date().toISOString(),error:err?.stack||String(err),userAgent:navigator.userAgent};
+  out.textContent=JSON.stringify(result,null,2);status.textContent='failed';
+  try{await fetch('/result',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(result)})}catch{}
+}
+})();
+</script>
