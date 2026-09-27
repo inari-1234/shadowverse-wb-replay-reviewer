@@ -6,6 +6,7 @@ const index=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const review=fs.readFileSync(new URL('../review-engine.js',import.meta.url),'utf8');
 const counter=fs.readFileSync(new URL('../counterfactual-review.js',import.meta.url),'utf8');
 const replay=fs.readFileSync(new URL('../replay-session.js',import.meta.url),'utf8');
+const state=fs.readFileSync(new URL('../state-recognition.js',import.meta.url),'utf8');
 
 assert.ok(purpose.includes('録画済みリプレイから観測できる情報を安全に抽出し、試合後の振り返りを支援する'));
 assert.ok(purpose.includes('Observation Core — 本体'));
@@ -30,6 +31,9 @@ assert.ok(index.includes('戦術シミュレーション（補助）'));
 assert.ok(index.includes('録画から得た観測事実とは別の手入力シミュレーション'));
 assert.ok(index.includes('Action Timelineの観測事実へは混ぜません'));
 assert.ok(index.includes('後から得た公開情報を自動遮断する仕組みではありません。'));
+assert.ok(index.includes('戦術レビュー用の分岐です。各枝は親状態を独立コピーし、保存された判断時点の状態を基準に評価します。後から得た公開情報を自動遮断する仕組みではありません。'),'counterfactual safety wording must remain exact and uninterrupted');
+assert.equal(state.includes('captureStatePair'),false,'purpose cleanup must remove superseded fixed-pair API');
+assert.equal(state.includes('statePairTarget'),false,'purpose cleanup must remove superseded fixed-pair helper');
 
 assert.ok(replay.includes('states:[],actions:[],observedEpisodes:[]'),'ReplaySession observation core must remain explicit');
 assert.ok(replay.includes('observationReviewPoints:[]'),'ReplaySession must persist observation-derived ReviewPoints separately');
