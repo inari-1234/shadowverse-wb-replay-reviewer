@@ -9,6 +9,7 @@ on:
     paths:
       - 'app-core.js'
       - 'turn-recognition.js'
+      - 'state-recognition.js'
       - 'tests/ios-simulator/**'
       - '.github/workflows/ios-simulator-seek.yml'
 
