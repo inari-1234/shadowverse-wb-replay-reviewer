@@ -51,6 +51,13 @@ assert.ok(review.includes("usesCurrentHand:false"),'generic coach must not silen
 assert.ok(review.includes("causalAttribution:false,cardAttribution:false"),'generic coach must deny causal and card attribution');
 assert.ok(review.includes("judgement:'hold'"),'generic coach must hold good/bad judgement when action identity is unknown');
 assert.ok(index.includes('デッキ固有カード、使用カード、効果源、行動順を推測してプレイの良否を断定しません'),'Phase 17 UI must disclose its inference boundary');
+assert.ok(review.includes("const CARD_USE_CANDIDATE_VERSION='card-use-candidate-v1'"),'Phase 18 card-use candidate layer must be explicit');
+assert.ok(review.includes("ambiguityPolicy:'unique-among-positively-observed-supported-cards'"),'Phase 18 must reject ambiguous same-cost candidates');
+assert.ok(review.includes("afterAbsenceUsed:false,historyObservedUsed:false,effectAttributionUsed:false"),'Phase 18 must not treat disappearance/history/effects as card-use proof');
+assert.ok(review.includes("causalAttribution:false,cardAttribution:'candidate-only'"),'Phase 18 may expose only candidate attribution, never causal confirmation');
+assert.ok(review.includes("createsAction:false"),'Phase 18 candidate must not create Action Timeline events');
+assert.ok(index.includes('候補はカード使用の確定ではなく、Action Timelineにも追加しません。'),'Phase 18 UI must disclose candidate-only/no-action semantics');
 assert.equal(replay.includes("'card-play'"),false,'purpose boundary must continue forbidding inferred card-play actions');
+assert.equal(review.includes("'card-play'"),false,'Phase 18 review layer must not introduce inferred card-play actions');
 
 console.log('PURPOSE BOUNDARY REGRESSION PASS');
