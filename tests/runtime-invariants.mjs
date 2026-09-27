@@ -146,6 +146,13 @@ assert.ok(stateRecognition.includes("version:'confirmed-state-v1'"),'state recog
 assert.ok(index.includes('id="reviewOverviewPanel"'),'user runtime must expose the automatic review overview');
 assert.ok(index.includes('id="replaySessionStatus"')&&index.includes('id="reviewPoints"')&&index.includes('id="actionTimeline"'),'automatic review UI must expose session, review-point and action-timeline targets');
 assert.ok(index.includes('id="leAnalyzeTurn"'),'state UI must expose one-action same-turn analysis');
+const statePanelHtml=index.slice(index.indexOf('<section id="lethalPanel"'),index.indexOf('<section id="reviewOverviewPanel"'));
+const reviewPanelHtml=index.slice(index.indexOf('<section id="reviewOverviewPanel"'),index.indexOf('<section class="panel"><h2>7. 局面保存</h2>'));
+assert.ok(statePanelHtml.includes('id="leFill"'),'state panel must keep the current-position capture as its primary action');
+assert.ok(statePanelHtml.includes('id="stateManualEditor"')&&statePanelHtml.includes('<summary>認識結果を確認・手動修正</summary>'),'manual state correction must remain available but collapsed by default');
+assert.equal(statePanelHtml.includes('id="leAnalyzeTurn"'),false,'same-turn analysis must not remain mixed into the state-capture panel');
+assert.ok(reviewPanelHtml.includes('id="leAnalyzeTurn"')&&reviewPanelHtml.includes('id="analyzeMatch"'),'single-turn and whole-match analysis must live together in automatic review');
+assert.ok(reviewPanelHtml.includes('<summary>自動振り返りの判定・安全条件</summary>'),'automatic-review implementation detail must remain available without dominating the normal UI');
 assert.equal(index.includes('id="leCompare"'),false,'fixed two-second comparison must not remain in normal UI');
 assert.ok(app.includes("WB.$('#leAnalyzeTurn')"),'app control state must target the new turn-analysis button');
 assert.ok(stateRecognition.includes('async function analyzeCurrentTurn(options={})'),'state recognition must implement automatic same-turn stable-frame analysis');
