@@ -47,6 +47,11 @@ assert.equal(appRevision,latest.revision,'app-core revision must match latest.js
 const manifestBlock=app.match(/const EXPECTED_MODULE_VERSIONS=Object\.freeze\(\{([\s\S]*?)\}\);/);
 assert.ok(manifestBlock,'app-core expected module manifest must be parseable');
 const expectedModuleVersions=Object.fromEntries([...manifestBlock[1].matchAll(/'([^']+)'\s*:\s*'([^']+)'/g)].map(m=>[m[1],m[2]]));
+const manifestRuntime=['app-core.js',...Object.keys(expectedModuleVersions).map(name=>`${name}.js`)];
+assert.deepEqual(expectedRuntime,manifestRuntime,'runtime script contract must match app-core expected module manifest in order');
+assert.ok(diagnostics.includes("expectedScripts=['app-core',...Object.keys(WB.expectedModules||{})]"),'diagnostics script integrity must derive its runtime list from app-core expected modules');
+assert.ok(diagnostics.includes('expectedScriptSet=new Set(expectedScripts)'),'diagnostics must filter runtime scripts through the manifest-derived contract');
+assert.ok(expectedRuntime.includes('replay-session.js')&&expectedRuntime.includes('counterfactual-review.js'),'runtime contract must include ReplaySession and counterfactual review scripts');
 const moduleSources={
   'turn-recognition':turnRecognition,
   'mulligan-class':mulliganClass,
