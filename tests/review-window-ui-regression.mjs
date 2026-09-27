@@ -16,7 +16,7 @@ vm.createContext(sandbox);
 new vm.Script(replay,{filename:'replay-session.js'}).runInContext(sandbox);
 const R=WB.ReplaySession;
 
-assert.equal(R.version,'replay-session-clean-1.8');
+assert.equal(R.version,'replay-session-clean-1.9');
 
 const before={
   id:'st:5:bottom:47.641',time:47.641,turn:5,absoluteSide:'bottom',relativeSide:'自分',
@@ -52,6 +52,9 @@ assert.equal(models[0].causalAttribution,false);
 assert.equal(models[0].beforeRows.find(x=>x.key==='pp').value,'2');
 assert.equal(models[0].afterRows.find(x=>x.key==='pp').value,'1');
 assert.equal(models[0].beforeRows.find(x=>x.key==='extraPP').value,'未確認');
+assert.equal(models[0].beforeRows.find(x=>x.key==='pp').changed,true,'PP row must be visually marked because an observed PP change exists');
+assert.equal(models[0].beforeRows.find(x=>x.key==='boardDamage').changed,true,'board row must be visually marked because an observed board change exists');
+assert.equal(models[0].beforeRows.find(x=>x.key==='opponentHP').changed,false,'unchanged HP must not be highlighted');
 assert.deepEqual(Array.from(models[0].unknownFields),['extraPP','opponentWard']);
 
 const html=R.renderDecisionWindowCard(models[0]);
@@ -61,10 +64,30 @@ for(const phrase of ['判断直前','変化後','観測した変化','重要と�
 assert.ok(html.includes('使用カード'),'unresolved card identity must be shown only as not determined');
 assert.equal(html.includes('使用カード:'),false,'UI must not invent a specific played card');
 assert.equal(html.includes('効果源:'),false,'UI must not invent a specific causal source');
+assert.ok(html.includes('data-review-time="47.641"')&&html.includes('判断直前を見る'),'review card must provide a direct before-state video navigation control');
+assert.ok(html.includes('data-review-time="48.091"')&&html.includes('変化後を見る'),'review card must provide a direct after-state video navigation control');
+assert.ok(html.includes('reviewStateChanged'),'only observed changed state rows should receive changed-state emphasis');
+
+const navStatus={textContent:''};
+let sought=null,paused=false,scrolled=false,taskName=null,taskLockText=null;
+WB.video={duration:123.338,currentTime:0,scrollIntoView(){scrolled=true}};
+WB.pauseVideo=()=>{paused=true;return true};
+WB.seekTo=async t=>{sought=Number(t);WB.video.currentTime=Number(t)};
+WB.runTask=async(name,fn,opts={})=>{taskName=name;taskLockText=opts.lockText;return await fn()};
+WB.$=sel=>sel==='#reviewNavigationStatus'?navStatus:null;
+assert.equal(await R.seekReviewWindow(47.641,'before'),true,'before navigation must seek successfully');
+assert.equal(sought,47.641);
+assert.equal(paused,true);
+assert.equal(scrolled,true);
+assert.equal(taskName,'局面レビュー移動');
+assert.equal(taskLockText,'判断直前へ移動しています。');
+assert.equal(navStatus.textContent,'判断直前 47.6s へ移動しました。');
 assert.ok(index.includes('Decision Windowごとに「判断直前」「変化後」「観測した変化」「重要とした理由」「未確認項目」'));
 assert.ok(index.includes('使用カード・効果源・行動順を推定しません'));
 assert.ok(index.includes('.reviewStateGrid,.reviewWindowGrid'));
-assert.ok(replay.includes("reviewWindowUi:'before-after-observed-importance-unknown-noncausal'"));
+assert.ok(index.includes('id="reviewNavigationStatus"'),'review panel must expose navigation feedback');
+assert.ok(index.includes('「判断直前を見る」「変化後を見る」から動画の該当時刻へ直接移動できます。'));
+assert.ok(replay.includes("reviewWindowUi:'before-after-observed-importance-unknown-noncausal-navigation'"));
 assert.ok(replay.includes('causalAttribution:false'));
 assert.equal(replay.includes("'card-play'"),false);
 
