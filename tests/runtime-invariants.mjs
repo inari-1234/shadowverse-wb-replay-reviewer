@@ -195,6 +195,10 @@ assert.ok(handRecognition.includes("layoutFrameCache:true"),'hand module must ad
 
 assert.ok(stateRecognition.includes("handHistory:!batchMode"),'whole-match analysis must skip only auxiliary hand-history scans at full endpoints');
 assert.ok(stateRecognition.includes("analyzeCurrentTurn({batchMode:true,contextOverride})"),'whole-match analysis must explicitly enable batch optimization');
+assert.ok(stateRecognition.includes("restorePosition:!batchMode"),'whole-match discovery must skip only the redundant restore while manual analysis keeps restoration');
+assert.ok(stateRecognition.includes("const canary=ocrTargets[0]"),'HP cache canary must prime the first chronological stable anchor');
+assert.ok(stateRecognition.includes("else captureSeekReuseCount++"),'capture path must reuse an already exact anchor without another seek');
+assert.ok(stateRecognition.includes("batchDiscoveryRestoreSkip:true")&&stateRecognition.includes("batchFirstAnchorReuse:true"),'state module must advertise safe batch anchor reuse');
 assert.ok(stateRecognition.includes("reason:'reused-stable-probe'"),'timeline-lite capture must be able to reuse already accepted PP probe evidence');
 assert.ok(stateRecognition.includes("probeReuse:{pp:!!ppSeed,hp:false}"),'probe reuse must remain PP-only; HP must retain guarded temporal confirmation');
 

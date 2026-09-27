@@ -6,7 +6,7 @@ const hand=fs.readFileSync(new URL('../hand-recognition.js',import.meta.url),'ut
 const app=fs.readFileSync(new URL('../app-core.js',import.meta.url),'utf8');
 
 assert.ok(app.includes("'hand-recognition':'hand-clean-1.52'"));
-assert.ok(app.includes("'state-recognition':'state-clean-1.8.19'"));
+assert.ok(app.includes("'state-recognition':'state-clean-1.8.20'"));
 
 assert.ok(hand.includes("allowHistory=ctx?.relativeSide==='自分'&&ctx?.historyScan!==false"),
   'history skipping must be an explicit caller opt-out after current-hand decision setup');
@@ -32,6 +32,8 @@ assert.ok(state.includes("ppSeed||await safeStateStage('timeline-pp'"),
 assert.ok(state.includes("hp=await safeStateStage('timeline-hp',()=>recognizeOpponentHp(c)"),
   'timeline capture HP must continue using guarded temporal confirmation');
 assert.ok(state.includes("'turn-analysis-hp-cache-verify'"),'prepared HP probe reuse must retain an exact canary seek');
+assert.ok(state.includes("restorePosition:!batchMode"),'batch analysis must not restore between discovery and capture');
+assert.ok(state.includes("captureSeekReuseCount"),'batch analysis must expose exact-anchor capture reuse');
 assert.ok(state.includes("hpProbeCache.fallback=true"),'HP probe cache must fall back to the legacy exact path on canary mismatch');
 assert.ok(state.includes("probeReuse:{pp:!!ppSeed,hp:false}"));
 
