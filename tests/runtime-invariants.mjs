@@ -206,6 +206,11 @@ assert.ok(stateRecognition.includes("state-hand-board-frame-cache-verify"),'boar
 assert.ok(stateRecognition.includes("baseLiveFingerprint===baseCachedFingerprint"),'board reuse canary must require exact fingerprint equality');
 assert.ok(stateRecognition.includes("await WB.seekTo(t,'state-board-confirm')"),'legacy exact board seek path must remain for cache miss or rejection');
 assert.ok(stateRecognition.includes("handBoardFrameCacheFallbacks"),'whole-match diagnostics must expose frame-share fallback counts');
+assert.ok(stateRecognition.includes("function adaptiveProbeShadowPlan(probes=[])"),'probe reduction must begin as an offline shadow plan, not a production sampling change');
+assert.ok(stateRecognition.includes("productionApplied:false"),'adaptive probe shadow must explicitly remain disconnected from production seeking');
+assert.ok(stateRecognition.includes("stableMisses.length===0&&anchorExact"),'shadow safety gate must reject any missed stable point or anchor mismatch');
+assert.ok(stateRecognition.includes("turn-analysis-probe-shadow"),'real-device diagnostics must expose per-turn shadow evidence');
+assert.ok(stateRecognition.includes("adaptiveProbeShadowProductionApplied:false"),'state module must advertise that coarse probing is not active in production');
 assert.ok(stateRecognition.includes("reason:'reused-stable-probe'"),'timeline-lite capture must be able to reuse already accepted PP probe evidence');
 assert.ok(stateRecognition.includes("probeReuse:{pp:!!ppSeed,hp:false}"),'probe reuse must remain PP-only; HP must retain guarded temporal confirmation');
 
