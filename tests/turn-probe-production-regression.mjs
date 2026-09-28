@@ -7,7 +7,7 @@ const sandbox={window:{WB},document:{createElement(){return {width:0,height:0,ge
 vm.createContext(sandbox);
 new vm.Script(fs.readFileSync(new URL('../state-recognition.js',import.meta.url),'utf8')).runInContext(sandbox);
 const S=WB.StateRecognition;
-assert.equal(S.version,'state-clean-1.8.23');
+assert.equal(S.version,'state-clean-1.8.24');
 
 const times=Array.from({length:25},(_,i)=>+(111.388+i*.45).toFixed(3));
 const stable=new Set([4,5,6,7,9,10,11,19,20]);
@@ -32,11 +32,21 @@ for(const i of S.adaptiveProbeIndexPlan(hiddenSparse,hidden.length).coarseIndice
 const hiddenPlan=S.adaptiveProbeIndexPlan(hiddenSparse,hidden.length),hiddenSelected=hiddenPlan.selectedIndices.map(i=>hidden[i]);
 assert.equal(S.adaptiveProbeNeedsFallback(hiddenSelected),true,'blind stable islands must trigger the full 0.45s fallback before production use');
 
+const aggregate=S.aggregateProbeProduction(
+ [{optimization:{probeProduction:{applied:true,saved:23,fallback:false}}}],
+ [{probeProduction:{applied:true,saved:0,fallback:true}},{probeProduction:{applied:true,saved:0,fallback:true}}]
+);
+assert.equal(aggregate.probeProductionAppliedTurns,3,'completed and safely skipped turns must both count as production attempts');
+assert.equal(aggregate.probeProductionSaved,23,'skipped fallback turns must not erase saved-probe accounting');
+assert.equal(aggregate.probeProductionFallbackTurns,2,'safe skips that required production fallback must remain visible in diagnostics');
+
 const source=fs.readFileSync(new URL('../state-recognition.js',import.meta.url),'utf8');
 assert.ok(source.includes("'turn-analysis-probe-coarse'"));
 assert.ok(source.includes("'turn-analysis-probe-refine'"));
 assert.ok(source.includes("'turn-analysis-probe-fallback'"));
 assert.ok(source.includes("probeProduction.fallbackReason='insufficient-safe-stable-pair'"));
 assert.ok(source.includes("adaptiveProbeProductionFallback:true"));
+assert.ok(source.includes("error.probeProduction=probeProduction"));
+assert.ok(source.includes("...aggregateProbeProduction(result.turns,result.skipped)"));
 assert.equal(source.includes('fastSeek'),false);
 console.log('TURN PROBE PRODUCTION REGRESSION PASS');
