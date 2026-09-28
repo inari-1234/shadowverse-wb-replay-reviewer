@@ -199,6 +199,13 @@ assert.ok(stateRecognition.includes("restorePosition:!batchMode"),'whole-match d
 assert.ok(stateRecognition.includes("const canary=ocrTargets[0]"),'HP cache canary must prime the first chronological stable anchor');
 assert.ok(stateRecognition.includes("else captureSeekReuseCount++"),'capture path must reuse an already exact anchor without another seek');
 assert.ok(stateRecognition.includes("batchDiscoveryRestoreSkip:true")&&stateRecognition.includes("batchFirstAnchorReuse:true"),'state module must advertise safe batch anchor reuse');
+assert.ok(handRecognition.includes("sharedCaptureFrameCache:true"),'hand recognition must advertise capture-scoped exact frame sharing');
+assert.ok(handRecognition.includes("sharedFrameCache.set(key,{time:+key,canvas,source})"),'hand layout scan must publish exact decoded frames only into the caller-owned capture cache');
+assert.ok(stateRecognition.includes("sharedFrameCache=options?.sharedFrameReuse===true?new Map():null"),'frame sharing must be opt-in and capture-scoped');
+assert.ok(stateRecognition.includes("state-hand-board-frame-cache-verify"),'board reuse must be guarded by a zero-seek live/cached frame canary');
+assert.ok(stateRecognition.includes("baseLiveFingerprint===baseCachedFingerprint"),'board reuse canary must require exact fingerprint equality');
+assert.ok(stateRecognition.includes("await WB.seekTo(t,'state-board-confirm')"),'legacy exact board seek path must remain for cache miss or rejection');
+assert.ok(stateRecognition.includes("handBoardFrameCacheFallbacks"),'whole-match diagnostics must expose frame-share fallback counts');
 assert.ok(stateRecognition.includes("reason:'reused-stable-probe'"),'timeline-lite capture must be able to reuse already accepted PP probe evidence');
 assert.ok(stateRecognition.includes("probeReuse:{pp:!!ppSeed,hp:false}"),'probe reuse must remain PP-only; HP must retain guarded temporal confirmation');
 

@@ -1,0 +1,21 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const hand=fs.readFileSync(new URL('../hand-recognition.js',import.meta.url),'utf8');
+const state=fs.readFileSync(new URL('../state-recognition.js',import.meta.url),'utf8');
+const app=fs.readFileSync(new URL('../app-core.js',import.meta.url),'utf8');
+
+assert.ok(app.includes("'hand-recognition':'hand-clean-1.53'"));
+assert.ok(app.includes("'state-recognition':'state-clean-1.8.21'"));
+assert.ok(hand.includes("ctx?.sharedFrameCache instanceof Map"));
+assert.ok(hand.includes("sharedFrameCache.set(key,{time:+key,canvas,source})"));
+assert.ok(hand.includes("cacheSharedFrame(t,canvas,'state-hand-layout')"));
+assert.ok(state.includes("sharedFrameCache=options?.sharedFrameReuse===true?new Map():null"));
+assert.ok(state.includes("sharedFrameReuse:batchMode"));
+assert.ok(state.includes("state-hand-board-frame-cache-verify"));
+assert.ok(state.includes("baseLiveFingerprint===baseCachedFingerprint"));
+assert.ok(state.includes("frameSource='hand-layout-cache'"));
+assert.ok(state.includes("await WB.seekTo(t,'state-board-confirm')"),'cache rejection/miss must retain exact board seeking');
+assert.ok(state.includes("handBoardFrameReuseCount"));
+assert.ok(state.includes("handBoardFrameCacheFallbacks"));
+assert.equal(state.includes('fastSeek'),false);
+console.log('HAND BOARD FRAME SHARE REGRESSION PASS');
