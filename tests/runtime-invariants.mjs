@@ -209,7 +209,7 @@ assert.ok(stateRecognition.includes("handBoardFrameCacheFallbacks"),'whole-match
 assert.ok(stateRecognition.includes("function adaptiveProbeShadowPlan(probes=[])"),'probe reduction must begin as an offline shadow plan, not a production sampling change');
 assert.ok(stateRecognition.includes("productionApplied:false"),'adaptive probe shadow must explicitly remain disconnected from production seeking');
 assert.ok(stateRecognition.includes("stableMisses.length===0&&anchorExact"),'shadow safety gate must reject any missed stable point or anchor mismatch');
-assert.ok(stateRecognition.includes("turn-analysis-probe-shadow"),'real-device diagnostics must expose per-turn shadow evidence');
+assert.ok(stateRecognition.includes("turn-analysis-probe-production"),'real-device diagnostics must expose per-turn adaptive production evidence');
 assert.ok(stateRecognition.includes("adaptiveProbeProduction:true")&&stateRecognition.includes("adaptiveProbeProductionFallback:true"),'adaptive coarse probing may run only with the full exact fallback contract');
 assert.ok(stateRecognition.includes("turn-analysis-probe-coarse")&&stateRecognition.includes("turn-analysis-probe-refine")&&stateRecognition.includes("turn-analysis-probe-fallback"),'production adaptive probing must remain exact and separately diagnosable');
 assert.ok(stateRecognition.includes("adaptiveProbeNeedsFallback(selected)"),'unsafe coarse/refine results must fall back before OCR/timeline publication');
