@@ -17,7 +17,7 @@ assert.ok(state.includes("async function captureState(options={})"));
 assert.ok(state.includes("WB.HandRecognition.recognizeHand(handCtx)"),
   'full endpoint capture must still run current-hand recognition');
 assert.ok(state.includes("handHistoryMode:handHistory?'full':'skipped-batch'"));
-assert.ok(state.includes("await captureState({handHistory:!batchMode,captureMode:batchMode?'batch-endpoint':'full'})"));
+assert.ok(state.includes("await captureState({handHistory:!batchMode,captureMode:batchMode?'batch-endpoint':'full',sharedFrameReuse:batchMode})"));
 assert.ok(state.includes("const turnResult=await analyzeCurrentTurn({batchMode:true,contextOverride});"));
 assert.equal(state.includes("'match-analysis-turn-anchor'"),false,'whole-match analysis must not seek only to reconstruct an already-confirmed turn context');
 assert.ok(state.includes("WB.runTask('状態取得',captureState"),
