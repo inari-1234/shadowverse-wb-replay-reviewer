@@ -5,8 +5,8 @@ const state=fs.readFileSync(new URL('../state-recognition.js',import.meta.url),'
 const hand=fs.readFileSync(new URL('../hand-recognition.js',import.meta.url),'utf8');
 const app=fs.readFileSync(new URL('../app-core.js',import.meta.url),'utf8');
 
-assert.ok(app.includes("'hand-recognition':'hand-clean-1.52'"));
-assert.ok(app.includes("'state-recognition':'state-clean-1.8.20'"));
+assert.ok(app.includes("'hand-recognition':'hand-clean-1.53'"));
+assert.ok(app.includes("'state-recognition':'state-clean-1.8.21'"));
 
 assert.ok(hand.includes("allowHistory=ctx?.relativeSide==='自分'&&ctx?.historyScan!==false"),
   'history skipping must be an explicit caller opt-out after current-hand decision setup');

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 const hand=fs.readFileSync(new URL('../hand-recognition.js',import.meta.url),'utf8');
 const app=fs.readFileSync(new URL('../app-core.js',import.meta.url),'utf8');
 
-assert.ok(app.includes("'hand-recognition':'hand-clean-1.52'"));
+assert.ok(app.includes("'hand-recognition':'hand-clean-1.53'"));
 
 assert.ok(hand.includes("currentScan.push({sampleTime:+t.toFixed(3),offset:+(t-original).toFixed(3),candidateCount:centers.length,centers,frameCanvas:canvas})"),
   'current layout scan must retain the exact canvas used to compute centers');
