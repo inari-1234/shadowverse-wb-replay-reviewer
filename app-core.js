@@ -1,12 +1,12 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.91',build:'4.13.91-20260929-clean-13-91-probeprod1diag1',revision:'clean-13-91-probeprod1diag1',subtitle:'Build 2026.09.29-clean-13-91-probeprod1diag1 / ターンprobe診断集計修正candidate'};
+const APP={version:'4.13.91',build:'4.13.91-20260929-clean-13-91-proberefineshadow1',revision:'clean-13-91-proberefineshadow1',subtitle:'Build 2026.09.29-clean-13-91-proberefineshadow1 / probe refine必要性shadow candidate'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'turn-recognition':'turn-clean-1.11',
   'mulligan-class':'mulligan-class-clean-1.5.4',
   'card-db':'card-db-clean-1.23',
   'hand-recognition':'hand-clean-1.53',
-  'state-recognition':'state-clean-1.8.24',
+  'state-recognition':'state-clean-1.8.25',
   'replay-session':'replay-session-clean-1.12',
   'review-engine':'review-clean-1.8.0',
   'counterfactual-review':'counterfactual-review-clean-1.0',
