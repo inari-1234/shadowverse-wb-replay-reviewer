@@ -166,7 +166,7 @@ assert.ok(stateRecognition.includes('function selectTurnStablePair(samples,cfg=T
 assert.ok(turnRecognition.includes("TERMINAL_TAIL_GUARD=Object.freeze({tailSeconds:3,targetMinAbsDiff:65,targetMinPixels:1750,targetMinStrongSamples:1,opponentMinAbsDiff:80,opponentMinPixels:1800,opponentMinStrongSamples:2"),'turn recognition must keep the role-aware terminal-tail guard narrowly bounded');
 assert.ok(turnRecognition.includes('function terminalTailDecision(timeline=[],duration=null,samples=[])'),'terminal-tail decision must remain independently regression-testable');
 assert.ok(turnRecognition.includes("const terminalGuard=await validateTerminalTail(stableRaw),stable=terminalGuard.timeline"),'terminal guard must run only after the stable13 primary scan');
-assert.ok(turnRecognition.includes("step=2;primaryCache=new Map()"),'stable13 coarse scan must be restored to the proven exact two-second implementation');
+assert.ok(turnRecognition.includes("step=2;primaryCache=primarySeedCache instanceof Map?new Map(primarySeedCache):new Map()"),'stable13 coarse scan must remain exact two-second scanning while reusing same-run exact preflight primary signals');
 assert.ok(turnRecognition.includes("coarseSeekMode:'exact-2s-restored'"),'diagnostics must identify the restored exact stable13 scanner');
 assert.equal(turnRecognition.includes('fastSeek'),false,'turn recognition must not use approximate fastSeek after the precision regression');
 assert.equal(turnRecognition.includes('requestVideoFrameCallback'),false,'turn recognition must not use the failed continuous-playback experiment');
@@ -410,4 +410,7 @@ console.log(JSON.stringify({
   zetaAcceptedCosts:[4,6],
   quickOverlapMaskedRescue:true
 },null,2));
+assert.ok(turnRecognition.includes('crossStageExactPrimaryReuse:true'),'turn recognition must expose guarded preflight-to-stable exact primary reuse');
+assert.ok(turnRecognition.includes("stableScan(scanStart,primarySeedCache)"),'stable13 may reuse only same-run exact preflight primary samples');
+assert.equal(turnRecognition.includes('stableValidatedSeedCache'),false,'failed stable13-to-early validated-frame cache must remain absent');
 console.log('RUNTIME INVARIANTS PASS');
