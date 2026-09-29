@@ -7,7 +7,7 @@ const sandbox={window:{WB},document:{createElement(){return {width:0,height:0,ge
 vm.createContext(sandbox);
 new vm.Script(fs.readFileSync(new URL('../state-recognition.js',import.meta.url),'utf8')).runInContext(sandbox);
 const S=WB.StateRecognition;
-assert.equal(S.version,'state-clean-1.8.24');
+assert.equal(S.version,'state-clean-1.8.26');
 
 const times=Array.from({length:25},(_,i)=>+(111.388+i*.45).toFixed(3));
 const stable=new Set([4,5,6,7,9,10,11,19,20]);
@@ -17,6 +17,7 @@ const coarseOnly=new Array(rows.length);
 for(const i of S.adaptiveProbeIndexPlan(coarseOnly,rows.length).coarseIndices)coarseOnly[i]=rows[i];
 const plan=S.adaptiveProbeIndexPlan(coarseOnly,rows.length);
 assert.deepEqual(Array.from(plan.selectedIndices),[0,2,3,4,5,6,7,8,9,10,11,12,14,16,18,19,20,21,22,24]);
+assert.deepEqual(Array.from(S.orderedRefineIndices({refineIndices:[1,5,3]})),[5,3,1],'refine sampling order must be descending while keeping the same exact indices');
 const selected=plan.selectedIndices.map(i=>rows[i]);
 assert.equal(S.adaptiveProbeNeedsFallback(selected),false,'validated turn-8 style adaptive result must not force full fallback');
 
@@ -43,6 +44,8 @@ assert.equal(aggregate.probeProductionFallbackTurns,2,'safe skips that required 
 const source=fs.readFileSync(new URL('../state-recognition.js',import.meta.url),'utf8');
 assert.ok(source.includes("'turn-analysis-probe-coarse'"));
 assert.ok(source.includes("'turn-analysis-probe-refine'"));
+assert.ok(source.includes("refineOrder:'descending-exact'"));
+assert.ok(source.includes("for(const i of orderedRefineIndices(adaptivePlan))"));
 assert.ok(source.includes("'turn-analysis-probe-fallback'"));
 assert.ok(source.includes("probeProduction.fallbackReason='insufficient-safe-stable-pair'"));
 assert.ok(source.includes("adaptiveProbeProductionFallback:true"));
