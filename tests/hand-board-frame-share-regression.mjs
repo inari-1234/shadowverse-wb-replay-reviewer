@@ -5,7 +5,7 @@ const state=fs.readFileSync(new URL('../state-recognition.js',import.meta.url),'
 const app=fs.readFileSync(new URL('../app-core.js',import.meta.url),'utf8');
 
 assert.ok(app.includes("'hand-recognition':'hand-clean-1.53'"));
-assert.ok(app.includes("'state-recognition':'state-clean-1.8.24'"));
+assert.ok(app.includes("'state-recognition':'state-clean-1.8.26'"));
 assert.ok(hand.includes("ctx?.sharedFrameCache instanceof Map"));
 assert.ok(hand.includes("sharedFrameCache.set(key,{time:+key,canvas,source})"));
 assert.ok(hand.includes("cacheSharedFrame(t,canvas,'state-hand-layout')"));
