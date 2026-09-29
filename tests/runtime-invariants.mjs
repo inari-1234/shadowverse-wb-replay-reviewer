@@ -410,4 +410,7 @@ console.log(JSON.stringify({
   zetaAcceptedCosts:[4,6],
   quickOverlapMaskedRescue:true
 },null,2));
+assert.ok(turnRecognition.includes('crossStageExactFrameReuse:true'),'turn recognition must expose guarded cross-stage exact-frame reuse');
+assert.ok(turnRecognition.includes("stableScan(scanStart,primarySeedCache,stableValidatedSeedCacheRun)"),'stable13 must reuse only same-run exact preflight samples');
+assert.equal(turnRecognition.includes('fastSeek'),false,'turn recognition production path must not use fastSeek');
 console.log('RUNTIME INVARIANTS PASS');

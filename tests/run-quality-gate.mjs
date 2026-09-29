@@ -32,6 +32,7 @@ const tests=[
   'tests/turn-terminal-tail-regression.mjs',
   'tests/start-boundary-real-video-regression.mjs',
   'tests/turn-preflight-cache-regression.mjs',
+  'tests/turn-frame-cache-regression.mjs',
   'tests/ios-seek-fallback-regression.mjs',
   'tests/video-input-fastpath-regression.mjs',
   'tests/ward-tristate-regression.mjs',
