@@ -212,6 +212,7 @@ assert.ok(stateRecognition.includes("stableMisses.length===0&&anchorExact"),'sha
 assert.ok(stateRecognition.includes("turn-analysis-probe-production"),'real-device diagnostics must expose per-turn adaptive production evidence');
 assert.ok(stateRecognition.includes("adaptiveProbeProduction:true")&&stateRecognition.includes("adaptiveProbeProductionFallback:true"),'adaptive coarse probing may run only with the full exact fallback contract');
 assert.ok(stateRecognition.includes("turn-analysis-probe-coarse")&&stateRecognition.includes("turn-analysis-probe-refine")&&stateRecognition.includes("turn-analysis-probe-fallback"),'production adaptive probing must remain exact and separately diagnosable');
+assert.ok(stateRecognition.includes("coarseOrder:'descending-exact'")&&stateRecognition.includes("for(const i of orderedCoarseIndices(coarsePlan))"),'coarse probe optimization may change traversal order only; exact sample set and fallback contract must remain intact');
 assert.ok(stateRecognition.includes("adaptiveProbeNeedsFallback(selected)"),'unsafe coarse/refine results must fall back before OCR/timeline publication');
 assert.ok(stateRecognition.includes("reason:'reused-stable-probe'"),'timeline-lite capture must be able to reuse already accepted PP probe evidence');
 assert.ok(stateRecognition.includes("probeReuse:{pp:!!ppSeed,hp:false}"),'probe reuse must remain PP-only; HP must retain guarded temporal confirmation');
