@@ -1,8 +1,8 @@
 {
-  "version": "4.13.91",
-  "build": "4.13.91-20260930-clean-13-91-stablecoarseorder1uiopt2live1",
-  "cache": "wb-review-v4-13-91-20260930-clean-13-91-stablecoarseorder1uiopt2live1",
+  "version": "4.13.92",
+  "build": "4.13.92-20261001-clean-13-92-stablecoarseorder1uiopt4candidate1",
+  "cache": "wb-review-v4-13-92-20261001-clean-13-92-stablecoarseorder1uiopt4candidate1",
   "sw": "./sw.js",
-  "revision": "clean-13-91-stablecoarseorder1uiopt2live1",
-  "updatedAt": "2026-09-30T16:40:00+09:00"
+  "revision": "clean-13-92-stablecoarseorder1uiopt4candidate1",
+  "updatedAt": "2026-10-01T00:42:00+09:00"
 }
