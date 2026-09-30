@@ -38,6 +38,7 @@ const tests=[
   'tests/ward-tristate-regression.mjs',
   'tests/runtime-invariants.mjs',
   'tests/ui-information-hierarchy-regression.mjs',
+  'tests/ui-opt4a-regression.mjs',
   'tests/candidate-update-channel-regression.mjs',
   'tests/near-threshold-phase-probe-regression.mjs',
   'tests/near-threshold-oscillation-regression.mjs',
