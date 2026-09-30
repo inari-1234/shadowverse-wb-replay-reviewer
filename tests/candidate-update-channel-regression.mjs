@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 const app=fs.readFileSync(new URL('../app-core.js',import.meta.url),'utf8');
 const latest=JSON.parse(fs.readFileSync(new URL('../latest.json',import.meta.url),'utf8'));
 
-assert.ok(latest.build.includes('stablecoarseorder1live1'));
+assert.ok(latest.build.includes('stablecoarseorder1uiopt1live1'));
 assert.ok(app.includes("href.includes('/candidate-live/')"));
 assert.ok(app.includes("/[?&]channel=candidate(?:&|$)/"));
 assert.ok(app.includes("runtimeChannel:RUNTIME_CHANNEL"));

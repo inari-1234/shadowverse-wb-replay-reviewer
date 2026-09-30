@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.91',build:'4.13.91-20260930-clean-13-91-stablecoarseorder1live1',revision:'clean-13-91-stablecoarseorder1live1',subtitle:'Build 2026.09.30-clean-13-91-stablecoarseorder1live1 / stable13 coarse逆順exact candidate / live更新対応'};
+const APP={version:'4.13.91',build:'4.13.91-20260930-clean-13-91-stablecoarseorder1uiopt1live1',revision:'clean-13-91-stablecoarseorder1uiopt1live1',subtitle:'Build 2026.09.30-clean-13-91-stablecoarseorder1uiopt1live1 / stable13高速化＋UI階層最適化 candidate / live更新対応'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'turn-recognition':'turn-clean-1.12',
   'mulligan-class':'mulligan-class-clean-1.5.4',
@@ -13,7 +13,7 @@ const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'diagnostics':'diagnostics-clean-1.57'
 });
 const RUNTIME_CHANNEL=(()=>{try{const href=String(window.location?.href||'');return href.includes('/candidate-live/')||/[?&]channel=candidate(?:&|$)/.test(href)?'candidate':'main'}catch{return'main'}})();
-const WB=window.WB={APP,runtimeChannel:RUNTIME_CHANNEL,expectedModules:EXPECTED_MODULE_VERSIONS,modules:[],moduleRegistrations:[],moduleRegistrationDuplicates:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,matchAnalysisLast:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
+const WB=window.WB={APP,runtimeChannel:RUNTIME_CHANNEL,uiView:'review',expectedModules:EXPECTED_MODULE_VERSIONS,modules:[],moduleRegistrations:[],moduleRegistrationDuplicates:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,matchAnalysisLast:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
 WB.$=s=>document.querySelector(s);
 WB.evaluateModuleIntegrity=(expected=WB.expectedModules,registrations=WB.moduleRegistrations)=>{
   const expectedModules={...(expected||{})},rows=Array.isArray(registrations)?registrations.map(x=>({name:String(x?.name??''),version:String(x?.version??'')})):[],byName=new Map(),moduleVersionMismatches=[];
@@ -82,20 +82,20 @@ WB.registerServiceWorker=async()=>{if(!('serviceWorker'in navigator))return;try{
   WB.swInfo=await queryServiceWorker(reg);WB.log('service-worker-register-managed',{scope:reg.scope,mode:'clean-single-sw',info:WB.swInfo})
 }catch(err){WB.recordError('service-worker',err)}};
 
-WB.disableCandidateServiceWorker=async()=>{if(WB.runtimeChannel!=='candidate')return{candidate:false,unregistered:0};let unregistered=0;try{
-  if('serviceWorker'in navigator){const reg=await navigator.serviceWorker.getRegistration('./');if(reg&&await reg.unregister())unregistered++}
-  WB.swInfo={mode:'candidate-no-sw',build:APP.build,unregistered};WB.log('candidate-service-worker-disabled',WB.swInfo)
-}catch(err){WB.recordError('candidate-service-worker-disable',err)}
-return{candidate:true,unregistered}};
-
+WB.disableCandidateServiceWorker=async()=>{if(WB.runtimeChannel!=='candidate')return{candidate:false,unregistered:0};let unregistered=0;try{if('serviceWorker'in navigator){const reg=await navigator.serviceWorker.getRegistration('./');if(reg&&await reg.unregister())unregistered++}WB.swInfo={mode:'candidate-no-sw',build:APP.build,unregistered};WB.log('candidate-service-worker-disabled',WB.swInfo)}catch(err){WB.recordError('candidate-service-worker-disable',err)}return{candidate:true,unregistered}};
 WB.fetchCandidateLatest=async()=>{if(WB.runtimeChannel!=='candidate')return null;try{const res=await fetch('./latest.json?_wb='+Date.now(),{cache:'no-store'});if(!res.ok)throw new Error('latest.json '+res.status);return await res.json()}catch(err){WB.recordError('candidate-latest-check',err);return null}};
-
 WB.refreshCandidate=async()=>{if(WB.runtimeChannel!=='candidate')return;await WB.disableCandidateServiceWorker();const u=new URL(location.href);u.searchParams.set('channel','candidate');u.searchParams.set('_wb',String(Date.now()));location.replace(u.href)};
+WB.initCandidateChannel=async()=>{if(WB.runtimeChannel!=='candidate')return;const header=document.querySelector('header');if(!header)return;let box=document.querySelector('#candidateChannel');if(!box){box=document.createElement('div');box.id='candidateChannel';box.style.cssText='display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;font-size:11px;color:#cbd5e1';const status=document.createElement('span');status.id='candidateChannelStatus';status.textContent='candidate-live / '+APP.build;const button=document.createElement('button');button.id='candidateRefresh';button.type='button';button.textContent='最新版を再読込';button.style.cssText='padding:6px 9px;font-size:11px';button.addEventListener('click',WB.refreshCandidate);box.append(status,button);header.appendChild(box)}await WB.disableCandidateServiceWorker();const latest=await WB.fetchCandidateLatest(),status=WB.$('#candidateChannelStatus');if(status){const latestBuild=latest?.build||null;status.textContent=latestBuild&&latestBuild!==APP.build?'新しいcandidateがあります / 現在 '+APP.build+' / 最新 '+latestBuild:'candidate-live / '+APP.build+(latestBuild?' / 最新一致':' / 最新確認失敗')};WB.log('candidate-channel-ready',{build:APP.build,latestBuild:latest?.build||null})};
 
-WB.initCandidateChannel=async()=>{if(WB.runtimeChannel!=='candidate')return;const header=document.querySelector('header');if(!header)return;
-  let box=document.querySelector('#candidateChannel');if(!box){box=document.createElement('div');box.id='candidateChannel';box.style.cssText='display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;font-size:11px;color:#cbd5e1';const status=document.createElement('span');status.id='candidateChannelStatus';status.textContent='candidate-live / '+APP.build;const button=document.createElement('button');button.id='candidateRefresh';button.type='button';button.textContent='最新版を再読込';button.style.cssText='padding:6px 9px;font-size:11px';button.addEventListener('click',WB.refreshCandidate);box.append(status,button);header.appendChild(box)}
-  await WB.disableCandidateServiceWorker();const latest=await WB.fetchCandidateLatest(),status=WB.$('#candidateChannelStatus');if(status){const latestBuild=latest?.build||null;status.textContent=latestBuild&&latestBuild!==APP.build?'新しいcandidateがあります / 現在 '+APP.build+' / 最新 '+latestBuild:'candidate-live / '+APP.build+(latestBuild?' / 最新一致':' / 最新確認失敗')};WB.log('candidate-channel-ready',{build:APP.build,latestBuild:latest?.build||null})
+WB.setUiView=view=>{const next=['review','detail','tools'].includes(view)?view:'review';WB.uiView=next;document.querySelectorAll('[data-ui-view]').forEach(el=>{el.hidden=el.dataset.uiView!==next});document.querySelectorAll('[data-ui-tab]').forEach(btn=>{const active=btn.dataset.uiTab===next;btn.classList.toggle('active',active);btn.setAttribute('aria-selected',active?'true':'false')});try{sessionStorage.setItem('wb-ui-view',next)}catch{}WB.log('ui-view',{view:next})};
+WB.updateUiSummary=()=>{const hasVideo=!!WB.videoMeta,turnCount=Array.isArray(WB.turnTimeline)?WB.turnTimeline.length:0,result=WB.matchAnalysisLast,reviewCount=Array.isArray(result?.session?.reviewPoints)?result.session.reviewPoints.length:0,episodeCount=Number(result?.session?.observedEpisodes||0),completed=Number(result?.completedTurns||0),total=Number(result?.totalTurns||0);
+  const videoText=WB.$('#flowVideoStatus'),turnText=WB.$('#flowTurnStatus'),reviewText=WB.$('#flowReviewStatus'),badge=WB.$('#turnCountBadge'),hint=WB.$('#uiNextHint');
+  if(videoText)videoText.textContent=hasVideo?'動画選択済み':'動画を選ぶ';if(turnText)turnText.textContent=turnCount?turnCount+'件認識':'ターン未解析';if(reviewText)reviewText.textContent=result?(completed+'/'+total+'解析'):'振り返り未解析';if(badge)badge.textContent=turnCount?turnCount+'件':'未解析';
+  const sA=WB.$('#summaryAnalyzed'),sR=WB.$('#summaryReviewPoints'),sE=WB.$('#summaryEpisodes');if(sA)sA.textContent=result?completed+'/'+total:'未実行';if(sR)sR.textContent=result?String(reviewCount):'－';if(sE)sE.textContent=result?String(episodeCount):'－';
+  document.querySelectorAll('[data-flow-step]').forEach(el=>{el.classList.remove('isDone','isCurrent')});const vStep=document.querySelector('[data-flow-step="video"]'),tStep=document.querySelector('[data-flow-step="turn"]'),rStep=document.querySelector('[data-flow-step="review"]');if(hasVideo)vStep?.classList.add('isDone');if(turnCount)tStep?.classList.add('isDone');if(result)rStep?.classList.add('isDone');if(!hasVideo)vStep?.classList.add('isCurrent');else if(!turnCount)tStep?.classList.add('isCurrent');else if(!result)rStep?.classList.add('isCurrent');
+  if(hint)hint.textContent=!hasVideo?'まずリプレイ動画を選択してください。':!turnCount?'次は「ターンを自動判定」を実行します。':!result?'ターン判定完了。次は「試合全体を振り返る」です。':reviewCount?'重要局面を上から確認し、必要な箇所だけ詳細を開いてください。':'解析完了。重要局面はありません。必要なら観測区間を確認してください。';
 };
+WB.initUiShell=()=>{document.querySelectorAll('[data-ui-tab]').forEach(btn=>btn.addEventListener('click',()=>WB.setUiView(btn.dataset.uiTab)));let initial='review';try{initial=sessionStorage.getItem('wb-ui-view')||'review'}catch{}WB.setUiView(initial);for(const name of ['metadata','timeline','video-reset','match-analysis-complete','task-finished'])WB.on(name,WB.updateUiSummary);WB.updateUiSummary()};
 
 function init(){
   const head=document.querySelector('header h1'),sub=document.querySelector('header p'),shellHeader=head?.textContent||'',shellSub=sub?.textContent||'',shellOk=shellHeader.includes(`v${APP.version}`)&&shellSub.includes(APP.revision);
@@ -123,6 +123,7 @@ function init(){
   WB.$('#clearScenes')?.addEventListener('click',()=>{const sceneIds=WB.scenes.map(s=>s.id);for(const s of WB.scenes)if(s.url)URL.revokeObjectURL(s.url);WB.scenes=[];WB.renderScenes();WB.emit('scenes-cleared',{sceneIds});WB.log('scenes-clear')});
   WB.$('#cancelScan')?.addEventListener('click',WB.requestCancel);
   WB.log('app-start',{build:APP.build,href:location.href,standalone:matchMedia('(display-mode: standalone)').matches,runtimeChannel:WB.runtimeChannel});
+  WB.initUiShell();
   if(WB.runtimeChannel==='candidate')WB.initCandidateChannel();else WB.registerServiceWorker();
   WB.ready=true;for(const fn of WB.readyQueue.splice(0)){try{fn()}catch(err){WB.recordError('module-init',err)}}
 }

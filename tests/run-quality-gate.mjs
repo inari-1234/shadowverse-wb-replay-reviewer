@@ -37,6 +37,7 @@ const tests=[
   'tests/video-input-fastpath-regression.mjs',
   'tests/ward-tristate-regression.mjs',
   'tests/runtime-invariants.mjs',
+  'tests/ui-information-hierarchy-regression.mjs',
   'tests/candidate-update-channel-regression.mjs',
   'tests/near-threshold-phase-probe-regression.mjs',
   'tests/near-threshold-oscillation-regression.mjs',

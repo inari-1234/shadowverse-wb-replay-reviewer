@@ -70,6 +70,7 @@ assert.ok(index.includes('<option value="none" selected>使用しない（状態
 assert.ok(index.includes('使用デッキ（記録用）'));
 assert.ok(index.includes('戦術レビューの切替には使用しません'));
 assert.ok(index.includes('後から得た公開情報を自動遮断する仕組みではありません'));
-assert.ok(index.includes('<details class="panel" id="diagnosticsPanel">'));
+assert.ok(index.includes('id="diagnosticsPanel"'),'diagnostics panel must remain available');
+assert.ok(index.includes('data-ui-view="tools"'),'diagnostics must be moved to the tools view rather than removed');
 
 console.log('REVIEW PROFILE BOUNDARY REGRESSION PASS');
