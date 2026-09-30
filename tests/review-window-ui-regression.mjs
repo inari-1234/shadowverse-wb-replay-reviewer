@@ -12,7 +12,8 @@ const WB={
   $(){return null},fmt:v=>Number(v).toFixed(1)+'s',
   escape:s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))
 };
-const sandbox={window:{WB},console,structuredClone,setTimeout,clearTimeout,URL,Date,Promise};
+const raf=fn=>setTimeout(fn,0);
+const sandbox={window:{WB},console,structuredClone,setTimeout,clearTimeout,setInterval,clearInterval,requestAnimationFrame:raf,URL,Date,Promise};
 vm.createContext(sandbox);
 new vm.Script(replay,{filename:'replay-session.js'}).runInContext(sandbox);
 const R=WB.ReplaySession;
@@ -58,50 +59,57 @@ assert.equal(models[0].beforeRows.find(x=>x.key==='boardDamage').changed,true,'b
 assert.equal(models[0].beforeRows.find(x=>x.key==='opponentHP').changed,false,'unchanged HP must not be highlighted');
 assert.deepEqual(Array.from(models[0].unknownFields),['extraPP','opponentWard']);
 assert.equal(models[0].coach.version,'review-window-coach-v1');
-assert.equal(models[0].coach.basis,'observation-only');
-assert.equal(models[0].coach.causalAttribution,false);
-assert.equal(models[0].coach.cardAttribution,false);
-assert.equal(models[0].cardUseCandidates.length,1);
 assert.equal(models[0].cardUseCandidates[0].status,'candidate-only');
 
+const comparison=R.reviewComparisonRows(models[0]);
+assert.equal(comparison.length,7,'comparison must combine the two snapshots into one seven-row table');
+assert.equal(comparison.find(x=>x.key==='pp').before,'2');
+assert.equal(comparison.find(x=>x.key==='pp').after,'1');
+assert.equal(comparison.find(x=>x.key==='pp').changed,true);
+assert.equal(comparison.find(x=>x.key==='opponentHP').changed,false);
+
 const html=R.renderDecisionWindowCard(models[0]);
-for(const phrase of ['判断直前','変化後','観測した変化','重要とした理由','未確認: ExPP / 相手守護','断定していない項目','PP 2 → 1','盤面打点 4 → 0']){
+for(const phrase of ['判断直前','変化後','観測した変化','状態比較','重要とした理由','ExPP','相手守護','断定不可','PP 2 → 1','盤面打点 4 → 0']){
   assert.ok(html.includes(phrase),`review card must include: ${phrase}`);
 }
-assert.ok(html.includes('使用カード'),'unresolved card identity must be shown only as not determined');
+assert.ok(html.indexOf('観測した変化')<html.indexOf('状態比較'),'diff summary must precede the comparison table');
+assert.ok(html.indexOf('状態比較')<html.indexOf('直前フレーム'),'comparison must precede frame evidence buttons');
+assert.ok(html.includes('data-review-frame-time="47.641"')&&html.includes('直前フレーム'),'review card must provide a static before-frame control');
+assert.ok(html.includes('data-review-frame-time="48.091"')&&html.includes('変化後フレーム'),'review card must provide a static after-frame control');
+assert.ok(html.includes('isChanged'),'only observed changed rows should receive changed-state emphasis');
+assert.ok(html.includes('isQuiet'),'unchanged rows should remain visually subordinate');
+assert.ok(html.includes('reviewUnknown'),'unknown values must use the dedicated uncertainty treatment');
+assert.equal(html.includes('reviewStateGrid'),false,'legacy vertical before/after state cards must not render');
+assert.ok(html.includes('戦術コーチ'));
+assert.ok(html.includes('評価保留'));
+assert.ok(html.includes('候補カード使用（未確定）'));
 assert.equal(html.includes('使用カード:'),false,'UI must not invent a specific played card');
 assert.equal(html.includes('効果源:'),false,'UI must not invent a specific causal source');
-assert.ok(html.includes('data-review-time="47.641"')&&html.includes('判断直前を見る'),'review card must provide a direct before-state video navigation control');
-assert.ok(html.includes('data-review-time="48.091"')&&html.includes('変化後を見る'),'review card must provide a direct after-state video navigation control');
-assert.ok(html.includes('reviewStateChanged'),'only observed changed state rows should receive changed-state emphasis');
-assert.ok(html.includes('戦術コーチ'),'Decision Window card must expose the Phase 17 coach');
-assert.ok(html.includes('考えるポイント')&&html.includes('確認質問')&&html.includes('評価保留'),'coach UI must separate prompts from held judgement');
-assert.ok(html.includes('観測だけではプレイの良否を断定しません。'));
-assert.ok(html.includes('候補カード使用（未確定）'));
-assert.ok(html.includes('刹那のクイックブレイダー'));
-assert.ok(html.includes('このカードを使用した確定ではありません'));
 
-const navStatus={textContent:''};
-let sought=null,paused=false,scrolled=false,taskName=null,taskLockText=null;
-WB.video={duration:123.338,currentTime:0,scrollIntoView(){scrolled=true}};
-WB.pauseVideo=()=>{paused=true;return true};
-WB.seekTo=async t=>{sought=Number(t);WB.video.currentTime=Number(t)};
-WB.runTask=async(name,fn,opts={})=>{taskName=name;taskLockText=opts.lockText;return await fn()};
-WB.$=sel=>sel==='#reviewNavigationStatus'?navStatus:null;
-assert.equal(await R.seekReviewWindow(47.641,'before'),true,'before navigation must seek successfully');
-assert.equal(sought,47.641);
-assert.equal(paused,true);
-assert.equal(scrolled,true);
-assert.equal(taskName,'局面レビュー移動');
-assert.equal(taskLockText,'判断直前へ移動しています。');
-assert.equal(navStatus.textContent,'判断直前 47.6s へ移動しました。');
-assert.ok(index.includes('Decision Windowごとに「判断直前」「変化後」「観測した変化」「重要とした理由」「未確認項目」'),'review safety explanation must remain available');
+let seekedHandler=null;
+const video={
+  duration:123.338,readyState:4,seeking:false,_time:0,
+  get currentTime(){return this._time},
+  set currentTime(v){this._time=Number(v);this.seeking=false;queueMicrotask(()=>seekedHandler?.())},
+  addEventListener(name,fn){if(name==='seeked')seekedHandler=fn},
+  removeEventListener(name,fn){if(name==='seeked'&&seekedHandler===fn)seekedHandler=null}
+};
+WB.video=video;
+WB.seekCount=17;
+WB.seekReasons={analysis:17};
+WB.seekPositionReached=(v,target)=>Math.abs(Number(v.currentTime)-Number(target))<=.06&&!v.seeking&&v.readyState>=2;
+await R.previewSeekTo(47.641,'review-frame-before');
+assert.equal(WB.seekCount,17,'preview seek must not increment analysis seek count');
+assert.deepEqual(WB.seekReasons,{analysis:17},'preview seek must not alter analysis seek reasons');
+assert.equal(WB.previewSeekCount,1,'preview seek must have its own counter');
+assert.equal(WB.previewSeekReasons['review-frame-before'],1);
+
+assert.ok(index.includes('id="reviewFrameSheet"'),'static frame sheet must exist');
+assert.ok(index.includes('id="matchProgressWrap"'),'whole-match progress surface must exist');
+assert.ok(index.includes('閲覧用のseekは解析性能のseek数とは別管理です。'));
 assert.ok(index.includes('使用カード・効果源・行動順を推定しません'));
-assert.ok(index.includes('.reviewStateGrid,.reviewWindowGrid'));
-assert.ok(index.includes('id="reviewNavigationStatus"'),'review panel must expose navigation feedback');
-assert.ok(index.includes('「判断直前を見る」「変化後を見る」から動画の該当時刻へ直接移動できます。'));
-assert.ok(replay.includes("reviewWindowUi:'before-after-observed-importance-unknown-noncausal-navigation+coach-v1'"));
-assert.ok(replay.includes("cardUseCandidate:'two-evidence-candidate-only-no-action-v1'"));
+assert.ok(index.includes('id="reviewNavigationStatus"'));
+assert.ok(replay.includes("reviewWindowUi:'diff-first-comparison+static-frame-preview+unknown-amber+coach-v1'"));
 assert.ok(replay.includes('window.__wbCardUseCandidateV1'));
 assert.ok(replay.includes('causalAttribution:false'));
 assert.equal(replay.includes("'card-play'"),false);
