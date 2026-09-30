@@ -151,8 +151,9 @@ assert.ok(stateRecognition.includes("version:'confirmed-state-v1'"),'state recog
 assert.ok(index.includes('id="reviewOverviewPanel"'),'user runtime must expose the automatic review overview');
 assert.ok(index.includes('id="replaySessionStatus"')&&index.includes('id="reviewPoints"')&&index.includes('id="actionTimeline"'),'automatic review UI must expose session, review-point and action-timeline targets');
 assert.ok(index.includes('id="leAnalyzeTurn"'),'state UI must expose one-action same-turn analysis');
-assert.ok(index.includes('data-ui-tab="review"')&&index.includes('data-ui-tab="detail"')&&index.includes('data-ui-tab="tools"'),'mobile UI must expose review/detail/tools views');
-assert.ok(app.includes("WB.setUiView=view=>")&&app.includes("WB.updateUiSummary=()=>"),'UI hierarchy controller must remain available');
+assert.equal(index.includes('class="appTabs"'),false,'normal UI must not expose nonessential top tabs');
+assert.equal(index.includes('class="flowPanel"'),false,'normal UI must not expose noninteractive STEP cards');
+assert.ok(index.includes('全体を振り返る'),'whole-match review must be the visible primary review action');
 const statePanelHtml=index.slice(index.indexOf('<section id="lethalPanel"'),index.indexOf('<section id="reviewOverviewPanel"'));
 const reviewPanelStart=index.indexOf('<section id="reviewOverviewPanel"'),reviewPanelEnd=index.indexOf('<section id="scenePanel"',reviewPanelStart),reviewPanelHtml=index.slice(reviewPanelStart,reviewPanelEnd);
 assert.ok(statePanelHtml.includes('id="leFill"'),'state panel must keep the current-position capture as its primary action');
