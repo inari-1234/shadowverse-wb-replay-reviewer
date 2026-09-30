@@ -348,9 +348,10 @@ function renderReviewComparison(model){
 function reviewFrameButton(label,time,phase){const t=finite(time);return t==null?'':`<button type="button" class="reviewFrameButton" data-review-frame-time="${t}" data-review-frame-phase="${W.escape(phase)}">${W.escape(label)}</button>`}
 function renderWindowCoach(coach){
   if(!coach)return'';
-  const focus=(coach.focus||[]).map(x=>`<li>${W.escape(x)}</li>`).join(''),questions=(coach.questions||[]).map(x=>`<li>${W.escape(x)}</li>`).join(''),
+  const facts=(coach.facts||[]).map(x=>`<li>${W.escape(x)}</li>`).join(''),
+    thinking=[...(coach.focus||[]),...(coach.questions||[])].filter((x,i,a)=>x&&a.indexOf(x)===i).map(x=>`<li>${W.escape(x)}</li>`).join(''),
     cautions=(coach.cautions||[]).map(x=>`<li>${W.escape(x)}</li>`).join('');
-  return`<details class="reviewCoach"><summary><b>戦術コーチ</b> — ${W.escape(coach.summary||'この局面の確認ポイント')}</summary><div class="reviewCoachBody">${focus?`<div><b>考えるポイント</b><ul>${focus}</ul></div>`:''}${questions?`<div><b>確認質問</b><ul>${questions}</ul></div>`:''}${cautions?`<div class="reviewCoachCaution"><b>評価保留</b><ul>${cautions}</ul><p>${W.escape(coach.judgementReason||'観測だけではプレイの良否を断定しません。')}</p></div>`:''}</div></details>`
+  return`<details class="reviewCoach" open><summary><b>戦術コーチ</b> — ${W.escape(coach.summary||'この局面の確認ポイント')}</summary><div class="reviewCoachBody">${facts?`<div class="reviewCoachFacts"><b>観測事実</b><ul>${facts}</ul></div>`:''}${thinking?`<div><b>考えるポイント</b><ul>${thinking}</ul></div>`:''}<div class="reviewCoachCaution"><div><b>まだ判断できないこと</b> <span class="reviewUncertainLabel">評価保留</span></div>${cautions?`<ul>${cautions}</ul>`:''}<p>${W.escape(coach.judgementReason||'観測だけではプレイの良否や最善手を断定しません。')}</p></div></div></details>`
 }
 function renderCardUseCandidates(candidates=[]){
   if(!Array.isArray(candidates)||!candidates.length)return'';
