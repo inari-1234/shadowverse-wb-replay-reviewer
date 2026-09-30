@@ -43,9 +43,10 @@ assert.ok(html.includes('id="reviewFrameSheet" class="reviewFrameSheet hidden"')
 const decisionStart=replay.indexOf('function renderDecisionWindowCard');
 const decisionEnd=replay.indexOf('async function previewSeekTo',decisionStart);
 const decision=replay.slice(decisionStart,decisionEnd);
-assert.ok(decision.indexOf('reviewObservationSummary')<decision.indexOf('renderReviewComparison(model)'),'observed changes must render before the comparison table');
-assert.ok(decision.indexOf('renderReviewComparison(model)')<decision.indexOf('reviewFrameActions'),'comparison must render before frame evidence');
-assert.ok(decision.indexOf('reviewFrameActions')<decision.indexOf('reasonHtml'),'frame evidence must render before the reason block');
-assert.ok(decision.indexOf('reasonHtml')<decision.indexOf('renderWindowCoach(model.coach)'),'reason must render before tactical coach');
+const rendered=decision.slice(decision.indexOf('return`<article'));
+assert.ok(rendered.indexOf('reviewObservationSummary')<rendered.indexOf('${renderReviewComparison(model)}'),'observed changes must render before the comparison table');
+assert.ok(rendered.indexOf('${renderReviewComparison(model)}')<rendered.indexOf('${frames}'),'comparison must render before frame evidence');
+assert.ok(rendered.indexOf('${frames}')<rendered.indexOf('${reasonHtml}'),'frame evidence must render before the reason block');
+assert.ok(rendered.indexOf('${reasonHtml}')<rendered.indexOf('${renderWindowCoach(model.coach)}'),'reason must render before tactical coach');
 
 console.log('UI OPT4A REGRESSION PASS');
