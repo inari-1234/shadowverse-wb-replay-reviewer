@@ -1,4 +1,4 @@
-const CACHE='wb-review-v4-13-91-20260930-clean-13-92-stablecoarseorder1uiopt4candidate1';
+const CACHE='wb-review-v4-13-92-20261001-clean-13-92-stablecoarseorder1uiopt4candidate1';
 const BUILD='4.13.92-20261001-clean-13-92-stablecoarseorder1uiopt4candidate1';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./latest.json','./app-core.js','./turn-recognition.js','./mulligan-class.js','./card-db.js','./hand-recognition.js','./state-recognition.js','./replay-session.js','./review-engine.js','./counterfactual-review.js','./diagnostics.js'];
 self.addEventListener('install',event=>{self.skipWaiting();event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)))});
