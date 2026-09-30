@@ -82,33 +82,40 @@ function deriveWindowCoach(model={}){
   const before=model.beforeState||{},after=model.afterState||{},changes=Array.isArray(model.observedChanges)?model.observedChanges:[],
     unknown=[...new Set((Array.isArray(model.unknownFields)?model.unknownFields:[]).map(String))],
     unresolved=[...new Set((Array.isArray(model.unresolved)?model.unresolved:[]).map(String))],
-    focus=[],questions=[],cautions=[];
+    facts=[],focus=[],questions=[],cautions=[],changedFactKeys=new Set();
   let hpDrop=null,boardDelta=null,ppDelta=null,resourceChanged=false,wardChanged=false;
   for(const a of changes){
     const from=coachFinite(a?.data?.from),to=coachFinite(a?.data?.to);
     if(a?.type==='opponent-hp-change'&&from!=null&&to!=null){
-      hpDrop={from,to,delta:to-from};
+      hpDrop={from,to,delta:to-from};changedFactKeys.add('opponentHP');facts.push(`相手HP ${from} → ${to}`);
       if(to<from){focus.push(`相手HPが ${from} → ${to}。残りHP ${to} と、変化後の盤面打点・守護・残りPPを並べて次の勝ち筋を確認する。`);questions.push('このHP減少の後、次のターンまでに必要な残り打点はどう変わったか？')}
       else focus.push(`相手HPが ${from} → ${to} に変化。回復・ダメージ源は断定せず、勝ち筋への影響を確認する。`)
     }else if(a?.type==='board-damage-change'&&from!=null&&to!=null){
-      boardDelta={from,to,delta:to-from};
+      boardDelta={from,to,delta:to-from};changedFactKeys.add('boardDamage');facts.push(`盤面打点 ${from} → ${to}`);
       if(to>from){focus.push(`攻撃可能打点が ${from} → ${to} に増加。増えた打点を今使う価値と、盤面に残す価値を比較する。`);questions.push('増えた攻撃可能打点を相手HPへ通す価値と、盤面維持の価値はどちらが高かったか？')}
       else if(to<from){focus.push(`攻撃可能打点が ${from} → ${to} に減少。攻撃・交換・除去など、何による減少かは未確定なので動画で使われ方を確認する。`);questions.push('減った打点は相手HPへの攻撃、盤面交換、その他の変化のどれだったか？')}
     }else if(a?.type==='pp-change'&&from!=null&&to!=null){
-      ppDelta={from,to,delta:to-from};
+      ppDelta={from,to,delta:to-from};changedFactKeys.add('pp');facts.push(`PP ${from} → ${to}`);
       if(to<from){focus.push(`PPが ${from} → ${to} に減少。使用カードは断定せず、残りPP ${to} で別の手順を残せていたか確認する。`);questions.push('残ったPPで、別の有力手順や行動順を残せていたか？')}
       else focus.push(`PPが ${from} → ${to} に変化。変化理由を推定せず、前後の選択肢を確認する。`)
     }else if(a?.type==='resource-change'){
-      resourceChanged=true;const key=String(a?.data?.resource||''),label=WINDOW_FIELD_LABELS[key]||key||'資源',fv=String(a?.data?.from??'unknown'),tv=String(a?.data?.to??'unknown');
+      resourceChanged=true;const key=String(a?.data?.resource||''),label=WINDOW_FIELD_LABELS[key]||key||'資源',fv=String(a?.data?.from??'unknown'),tv=String(a?.data?.to??'unknown');changedFactKeys.add(key);facts.push(`${label} ${coachResourceLabel(fv)} → ${coachResourceLabel(tv)}`);
       focus.push(`${label}が ${coachResourceLabel(fv)} → ${coachResourceLabel(tv)} に変化。使用したとは断定せず、タイミングと得られた打点・盤面価値を確認する。`);
       questions.push(`${label}の変化は、この局面で得た打点・盤面・テンポに見合っていたか？`)
     }else if(a?.type==='ward-change'){
-      wardChanged=true;const fv=String(a?.data?.from??'unknown'),tv=String(a?.data?.to??'unknown');
+      wardChanged=true;const fv=String(a?.data?.from??'unknown'),tv=String(a?.data?.to??'unknown');changedFactKeys.add('opponentWard');facts.push(`相手守護 ${coachWardLabel(fv)} → ${coachWardLabel(tv)}`);
       focus.push(`相手守護が ${coachWardLabel(fv)} → ${coachWardLabel(tv)} に変化。攻撃先と残り打点への影響を確認する。`);
       questions.push('守護状態の変化で、相手HPへ通せる打点や攻撃順はどう変わったか？')
     }
   }
-  if(changes.length>1)cautions.push('同一区間で複数の変化を観測していますが、同一カード・同一行動による変化とは結び付けません。');
+  const afterWardFact=String(after.opponentWard||'unknown'),afterBoardFact=after.boardDamageKnown===true?coachFinite(after.boardDamage):null;
+  if(!changedFactKeys.has('opponentWard')&&afterWardFact!=='unknown')facts.push(`相手守護 ${coachWardLabel(afterWardFact)}`);
+  if(!changedFactKeys.has('boardDamage')){
+    if(afterBoardFact!=null)facts.push(`変化後の盤面打点 ${afterBoardFact}`);
+    else if(unknown.includes('boardDamage')||after.boardDamageKnown!==true)facts.push('変化後の盤面打点は未確認');
+  }
+  if(!facts.length)facts.push('前後状態は観測済みですが、確定した差分はありません。');
+    if(changes.length>1)cautions.push('同一区間で複数の変化を観測していますが、同一カード・同一行動による変化とは結び付けません。');
   if(unresolved.length)cautions.push(`未確定の因果: ${unresolved.join(' / ')}。`);
   if(unknown.length)cautions.push(`未確認項目（${unknown.map(x=>WINDOW_FIELD_LABELS[x]||x).join(' / ')}）があるため、最善手・リーサル有無・プレイの良否は断定しません。`);
   const afterHp=coachFinite(after.opponentHP),afterBoard=after.boardDamageKnown===true?coachFinite(after.boardDamage):null,afterWard=String(after.opponentWard||'unknown');
@@ -126,8 +133,8 @@ function deriveWindowCoach(model={}){
   if(!focus.length)focus.push('判断直前と変化後を動画で見比べ、確認できる事実だけで選択肢を整理する。');
   if(!questions.length)questions.push('この変化によって、次の行動候補と相手への圧力はどう変わったか？');
   return{version:WINDOW_COACH_VERSION,id:model.id?`coach:${model.id}`:null,turn:model.turn??null,reviewStart:coachFinite(model.reviewStart),reviewEnd:coachFinite(model.reviewEnd),
-    basis:'observation-only',deckSpecific:false,usesCurrentHand:false,summary,focus,questions,cautions,unknownFields:unknown,
-    judgement:'hold',judgementReason:'使用カード・効果源・行動順が確定していないため、この情報だけではプレイの良否を断定しません。',
+    basis:'observation-only',deckSpecific:false,usesCurrentHand:false,structure:'facts-thinking-unknown-v1',summary,facts:[...new Set(facts)],focus,questions,cautions,unknownFields:unknown,
+    judgement:'hold',judgementReason:'使用カード・効果源・行動順が確定していないため、この情報だけではプレイの良否や最善手を断定しません。',
     causalAttribution:false,cardAttribution:false};
 }
 function deriveWindowCoaches(models=[]){return(Array.isArray(models)?models:[]).map(deriveWindowCoach)}
