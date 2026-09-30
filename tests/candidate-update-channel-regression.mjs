@@ -14,5 +14,5 @@ assert.ok(app.includes("reg.unregister()"));
 assert.ok(app.includes("fetch('./latest.json?_wb='+Date.now(),{cache:'no-store'})"));
 assert.ok(app.includes("button.textContent='更新'"));
 assert.ok(app.includes("u.searchParams.set('_wb',String(Date.now()))"));
-assert.ok(app.includes("status.textContent=latestBuild&&latestBuild!==APP.build?'新しいcandidateがあります"));
+assert.ok(app.includes("status.textContent=latestBuild&&latestBuild!==APP.build?'更新あり'"));
 console.log('CANDIDATE UPDATE CHANNEL REGRESSION PASS');
