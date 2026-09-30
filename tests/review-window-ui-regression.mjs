@@ -95,7 +95,7 @@ assert.equal(scrolled,true);
 assert.equal(taskName,'局面レビュー移動');
 assert.equal(taskLockText,'判断直前へ移動しています。');
 assert.equal(navStatus.textContent,'判断直前 47.6s へ移動しました。');
-assert.ok(index.includes('Decision Windowごとに「判断直前」「変化後」「観測した変化」「重要とした理由」「未確認項目」'));
+assert.ok(index.includes('Decision Windowごとに「判断直前」「変化後」「観測した変化」「重要とした理由」「未確認項目」'),'review safety explanation must remain available');
 assert.ok(index.includes('使用カード・効果源・行動順を推定しません'));
 assert.ok(index.includes('.reviewStateGrid,.reviewWindowGrid'));
 assert.ok(index.includes('id="reviewNavigationStatus"'),'review panel must expose navigation feedback');

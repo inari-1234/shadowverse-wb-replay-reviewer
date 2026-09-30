@@ -151,7 +151,7 @@ assert.ok(index.includes('id="reviewOverviewPanel"'),'user runtime must expose t
 assert.ok(index.includes('id="replaySessionStatus"')&&index.includes('id="reviewPoints"')&&index.includes('id="actionTimeline"'),'automatic review UI must expose session, review-point and action-timeline targets');
 assert.ok(index.includes('id="leAnalyzeTurn"'),'state UI must expose one-action same-turn analysis');
 const statePanelHtml=index.slice(index.indexOf('<section id="lethalPanel"'),index.indexOf('<section id="reviewOverviewPanel"'));
-const reviewPanelHtml=index.slice(index.indexOf('<section id="reviewOverviewPanel"'),index.indexOf('<section class="panel"><h2>7. 局面保存</h2>'));
+const reviewPanelStart=index.indexOf('<section id="reviewOverviewPanel"'),reviewPanelEnd=index.indexOf('<section id="scenePanel"',reviewPanelStart),reviewPanelHtml=index.slice(reviewPanelStart,reviewPanelEnd);
 assert.ok(statePanelHtml.includes('id="leFill"'),'state panel must keep the current-position capture as its primary action');
 assert.ok(statePanelHtml.includes('id="stateManualEditor"')&&statePanelHtml.includes('<summary>認識結果を確認・手動修正</summary>'),'manual state correction must remain available but collapsed by default');
 assert.equal(statePanelHtml.includes('id="leAnalyzeTurn"'),false,'same-turn analysis must not remain mixed into the state-capture panel');
