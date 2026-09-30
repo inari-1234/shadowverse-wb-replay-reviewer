@@ -134,7 +134,7 @@ function deriveWindowCoach(model={}){
   if(!questions.length)questions.push('この変化によって、次の行動候補と相手への圧力はどう変わったか？');
   return{version:WINDOW_COACH_VERSION,id:model.id?`coach:${model.id}`:null,turn:model.turn??null,reviewStart:coachFinite(model.reviewStart),reviewEnd:coachFinite(model.reviewEnd),
     basis:'observation-only',deckSpecific:false,usesCurrentHand:false,structure:'facts-thinking-unknown-v1',summary,facts:[...new Set(facts)],focus,questions,cautions,unknownFields:unknown,
-    judgement:'hold',judgementReason:'使用カード・効果源・行動順が確定していないため、この情報だけではプレイの良否や最善手を断定しません。',
+    judgement:'hold',judgementReason:'使用カード・効果源・行動順が確定していないため、この情報だけではプレイの良否を断定しません。最善手も断定しません。',
     causalAttribution:false,cardAttribution:false};
 }
 function deriveWindowCoaches(models=[]){return(Array.isArray(models)?models:[]).map(deriveWindowCoach)}
