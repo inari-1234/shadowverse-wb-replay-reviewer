@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.91',build:'4.13.91-20260930-clean-13-91-stablecoarseorder1uiopt2live1',revision:'clean-13-91-stablecoarseorder1uiopt2live1',subtitle:'Build 2026.09.30-clean-13-91-stablecoarseorder1uiopt2live1 / 最小操作UI candidate / live更新対応'};
+const APP={version:'4.13.92',build:'4.13.92-20261001-clean-13-92-stablecoarseorder1uiopt4candidate1',revision:'clean-13-92-stablecoarseorder1uiopt4candidate1',subtitle:'Build 2026.09.30-clean-13-92-stablecoarseorder1uiopt4candidate1 / 最小操作UI candidate / live更新対応'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'turn-recognition':'turn-clean-1.12',
   'mulligan-class':'mulligan-class-clean-1.5.4',
