@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#101827">
+<meta name="theme-color" content="#f4f7fb">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="manifest" href="./manifest.webmanifest">
 <title>シャドバWB リプレイ診断 v4.13.91</title>
@@ -121,6 +121,71 @@ input[type=text],input[type=number],select,textarea{background:#101319;border:1p
 #candidateRefresh{min-height:30px!important;height:30px!important;padding:0 10px!important;border-radius:10px!important;font-size:11px!important;background:#232832!important;border:1px solid #303743!important}
 @media(max-width:620px){main{padding:8px 10px 78px}.panel{padding:15px;border-radius:18px}.panel h2{font-size:17px}.settingsGrid{grid-template-columns:1fr 1fr}.secondaryButtons{gap:6px}.secondaryButtons button{font-size:12px}.reviewSummaryGrid{grid-template-columns:repeat(3,1fr)}}
 
+
+/* ui-opt3 bright surface */
+:root{
+  color-scheme:light;
+  --bg:#f4f7fb;
+  --surface:#ffffff;
+  --surface2:#f8fafc;
+  --line:#dce4ee;
+  --text:#182234;
+  --muted:#6f7c90;
+  --accent:#14b8a6;
+  --accentPressed:#0f9f91;
+  --accentSoft:#e8faf7;
+  --success:#1f9d70;
+  --warning:#b7791f;
+  --danger:#c84d5a
+}
+body{background:var(--bg);color:var(--text)}
+header{background:var(--bg)}
+header h1{color:#152033}
+.panel{background:var(--surface);border-color:var(--line);box-shadow:0 6px 20px rgba(30,45,70,.055)}
+.panel h2{color:#172033}
+.help,.muted,.statusLine{color:var(--muted)}
+.warn{color:var(--warning)}
+.ok{color:var(--success)}
+.bad{color:var(--danger)}
+button{background:#eef3f8;color:#334155;border-color:#d9e2ec}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:active{background:var(--accentPressed)}
+#cancelScan,#cancelMatch{background:#eef3f8;border-color:#d9e2ec;color:#475569}
+input[type=file]{color:var(--muted)}
+input[type=file]::file-selector-button{background:var(--accent);color:#fff}
+input[type=text],input[type=number],select,textarea{background:#fff;border-color:#d7e0ea;color:var(--text)}
+select{color-scheme:light}
+.timebar input[type=range]{accent-color:var(--accent)}
+.progress{background:#e6ecf3}
+.progress>div{background:var(--accent)}
+.summaryMetric{background:var(--surface2);border-color:var(--line)}
+.badge{background:#eaf0f6;color:#526174}
+.ocrRead,.diag{background:#f8fafc;border-color:#dce4ee;color:#344256}
+.tacticalEditor,.reviewBlock,.reviewState,.reviewCoach{background:#fbfcfe;border-color:#dce4ee}
+.tacticalEditor[open]>summary{border-bottom-color:#dce4ee}
+.tacticalItem{background:#fff;border-color:#dce4ee}
+.reviewWindow{background:#fff;border-color:#dce4ee;box-shadow:0 4px 16px rgba(30,45,70,.045)}
+.reviewStateRows>div{border-top-color:#e8edf3}
+.reviewStateRows>div.reviewStateChanged{background:#ecfbf7}
+.reviewWindowTime,.reviewWindowMeta,.reviewStateRows span,.tacticalItem small,.cardUseCandidateRow span,.cardUseCandidateRow small,.reviewCoachCaution p{color:var(--muted)}
+.reviewCoach{background:#f7fbfc}
+.cardUseCandidate{background:#f4faf9;border-color:#a8ddd4}
+.reviewUnresolved{background:#fff8e8;color:#7c5a18}
+.resultDetails{border-top-color:#e4eaf1}
+.resultDetails>summary{color:#66758a}
+.developerPanel>summary{color:#7c8798}
+#candidateChannel{color:#7b8797!important}
+#candidateRefresh{background:#eef3f8!important;border-color:#d9e2ec!important;color:#4a596d!important}
+.lock{background:rgba(34,48,67,.24)}
+.lock>div{background:#fff;border-color:#dce4ee;color:var(--text);box-shadow:0 12px 38px rgba(32,48,70,.16)}
+.good{background:#e7f7f1;color:#197657;border-color:#c4eadc}
+.danger{background:#fff0f2;color:#a83d4a;border-color:#f2c9ce}
+.sep{border-top-color:#e1e8f0}
+.stateYes{color:#18805d}
+.stateNo{color:#657286}
+.stateUnknown{color:#b7791f}
+video{background:#0b0d12}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script defer src="./app-core.js"></script>
@@ -135,7 +200,7 @@ input[type=text],input[type=number],select,textarea{background:#101319;border:1p
 <script defer src="./diagnostics.js"></script>
 </head>
 <body>
-<header><h1>シャドバWB リプレイ診断 v4.13.91</h1><p>Build 2026.09.30-clean-13-91-stablecoarseorder1uiopt2live1 / 最小操作UI candidate / live更新対応</p></header>
+<header><h1>シャドバWB リプレイ診断 v4.13.91</h1><p>Build 2026.09.30-clean-13-91-stablecoarseorder1uiopt3light1 / 明るい最小操作UI candidate / live更新対応</p></header>
 <main>
 <section id="replayPanel" class="panel uiView" data-ui-view="review"><h2>動画を選ぶ</h2><input id="videoFile" type="file" accept="video/*"><p class="muted operationHint">iPhoneでは「ファイルを選択」が速いです。</p><p id="videoLoadTiming" class="muted"></p><video id="video" controls playsinline preload="metadata"></video><div class="timebar"><span id="now">00:00.0</span><input id="scrub" type="range" min="0" max="1" step="0.1" value="0"><span id="dur">00:00.0</span></div><div class="buttons secondaryButtons"><button data-jump="-5">−5秒</button><button data-jump="-1">−1秒</button><button data-jump="1">＋1秒</button><button data-jump="5">＋5秒</button></div><p id="videoStatus" class="help">動画を選択してください。</p></section>
 <section id="turnPanel" class="panel uiView" data-ui-view="review"><h2>ターンを判定</h2><div class="settingsGrid"><label>解析対象<select id="targetSide"><option value="bottom" selected>自分（下側）</option><option value="top">相手（上側）</option></select></label><label>先攻 / 後攻<select id="playOrder"><option>先攻</option><option selected>後攻</option></select></label></div><div class="buttons primaryFlow"><button id="scanTurns" class="primary" disabled>ターンを判定</button><button id="cancelScan" disabled>中止</button></div><div id="progressWrap" class="progress hidden"><div id="progress"></div></div><p id="scanStatus" class="help"></p><details class="compactDetails"><summary>認識したターン一覧 <span id="turnCountBadge" class="badge">未解析</span></summary><div class="compactDetailsBody"><div id="turnTimeline" class="ocrRead"></div></div></details><details class="compactDetails"><summary>判定ルール・安全条件</summary><div class="compactDetailsBody"><p class="help">stable-13相当のターン表示検出を主系にし、序盤HUDが明確にずれている場合だけ軽量補正します。先頭だけの誤検出は後続3区間以上の一致とHUD再確認が揃った場合のみ除外します。動画末尾3秒以内の孤立した最終ターン候補は、相手側候補なら通常の相手ターンHUD相当の強い入口シグナルが複数フレームで続く場合だけ採用し、終端アニメーションの単発・弱い色変化は除外します。正常列は再走査しません。</p></div></details></section>
