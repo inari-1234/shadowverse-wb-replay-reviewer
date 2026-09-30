@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.91',build:'4.13.91-20260930-clean-13-91-stablecoarseorder1',revision:'clean-13-91-stablecoarseorder1',subtitle:'Build 2026.09.30-clean-13-91-stablecoarseorder1 / stable13 coarse逆順exact candidate'};
+const APP={version:'4.13.91',build:'4.13.91-20260930-clean-13-91-stablecoarseorder1live1',revision:'clean-13-91-stablecoarseorder1live1',subtitle:'Build 2026.09.30-clean-13-91-stablecoarseorder1live1 / stable13 coarse逆順exact candidate / live更新対応'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'turn-recognition':'turn-clean-1.12',
   'mulligan-class':'mulligan-class-clean-1.5.4',
@@ -12,7 +12,8 @@ const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'counterfactual-review':'counterfactual-review-clean-1.0',
   'diagnostics':'diagnostics-clean-1.57'
 });
-const WB=window.WB={APP,expectedModules:EXPECTED_MODULE_VERSIONS,modules:[],moduleRegistrations:[],moduleRegistrationDuplicates:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,matchAnalysisLast:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
+const RUNTIME_CHANNEL=(()=>{try{const href=String(window.location?.href||'');return href.includes('/candidate-live/')||/[?&]channel=candidate(?:&|$)/.test(href)?'candidate':'main'}catch{return'main'}})();
+const WB=window.WB={APP,runtimeChannel:RUNTIME_CHANNEL,expectedModules:EXPECTED_MODULE_VERSIONS,modules:[],moduleRegistrations:[],moduleRegistrationDuplicates:[],events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,matchAnalysisLast:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};
 WB.$=s=>document.querySelector(s);
 WB.evaluateModuleIntegrity=(expected=WB.expectedModules,registrations=WB.moduleRegistrations)=>{
   const expectedModules={...(expected||{})},rows=Array.isArray(registrations)?registrations.map(x=>({name:String(x?.name??''),version:String(x?.version??'')})):[],byName=new Map(),moduleVersionMismatches=[];
@@ -81,6 +82,21 @@ WB.registerServiceWorker=async()=>{if(!('serviceWorker'in navigator))return;try{
   WB.swInfo=await queryServiceWorker(reg);WB.log('service-worker-register-managed',{scope:reg.scope,mode:'clean-single-sw',info:WB.swInfo})
 }catch(err){WB.recordError('service-worker',err)}};
 
+WB.disableCandidateServiceWorker=async()=>{if(WB.runtimeChannel!=='candidate')return{candidate:false,unregistered:0};let unregistered=0;try{
+  if('serviceWorker'in navigator){const reg=await navigator.serviceWorker.getRegistration('./');if(reg&&await reg.unregister())unregistered++}
+  WB.swInfo={mode:'candidate-no-sw',build:APP.build,unregistered};WB.log('candidate-service-worker-disabled',WB.swInfo)
+}catch(err){WB.recordError('candidate-service-worker-disable',err)}
+return{candidate:true,unregistered}};
+
+WB.fetchCandidateLatest=async()=>{if(WB.runtimeChannel!=='candidate')return null;try{const res=await fetch('./latest.json?_wb='+Date.now(),{cache:'no-store'});if(!res.ok)throw new Error('latest.json '+res.status);return await res.json()}catch(err){WB.recordError('candidate-latest-check',err);return null}};
+
+WB.refreshCandidate=async()=>{if(WB.runtimeChannel!=='candidate')return;await WB.disableCandidateServiceWorker();const u=new URL(location.href);u.searchParams.set('channel','candidate');u.searchParams.set('_wb',String(Date.now()));location.replace(u.href)};
+
+WB.initCandidateChannel=async()=>{if(WB.runtimeChannel!=='candidate')return;const header=document.querySelector('header');if(!header)return;
+  let box=document.querySelector('#candidateChannel');if(!box){box=document.createElement('div');box.id='candidateChannel';box.style.cssText='display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;font-size:11px;color:#cbd5e1';const status=document.createElement('span');status.id='candidateChannelStatus';status.textContent='candidate-live / '+APP.build;const button=document.createElement('button');button.id='candidateRefresh';button.type='button';button.textContent='最新版を再読込';button.style.cssText='padding:6px 9px;font-size:11px';button.addEventListener('click',WB.refreshCandidate);box.append(status,button);header.appendChild(box)}
+  await WB.disableCandidateServiceWorker();const latest=await WB.fetchCandidateLatest(),status=WB.$('#candidateChannelStatus');if(status){const latestBuild=latest?.build||null;status.textContent=latestBuild&&latestBuild!==APP.build?'新しいcandidateがあります / 現在 '+APP.build+' / 最新 '+latestBuild:'candidate-live / '+APP.build+(latestBuild?' / 最新一致':' / 最新確認失敗')};WB.log('candidate-channel-ready',{build:APP.build,latestBuild:latest?.build||null})
+};
+
 function init(){
   const head=document.querySelector('header h1'),sub=document.querySelector('header p'),shellHeader=head?.textContent||'',shellSub=sub?.textContent||'',shellOk=shellHeader.includes(`v${APP.version}`)&&shellSub.includes(APP.revision);
   if(!shellOk){const key='wb-shell-reload-'+APP.build;let shouldReload=false;try{if(sessionStorage.getItem(key)!=='1'){sessionStorage.setItem(key,'1');shouldReload=true}}catch{}WB.log('shell-version-mismatch',{build:APP.build,shellHeader,shellSub,shouldReload});if(shouldReload){location.reload();return}}
@@ -106,8 +122,8 @@ function init(){
   WB.$('#captureScene')?.addEventListener('click',async()=>{if(!WB.videoMeta||WB.task)return;try{await WB.runTask('局面保存',async()=>{const c=WB.frameCanvas(1200);if(!c)throw new Error('画像を取得できません');const blob=await WB.canvasBlob(c,.84),ctx=WB.currentTurnContext(),scene={id:`s${Date.now().toString(36)}`,turn:ctx.turn,time:+WB.video.currentTime.toFixed(3),playOrder:WB.playOrder(),matchup:WB.$('#matchup').value.trim()||null,deck:WB.$('#deck').value.trim()||null,note:WB.$('#note').value.trim()||null,blob,url:URL.createObjectURL(blob)};WB.scenes.push(scene);WB.renderScenes();WB.emit('scene-saved',{scene});WB.$('#captureStatus').textContent=`${ctx.turn?ctx.turn+'T / ':''}${WB.fmt(scene.time)} を保存しました。`;WB.log('scene-save',{turn:ctx.turn,time:scene.time})},{lockText:'現在フレームを保存しています。'})}catch(err){WB.$('#captureStatus').textContent='保存エラー: '+err.message}});
   WB.$('#clearScenes')?.addEventListener('click',()=>{const sceneIds=WB.scenes.map(s=>s.id);for(const s of WB.scenes)if(s.url)URL.revokeObjectURL(s.url);WB.scenes=[];WB.renderScenes();WB.emit('scenes-cleared',{sceneIds});WB.log('scenes-clear')});
   WB.$('#cancelScan')?.addEventListener('click',WB.requestCancel);
-  WB.log('app-start',{build:APP.build,href:location.href,standalone:matchMedia('(display-mode: standalone)').matches});
-  WB.registerServiceWorker();
+  WB.log('app-start',{build:APP.build,href:location.href,standalone:matchMedia('(display-mode: standalone)').matches,runtimeChannel:WB.runtimeChannel});
+  if(WB.runtimeChannel==='candidate')WB.initCandidateChannel();else WB.registerServiceWorker();
   WB.ready=true;for(const fn of WB.readyQueue.splice(0)){try{fn()}catch(err){WB.recordError('module-init',err)}}
 }
 
