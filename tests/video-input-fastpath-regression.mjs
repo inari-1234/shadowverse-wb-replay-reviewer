@@ -8,7 +8,9 @@ const app=read('app-core.js');
 
 assert.ok(index.includes('id="videoFile" type="file" accept="video/*"'),'video input must remain a plain video file input');
 assert.ok(index.includes('id="videoLoadTiming"'),'video input UI must expose handoff timing');
-assert.ok(index.includes('「ファイルを選択」'),'iPhone UI must explain the verified Files fast path');
+assert.ok(index.includes('class="filePickerVisual">ファイルを選択</span>'),'video input must expose a custom full-width file picker button');
+assert.equal(index.includes('iPhoneでは「ファイルを選択」が速いです。'),false,'fast-path guidance must be removed from the normal UI');
+assert.ok(index.includes('id="videoLoadTiming" class="muted runtimeDiagnostic"'),'handoff timing must remain in the DOM for diagnostics while hidden from the normal UI');
 
 const changeStart=app.indexOf("file?.addEventListener('change'");
 const metadataStart=app.indexOf("WB.video?.addEventListener('loadedmetadata'",changeStart);
