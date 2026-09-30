@@ -1,8 +1,8 @@
 (()=>{
 'use strict';
-const APP={version:'4.13.91',build:'4.13.91-20260930-clean-13-91-probecoarseorder1',revision:'clean-13-91-probecoarseorder1',subtitle:'Build 2026.09.30-clean-13-91-probecoarseorder1 / probe coarse逆順exact candidate'};
+const APP={version:'4.13.91',build:'4.13.91-20260930-clean-13-91-stablecoarseorder1',revision:'clean-13-91-stablecoarseorder1',subtitle:'Build 2026.09.30-clean-13-91-stablecoarseorder1 / stable13 coarse逆順exact candidate'};
 const EXPECTED_MODULE_VERSIONS=Object.freeze({
-  'turn-recognition':'turn-clean-1.11',
+  'turn-recognition':'turn-clean-1.12',
   'mulligan-class':'mulligan-class-clean-1.5.4',
   'card-db':'card-db-clean-1.23',
   'hand-recognition':'hand-clean-1.53',

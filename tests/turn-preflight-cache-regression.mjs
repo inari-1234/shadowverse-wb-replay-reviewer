@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 const turn=fs.readFileSync(new URL('../turn-recognition.js',import.meta.url),'utf8');
 const mulligan=fs.readFileSync(new URL('../mulligan-class.js',import.meta.url),'utf8');
 const app=fs.readFileSync(new URL('../app-core.js',import.meta.url),'utf8');
-assert.ok(app.includes("'turn-recognition':'turn-clean-1.11'"));
+assert.ok(app.includes("'turn-recognition':'turn-clean-1.12'"));
 assert.ok(app.includes("'mulligan-class':'mulligan-class-clean-1.5.4'"));
 assert.ok(mulligan.includes("onSample=null"));
 assert.ok(mulligan.includes("onSample({time:row.time,src,row})"));

@@ -18,6 +18,7 @@ const tests=[
   'tests/review-window-coach-regression.mjs',
   'tests/card-use-candidate-regression.mjs',
   'tests/turn-stable-selection-regression.mjs',
+  'tests/turn-stable-coarse-order-regression.mjs',
   'tests/match-auto-analysis-regression.mjs',
   'tests/batch-seek-optimization-regression.mjs',
   'tests/match-hp-probe-cache-regression.mjs',

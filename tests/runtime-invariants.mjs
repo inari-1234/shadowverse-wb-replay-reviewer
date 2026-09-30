@@ -167,7 +167,9 @@ assert.ok(turnRecognition.includes("TERMINAL_TAIL_GUARD=Object.freeze({tailSecon
 assert.ok(turnRecognition.includes('function terminalTailDecision(timeline=[],duration=null,samples=[])'),'terminal-tail decision must remain independently regression-testable');
 assert.ok(turnRecognition.includes("const terminalGuard=await validateTerminalTail(stableRaw),stable=terminalGuard.timeline"),'terminal guard must run only after the stable13 primary scan');
 assert.ok(turnRecognition.includes("step=2;primaryCache=new Map()"),'stable13 coarse scan must be restored to the proven exact two-second implementation');
-assert.ok(turnRecognition.includes("coarseSeekMode:'exact-2s-restored'"),'diagnostics must identify the restored exact stable13 scanner');
+assert.ok(turnRecognition.includes("coarseSeekMode:'exact-2s-descending'"),'diagnostics must identify exact descending stable13 coarse traversal');
+assert.ok(turnRecognition.includes("orderedStableCoarseTimes(start,v.duration,step)"),'stable13 coarse traversal must use the exact same scheduled sample times in descending order');
+assert.ok(turnRecognition.includes("coarse.sort((a,b)=>a.time-b.time)"),'stable13 coarse samples must be restored to chronological order before timeline selection');
 assert.equal(turnRecognition.includes('fastSeek'),false,'turn recognition must not use approximate fastSeek after the precision regression');
 assert.equal(turnRecognition.includes('requestVideoFrameCallback'),false,'turn recognition must not use the failed continuous-playback experiment');
 assert.ok(turnRecognition.includes("EARLY_VALIDATION_HARD_ERRORS=new Set(['side-offset-mismatch','turn-sequence-gap','non-alternating-merged-timeline'])"),'structural early/stable contradictions must be hard-gated');
