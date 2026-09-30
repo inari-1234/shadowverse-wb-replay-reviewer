@@ -109,7 +109,8 @@ assert.ok(index.includes('id="matchProgressWrap"'),'whole-match progress surface
 assert.ok(index.includes('閲覧用のseekは解析性能のseek数とは別管理です。'));
 assert.ok(index.includes('使用カード・効果源・行動順を推定しません'));
 assert.ok(index.includes('id="reviewNavigationStatus"'));
-assert.ok(replay.includes("reviewWindowUi:'diff-first-comparison+static-frame-preview+unknown-amber+coach-v1'"));
+assert.ok(replay.includes("reviewWindowUi:'before-after-observed-importance-unknown-noncausal-navigation+coach-v1'"));
+assert.ok(replay.includes("reviewWindowPresentation:'diff-first-comparison+static-frame-preview+unknown-amber+coach-v1'"));
 assert.ok(replay.includes('window.__wbCardUseCandidateV1'));
 assert.ok(replay.includes('causalAttribution:false'));
 assert.equal(replay.includes("'card-play'"),false);
