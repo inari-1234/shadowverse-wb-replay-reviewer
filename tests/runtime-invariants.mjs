@@ -127,6 +127,10 @@ assert.ok(assetsMatch,'service worker assets must be parseable');
 const swScripts=[...assetsMatch[1].matchAll(/'\.\/([^']+\.js)'/g)].map(m=>m[1]);
 assert.deepEqual(swScripts,expectedRuntime,'service worker must cache the same approved runtime scripts');
 assert.equal(swScripts.some(x=>/fix-v/i.test(x)),false,'service worker must not cache historical fix-v runtime scripts');
+assert.ok(app.includes("href.includes('/candidate-live/')")&&app.includes("runtimeChannel:RUNTIME_CHANNEL"),'candidate-live runtime must be explicitly detectable');
+assert.ok(app.includes("WB.runtimeChannel==='candidate')WB.initCandidateChannel();else WB.registerServiceWorker()"),'candidate-live must bypass normal service-worker registration');
+assert.ok(app.includes("navigator.serviceWorker.getRegistration('./')")&&app.includes('reg.unregister()'),'candidate-live must unregister any same-scope service worker');
+assert.ok(app.includes("fetch('./latest.json?_wb='+Date.now(),{cache:'no-store'})"),'candidate-live latest check must bypass caches');
 
 assert.equal(review.includes('historyObserved'),false,'review-engine must never consume historyObserved');
 const repoRoot=new URL('../',import.meta.url),rootFiles=fs.readdirSync(repoRoot);
