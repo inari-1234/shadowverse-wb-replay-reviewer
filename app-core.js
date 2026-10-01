@@ -6,8 +6,8 @@ const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'mulligan-class':'mulligan-class-clean-1.5.4',
   'card-db':'card-db-clean-1.23',
   'hand-recognition':'hand-clean-1.53',
-  'state-recognition':'state-clean-1.8.27',
-  'replay-session':'replay-session-clean-1.12',
+  'state-recognition':'state-clean-1.8.28',
+  'replay-session':'replay-session-clean-1.13',
   'review-engine':'review-clean-1.8.0',
   'counterfactual-review':'counterfactual-review-clean-1.0',
   'diagnostics':'diagnostics-clean-1.57'

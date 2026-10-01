@@ -1,7 +1,7 @@
 (()=>{
 'use strict';
 const WB=window.WB;if(!WB)return;
-const VERSION='state-clean-1.8.27';WB.registerModule('state-recognition',VERSION);
+const VERSION='state-clean-1.8.28';WB.registerModule('state-recognition',VERSION);
 const TURN_ANALYZE_CFG={startMargin:.45,endMargin:.12,probeStep:.45,minGap:.45,maxGap:3,maxOcrSamples:8,timelineMaxGap:2.7,maxTimelineAnchors:10};
 const MATCH_ANALYZE_VERSION='match-auto-review-v12',MATCH_INPUT_IDS=['#leTurn','#leOppHp','#lePp','#leBoard','#leExtra','#leEp','#leSep','#leWard'];
 const PP_CFG={dx:.01125,dy:.0325,green:18,active:72,strongActive:85,strongInactive:75,strongGreen:22,strongNonGreen:17,scanStep:.25,scanWindow:1.8};
@@ -371,12 +371,13 @@ async function analyzeMatchTargetTurns(){
     result={version:MATCH_ANALYZE_VERSION,targetSide,totalTurns:plan.length,eligibleTurns:plan.filter(x=>x.eligible).length,completedTurns:0,skippedTurns:0,cancelled:false,startedAt,finishedAt:null,turns:[],skipped:[],session:null};
   if(!WB.video?.videoWidth)throw new Error('動画を読み込んでください');
   if(!plan.length)throw new Error('解析する側のターンが認識されていません');
+  WB.emit('match-analysis-start',{targetSide,totalTurns:plan.length});
+  if(status){status.textContent='';status.className='statusLine'}
   WB.matchAnalysisLast=result;prepareBatchInputs();let progressPosition=0;setMatchProgress(0,plan.length,null,'running');
   try{
     for(let i=0;i<plan.length;i++){
       const item=plan[i];if(WB.cancelRequested){result.cancelled=true;break}
       progressPosition=i+1;setMatchProgress(progressPosition,plan.length,item.turn,'running');
-      if(status){status.textContent=`全ターン解析 ${i+1}/${plan.length}：${item.turn??'?'}T を確認中…`;status.className='help'}
       if(!item.eligible){result.skipped.push({turn:item.turn,absoluteSide:item.absoluteSide,rowTime:item.rowTime,reason:'turn-window-too-short'});result.skippedTurns++;continue}
       try{
         const contextOverride={row:item.row,turn:item.turn,absoluteSide:item.absoluteSide,targetSide,relativeSide:'自分',playOrder:WB.playOrder(),time:Number(item.rowTime)};
