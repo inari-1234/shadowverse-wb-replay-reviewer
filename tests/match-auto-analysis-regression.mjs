@@ -77,9 +77,9 @@ assert.equal(elements['#leWard'].value,'present');
 assert.equal(elements['#leOppHp'].dataset.source,'manual');
 assert.equal(elements['#leOppHp'].dataset.manualVideo,'test');
 
-assert.equal(S.version,'state-clean-1.8.27');
+assert.equal(S.version,'state-clean-1.8.28');
 assert.equal(typeof S.analyzeMatchTargetTurns,'function');
 assert.equal(typeof S.selectTurnTimelineAnchors,'function');
 assert.equal(typeof S.captureTimelineState,'function');
-assert.equal(S.version,'state-clean-1.8.27');
+assert.equal(S.version,'state-clean-1.8.28');
 console.log('MATCH AUTO ANALYSIS REGRESSION PASS');

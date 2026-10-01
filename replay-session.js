@@ -1,13 +1,14 @@
 (()=>{'use strict';
 const W=window.WB;if(!W)return;
-const VERSION='replay-session-clean-1.12';
+const VERSION='replay-session-clean-1.13';
 const DB_NAME='wb-replay-session-v1',DB_VERSION=1,SESSION_STORE='sessions',SCENE_STORE='scene-images',MAX_CONTIGUOUS_GAP=3,SESSION_SCHEMA='replay-session-v2';
 W.registerModule('replay-session',VERSION);
 
 const clone=x=>{try{return structuredClone(x)}catch{return x==null?x:JSON.parse(JSON.stringify(x))}};
 const finite=v=>{if(v===null||v===undefined)return null;if(typeof v==='string'&&v.trim()==='')return null;const n=Number(v);return Number.isFinite(n)?n:null};
 const nowIso=()=>new Date().toISOString();
-let current=null,dbPromise=null,persistQueue=Promise.resolve(),renderDeferred=false;
+let current=null,dbPromise=null,persistQueue=Promise.resolve(),renderDeferred=false,reviewPlaybackReady=false,activeReviewPlaybackIndex=0;
+const REVIEW_PLAYBACK_LEAD=3;
 
 function sourceKey(){return W.videoMeta?W.videoKey():null}
 function emptySession(key=sourceKey()){return{
@@ -367,8 +368,9 @@ function renderDecisionWindowCard(model){
     unknown=(model.unknownFields||[]).map(x=>REVIEW_FIELD_LABELS[x]||x),
     unresolved=(model.unresolved||[]),
     confidence=model.confidence==='observed-endpoints'?'端点観測':model.confidence==='observed'?'観測':'確認値',
+    videoAction=finite(model.reviewStart)==null?'':`<div class="reviewVideoAction"><button type="button" data-review-video-window="${W.escape(model.id||'')}">この局面を動画で見る</button><small>3秒前から再生</small></div>`,
     frames=`<div class="reviewFrameActions">${reviewFrameButton('直前フレーム',model.reviewStart,'before')}${reviewFrameButton('変化後フレーム',model.reviewEnd,'after')}</div>`;
-  return`<article class="reviewWindow" data-review-window-id="${W.escape(model.id||'')}"><div class="reviewWindowHeader"><div><span class="badge">${W.escape(model.priority)}</span><b>${W.escape(model.title)}</b></div><div class="reviewWindowTime">${model.turn?W.escape(model.turn+'T'):'局面'} / ${model.reviewStart==null?'--:--.-':W.fmt(model.reviewStart)} → ${model.reviewEnd==null?'--:--.-':W.fmt(model.reviewEnd)}</div></div><div class="reviewObservationSummary"><b>観測した変化</b><ul>${changes}</ul></div>${renderReviewComparison(model)}${frames}${reasonHtml}${renderCardUseCandidates(model.cardUseCandidates)}${renderWindowCoach(model.coach)}<div class="reviewWindowMeta"><span>確度: ${W.escape(confidence)}</span></div>${unknown.length?`<div class="reviewUncertain"><span class="reviewUncertainLabel">未確認</span>${W.escape(unknown.join(' / '))}</div>`:''}${unresolved.length?`<div class="reviewUnresolved reviewUncertain"><span class="reviewUncertainLabel">断定不可</span><b>断定していない項目:</b> ${W.escape(unresolved.join(' / '))}</div>`:''}</article>`
+  return`<article class="reviewWindow" data-review-window-id="${W.escape(model.id||'')}"><div class="reviewWindowHeader"><div><span class="badge">${W.escape(model.priority)}</span><b>${W.escape(model.title)}</b></div><div class="reviewWindowTime">${model.turn?W.escape(model.turn+'T'):'局面'} / ${model.reviewStart==null?'--:--.-':W.fmt(model.reviewStart)} → ${model.reviewEnd==null?'--:--.-':W.fmt(model.reviewEnd)}</div></div><div class="reviewObservationSummary"><b>観測した変化</b><ul>${changes}</ul></div>${videoAction}${renderReviewComparison(model)}${frames}${reasonHtml}${renderCardUseCandidates(model.cardUseCandidates)}${renderWindowCoach(model.coach)}<div class="reviewWindowMeta"><span>確度: ${W.escape(confidence)}</span></div>${unknown.length?`<div class="reviewUncertain"><span class="reviewUncertainLabel">未確認</span>${W.escape(unknown.join(' / '))}</div>`:''}${unresolved.length?`<div class="reviewUnresolved reviewUncertain"><span class="reviewUncertainLabel">断定不可</span><b>断定していない項目:</b> ${W.escape(unresolved.join(' / '))}</div>`:''}</article>`
 }
 async function previewSeekTo(time,reason='review-frame-preview'){
   const v=W.video,t=finite(time);if(t==null||!v||!Number.isFinite(v.duration))throw new Error('動画未読込');
@@ -390,12 +392,47 @@ async function showReviewFrame(time,phase='before'){
   catch(err){if(status)status.textContent='フレーム確認エラー: '+(err?.message||String(err));return false}
 }
 async function seekReviewWindow(time,phase='before'){return showReviewFrame(time,phase)}
+
+function reviewPlaybackModels(session=current){return reviewWindowModels(session).slice(-12)}
+function updateReviewPlaybackUi(){
+  const box=W.$('#reviewPlayback'),pos=W.$('#reviewPointPosition'),prev=W.$('#reviewPointPrev'),next=W.$('#reviewPointNext'),models=reviewPlaybackModels();
+  if(box){box.classList.toggle('reviewPlaybackActive',reviewPlaybackReady);box.setAttribute('aria-hidden',reviewPlaybackReady?'false':'true')}
+  if(models.length)activeReviewPlaybackIndex=Math.max(0,Math.min(models.length-1,activeReviewPlaybackIndex));else activeReviewPlaybackIndex=0;
+  if(pos)pos.textContent=`振り返りポイント ${models.length?activeReviewPlaybackIndex+1:0} / ${models.length}`;
+  if(prev)prev.disabled=!reviewPlaybackReady||models.length<2||activeReviewPlaybackIndex<=0;
+  if(next)next.disabled=!reviewPlaybackReady||models.length<2||activeReviewPlaybackIndex>=models.length-1;
+  return{ready:reviewPlaybackReady,index:activeReviewPlaybackIndex,count:models.length}
+}
+function setReviewPlaybackReady(ready){reviewPlaybackReady=!!ready;if(!reviewPlaybackReady)W.pauseVideo?.('review-playback-hide');return updateReviewPlaybackUi()}
+async function playReviewWindow(windowId){
+  const status=W.$('#reviewNavigationStatus'),models=reviewPlaybackModels(),index=models.findIndex(x=>String(x.id||'')===String(windowId||''));
+  if(index<0||!W.video||!Number.isFinite(W.video.duration)||W.task){if(status)status.textContent='解析完了後に振り返り動画を確認できます。';return false}
+  activeReviewPlaybackIndex=index;setReviewPlaybackReady(true);
+  const model=models[index],start=finite(model.reviewStart)??finite(model.reviewEnd);if(start==null)return false;
+  const target=Math.max(0,start-REVIEW_PLAYBACK_LEAD);W.pauseVideo?.('review-playback-select');
+  try{
+    await previewSeekTo(target,'review-playback-window');
+    W.$('#reviewPlayback')?.scrollIntoView?.({behavior:'smooth',block:'start'});
+    let played=false;if(typeof W.video.play==='function'){try{await W.video.play();played=true}catch{}}
+    if(status)status.textContent=`振り返りポイント ${index+1}/${models.length}：${model.turn?model.turn+'T / ':''}${W.fmt(start)} の3秒前から${played?'再生しています。':'確認できます。'}`;
+    W.log?.('review-playback',{windowId:model.id||null,index:index+1,count:models.length,reviewStart:+start.toFixed(3),target:+target.toFixed(3),autoplay:played});
+    updateReviewPlaybackUi();return true
+  }catch(err){if(status)status.textContent='振り返り動画の移動エラー: '+(err?.message||String(err));return false}
+}
+async function moveReviewPlayback(delta){
+  const models=reviewPlaybackModels();if(!models.length)return false;
+  const next=Math.max(0,Math.min(models.length-1,activeReviewPlaybackIndex+Number(delta||0)));
+  return playReviewWindow(models[next]?.id)
+}
+
 function bindReviewNavigation(){
-  const root=W.$('#reviewPoints'),sheet=W.$('#reviewFrameSheet'),close=W.$('#reviewFrameClose');if(!root)return false;
-  if(root.dataset.reviewNavigationBound!=='1'){root.dataset.reviewNavigationBound='1';root.addEventListener('click',e=>{const b=e.target?.closest?.('[data-review-frame-time]');if(!b||!root.contains(b))return;showReviewFrame(b.dataset.reviewFrameTime,b.dataset.reviewFramePhase||'before')})}
+  const root=W.$('#reviewPoints'),sheet=W.$('#reviewFrameSheet'),close=W.$('#reviewFrameClose'),prev=W.$('#reviewPointPrev'),next=W.$('#reviewPointNext');if(!root)return false;
+  if(root.dataset.reviewNavigationBound!=='1'){root.dataset.reviewNavigationBound='1';root.addEventListener('click',e=>{const videoButton=e.target?.closest?.('[data-review-video-window]');if(videoButton&&root.contains(videoButton)){playReviewWindow(videoButton.dataset.reviewVideoWindow);return}const b=e.target?.closest?.('[data-review-frame-time]');if(!b||!root.contains(b))return;showReviewFrame(b.dataset.reviewFrameTime,b.dataset.reviewFramePhase||'before')})}
+  if(prev&&prev.dataset.reviewPlaybackBound!=='1'){prev.dataset.reviewPlaybackBound='1';prev.addEventListener('click',()=>moveReviewPlayback(-1))}
+  if(next&&next.dataset.reviewPlaybackBound!=='1'){next.dataset.reviewPlaybackBound='1';next.addEventListener('click',()=>moveReviewPlayback(1))}
   if(close&&close.dataset.reviewFrameBound!=='1'){close.dataset.reviewFrameBound='1';close.addEventListener('click',closeReviewFrame)}
   if(sheet&&sheet.dataset.reviewFrameBound!=='1'){sheet.dataset.reviewFrameBound='1';sheet.addEventListener('click',e=>{if(e.target===sheet)closeReviewFrame()})}
-  return true
+  updateReviewPlaybackUi();return true
 }
 function renderSupplementalPoint(x){return`<div class="branchItem"><b>${x.turn?x.turn+'T':'局面'}</b><div><span class="badge">${W.escape(x.priority)}</span>${W.escape(x.title)}<br><span class="muted">${x.time==null?'--:--.-':W.fmt(x.time)} / ${W.escape(x.detail||'')}</span></div></div>`}
 function render(){
@@ -413,7 +450,7 @@ function render(){
   if(at)at.innerHTML=s?.actions?.length?s.actions.slice(-20).map(x=>`<div class="branchItem"><b>${x.turn?x.turn+'T':'-'}</b><div>${W.escape(actionLabel(x))}<br><span class="muted">${x.time==null?'--:--.-':W.fmt(x.time)} / ${W.escape(x.confidence)}</span></div></div>`).join(''):'<p class="help">連続した状態取得がまだありません。3秒以内の同一ターン観測だけを詳細な状態変化として扱います。</p>'
 }
 
-W.ReplaySession={version:VERSION,schema:SESSION_SCHEMA,dbName:DB_NAME,persistenceMode,emptySession,migrateLoadedSession,normalizeCapture,deriveActions,deriveTimelineActions,deriveObservedEpisodes,observedEpisodeInterpretation,deriveObservationReviewPoints,deriveSupplementalReviewPoints,mergeReviewPoints,deriveReviewPoints,deriveDecisionWindows,attachDecisionWindows,reviewChangedKeys,reviewStateRows,reviewComparisonRows,reviewWindowModels,renderReviewComparison,renderWindowCoach,renderCardUseCandidates,renderDecisionWindowCard,previewSeekTo,showReviewFrame,closeReviewFrame,seekReviewWindow,bindReviewNavigation,ingestState,ingestReviewSignal,ingestScene,clearScenes,ingestReviewState,restoreCurrent,snapshot,rebuildDerived,render,flushDeferredRender};
+W.ReplaySession={version:VERSION,schema:SESSION_SCHEMA,dbName:DB_NAME,persistenceMode,emptySession,migrateLoadedSession,normalizeCapture,deriveActions,deriveTimelineActions,deriveObservedEpisodes,observedEpisodeInterpretation,deriveObservationReviewPoints,deriveSupplementalReviewPoints,mergeReviewPoints,deriveReviewPoints,deriveDecisionWindows,attachDecisionWindows,reviewChangedKeys,reviewStateRows,reviewComparisonRows,reviewWindowModels,reviewPlaybackModels,renderReviewComparison,renderWindowCoach,renderCardUseCandidates,renderDecisionWindowCard,previewSeekTo,showReviewFrame,closeReviewFrame,seekReviewWindow,setReviewPlaybackReady,updateReviewPlaybackUi,playReviewWindow,moveReviewPlayback,bindReviewNavigation,ingestState,ingestReviewSignal,ingestScene,clearScenes,ingestReviewState,restoreCurrent,snapshot,rebuildDerived,render,flushDeferredRender};
 
 W.on('metadata',()=>{restoreCurrent().catch(err=>W.recordError('replay-session-restore',err))});
 W.on('timeline',detail=>{const s=ensureCurrent();if(s){s.turnTimeline=clone(detail?.timeline||W.turnTimeline||[]);schedulePersist()}});
@@ -425,6 +462,8 @@ W.on('review-profile-changed',()=>{const s=ensureCurrent();if(s){refreshMetadata
 W.on('scene-saved',detail=>{ingestScene(detail?.scene).catch(err=>W.recordError('replay-session-scene-save',err))});
 W.on('scenes-cleared',detail=>{clearScenes(detail?.sceneIds||[]).catch(err=>W.recordError('replay-session-scenes-clear',err))});
 W.on('task-finished',()=>flushDeferredRender());
-W.on('video-reset',()=>{current=null;renderDeferred=false;closeReviewFrame();expose();render()});
-W.onReady(()=>{render();W.log('module-ready',{module:'replay-session',version:VERSION,persistence:persistenceMode(),maxContiguousGap:MAX_CONTIGUOUS_GAP,turnIdentity:'number+side',unknownSafe:true,nullNumericSafe:true,unknownHpBridge:'same-turn-observed-endpoints<=3s',observedEpisodes:'same-state-pair-noncausal-summary',causalAttribution:false,reviewPointDomains:'observation+supplemental-merged',decisionWindows:'same-turn-state-pair<=3s-noncausal',reviewWindowUi:'before-after-observed-importance-unknown-noncausal-navigation+coach-v1',reviewWindowPresentation:'diff-first-comparison+static-frame-preview+unknown-amber+coach-v1',cardUseCandidate:'two-evidence-candidate-only-no-action-v1',taskRenderCoalescing:true,sessionSchema:SESSION_SCHEMA})});
+W.on('match-analysis-start',()=>{reviewPlaybackReady=false;activeReviewPlaybackIndex=0;updateReviewPlaybackUi()});
+W.on('match-analysis-complete',detail=>{reviewPlaybackReady=!detail?.cancelled;activeReviewPlaybackIndex=0;updateReviewPlaybackUi()});
+W.on('video-reset',()=>{current=null;renderDeferred=false;reviewPlaybackReady=false;activeReviewPlaybackIndex=0;closeReviewFrame();updateReviewPlaybackUi();expose();render()});
+W.onReady(()=>{render();W.log('module-ready',{module:'replay-session',version:VERSION,persistence:persistenceMode(),maxContiguousGap:MAX_CONTIGUOUS_GAP,turnIdentity:'number+side',unknownSafe:true,nullNumericSafe:true,unknownHpBridge:'same-turn-observed-endpoints<=3s',observedEpisodes:'same-state-pair-noncausal-summary',causalAttribution:false,reviewPointDomains:'observation+supplemental-merged',decisionWindows:'same-turn-state-pair<=3s-noncausal',reviewWindowUi:'before-after-observed-importance-unknown-noncausal-navigation+coach-v1',reviewWindowPresentation:'diff-first-comparison+static-frame-preview+unknown-amber+coach-v1',cardUseCandidate:'two-evidence-candidate-only-no-action-v1',reviewPlayback:'post-analysis-video+3s-lead+preview-seek-only-v1',taskRenderCoalescing:true,sessionSchema:SESSION_SCHEMA})});
 })();

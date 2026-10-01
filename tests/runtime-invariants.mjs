@@ -245,7 +245,7 @@ assert.ok(replaySession.includes("SESSION_SCHEMA='replay-session-v2'"),'ReplaySe
 assert.ok(replaySession.includes("decisionWindows:[]"),'ReplaySession must expose derived Decision Windows without changing recognition state');
 assert.ok(replaySession.includes("v===null||v===undefined"),'ReplaySession numeric normalization must preserve null/undefined');
 assert.ok(replaySession.includes("legacy-unsafe-null-number-coercion"),'ReplaySession must explicitly invalidate unsafe v1 derived observations');
-assert.ok(replaySession.includes("const VERSION='replay-session-clean-1.12'"),'ReplaySession module must have an explicit version');
+assert.ok(replaySession.includes("const VERSION='replay-session-clean-1.13'"),'ReplaySession module must have an explicit version');
 assert.ok(replaySession.includes("unknownHpBridge:'same-turn-observed-endpoints<=3s'"),'ReplaySession must expose the bounded unknown-HP bridge contract');
 assert.ok(replaySession.includes('bridgedUnknownObservations'),'bridged HP actions must retain evidence that unknown observations were skipped');
 assert.ok(index.includes('id="observedEpisodes"'),'automatic review UI must expose observed-episode Action Timeline output');
