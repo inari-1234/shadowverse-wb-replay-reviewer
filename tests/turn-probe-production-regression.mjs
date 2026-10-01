@@ -7,7 +7,7 @@ const sandbox={window:{WB},document:{createElement(){return {width:0,height:0,ge
 vm.createContext(sandbox);
 new vm.Script(fs.readFileSync(new URL('../state-recognition.js',import.meta.url),'utf8')).runInContext(sandbox);
 const S=WB.StateRecognition;
-assert.equal(S.version,'state-clean-1.8.27');
+assert.equal(S.version,'state-clean-1.8.28');
 
 const times=Array.from({length:25},(_,i)=>+(111.388+i*.45).toFixed(3));
 const stable=new Set([4,5,6,7,9,10,11,19,20]);
