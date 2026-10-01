@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 const state=fs.readFileSync(new URL('../state-recognition.js',import.meta.url),'utf8');
 const app=fs.readFileSync(new URL('../app-core.js',import.meta.url),'utf8');
-assert.ok(app.includes("'state-recognition':'state-clean-1.8.27'"));
+assert.ok(app.includes("'state-recognition':'state-clean-1.8.28'"));
 assert.ok(state.includes("const MATCH_ANALYZE_VERSION='match-auto-review-v12'"));
 assert.ok(state.includes("function hpPreparedFingerprint(variants=[])"));
 assert.ok(state.includes("function prepareHpProbeFrame(frame,side,quality=null)"));
