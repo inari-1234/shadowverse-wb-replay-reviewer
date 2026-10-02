@@ -7,7 +7,7 @@ const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'card-db':'card-db-clean-1.23',
   'hand-recognition':'hand-clean-1.53',
   'state-recognition':'state-clean-1.8.28',
-  'replay-session':'replay-session-clean-1.13',
+  'replay-session':'replay-session-clean-1.14',
   'review-engine':'review-clean-1.8.0',
   'counterfactual-review':'counterfactual-review-clean-1.0',
   'diagnostics':'diagnostics-clean-1.57'
