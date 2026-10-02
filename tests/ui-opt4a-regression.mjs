@@ -37,7 +37,7 @@ for(const cls of ['reviewUnknown','reviewUncertain','reviewUnresolved','reviewCo
 assert.ok(html.includes('background:#fff4cc')&&html.includes('border:1px solid #e9a23b'),'unknown styling must use amber background and border');
 assert.ok(html.includes('.bad{color:#b42318}'),'technical error styling must remain red');
 assert.ok(html.includes('.runtimeMedia{position:absolute!important;width:1px!important;height:1px!important'),'recognition video must remain visually hidden during analysis');
-assert.ok(html.includes('.runtimeMedia.reviewPlaybackActive{position:relative!important;width:100%!important'),'the same recognition video may become visible only for post-analysis review');
+assert.ok(html.includes('.runtimeMedia.reviewPlaybackActive{position:relative!important;width:100%!important'),'the same recognition video may become visible after video selection for review');
 assert.ok(html.includes('class="manualCorrection"'),'manual play-order fallback must remain collapsed');
 assert.ok(html.includes('id="reviewFrameSheet" class="reviewFrameSheet hidden"'),'static frame evidence must use a hidden modal/sheet surface');
 

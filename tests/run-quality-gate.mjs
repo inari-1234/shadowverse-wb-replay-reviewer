@@ -18,6 +18,7 @@ const tests=[
   'tests/review-window-coach-regression.mjs',
   'tests/ui-opt4b-regression.mjs',
   'tests/ui-opt5-regression.mjs',
+  'tests/ui-opt5r1-video-visibility-regression.mjs',
   'tests/card-use-candidate-regression.mjs',
   'tests/turn-stable-selection-regression.mjs',
   'tests/turn-stable-coarse-order-regression.mjs',

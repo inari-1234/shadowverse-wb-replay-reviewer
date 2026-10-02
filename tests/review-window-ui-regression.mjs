@@ -18,7 +18,7 @@ vm.createContext(sandbox);
 new vm.Script(replay,{filename:'replay-session.js'}).runInContext(sandbox);
 const R=WB.ReplaySession;
 
-assert.equal(R.version,'replay-session-clean-1.13');
+assert.equal(R.version,'replay-session-clean-1.14');
 
 const before={
   id:'st:5:bottom:47.641',time:47.641,turn:5,absoluteSide:'bottom',relativeSide:'自分',
