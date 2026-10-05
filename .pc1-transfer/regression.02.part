@@ -1,0 +1,56 @@
+),OB=node('OB',{activePlayer:'P2',fingerprint:'DUP'}),M=node('M',{activePlayer:'P1'});
+ const edges=[{from:'S0',to:'S1',id:'PLAY'},{from:'S1',to:'O0',id:'ET1',type:'END_TURN'},{from:'O0',to:'OA',id:'A'},{from:'O0',to:'OB',id:'B'},{from:'OA',to:'M',id:'ETA',type:'END_TURN'},{from:'OB',to:'M',id:'ETB',type:'END_TURN'}];
+ const {out}=evalOne({S0,S1,O0,OA,OB,M},edges);assert.ok(out.futureOutcome.search.opponentDuplicates>=1);
+}
+// OC-23 cycle detection.
+{
+ const S0=node('S0'),S1=node('S1'),O0=node('O0',{activePlayer:'P2'}),OC=node('OC',{activePlayer:'P2',fingerprint:'O0'});
+ const edges=[{from:'S0',to:'S1',id:'PLAY'},{from:'S1',to:'O0',id:'ET1',type:'END_TURN'},{from:'O0',to:'OC',id:'LOOP'}];
+ const {out}=evalOne({S0,S1,O0,OC},edges);assert.ok(out.futureOutcome.search.opponentCycles>=1);
+}
+// OC-24 maxDepth stop.
+{
+ const S0=node('S0'),S1=node('S1'),O0=node('O0',{activePlayer:'P2'}),O1=node('O1',{activePlayer:'P2'}),O2=node('O2',{activePlayer:'P2'});
+ const edges=[{from:'S0',to:'S1',id:'PLAY'},{from:'S1',to:'O0',id:'ET1',type:'END_TURN'},{from:'O0',to:'O1',id:'A'},{from:'O1',to:'O2',id:'B'}];
+ const {out}=evalOne({S0,S1,O0,O1,O2},edges,'PLAY',{limits:{maxDepth:1}});assert.ok(out.uncertainty.includes(REASON.DEPTH_LIMIT)||out.uncertainty.includes(REASON.SEARCH_TRUNCATED));
+}
+// OC-25 maxNodes is global across opponent/continuation search.
+{
+ const S0=node('S0'),S1=node('S1'),O0=node('O0',{activePlayer:'P2'}),O1=node('O1',{activePlayer:'P2'}),M=node('M',{activePlayer:'P1'});
+ const edges=[{from:'S0',to:'S1',id:'PLAY'},{from:'S1',to:'O0',id:'ET1',type:'END_TURN'},{from:'O0',to:'O1',id:'A'},{from:'O1',to:'M',id:'ET2',type:'END_TURN'}];
+ const {out}=evalOne({S0,S1,O0,O1,M},edges,'PLAY',{limits:{maxNodes:1}});assert.equal(out.futureOutcome.search.limits.globalNodes,1);assert.ok(out.uncertainty.includes(REASON.NODE_LIMIT)||out.uncertainty.includes(REASON.SEARCH_TRUNCATED));
+}
+// OC-26 outcome diff API.
+{
+ const A={sequenceId:'A',lethalStatus:LETHAL_STATUS.NO_CONFIRMED_LETHAL,survivalStatus:SURVIVAL_STATUS.CONFIRMED_SURVIVAL,uncertainty:[],immediateOutcome:{damageAmount:15,leaderHP:10,opponentLeaderHP:5,drainAmount:0,healAmount:0,boardState:{followerCount:0,totalAttack:0},opponentBoardState:{followerCount:0,totalAttack:0},handResources:{pp:0,ep:0,sep:0,handCount:0}},futureOutcome:{opponentResponses:[]}};
+ const B={sequenceId:'B',lethalStatus:LETHAL_STATUS.NEXT_TURN_LETHAL_POSSIBLE,survivalStatus:SURVIVAL_STATUS.CONFIRMED_SURVIVAL,uncertainty:[],immediateOutcome:{damageAmount:12,leaderHP:10,opponentLeaderHP:8,drainAmount:0,healAmount:0,boardState:{followerCount:2,totalAttack:10},opponentBoardState:{followerCount:0,totalAttack:0},handResources:{pp:1,ep:0,sep:0,handCount:2}},futureOutcome:{opponentResponses:[]}};
+ const d=P.create?null:null; // keep lint-free marker
+ const h=makeHarness({S0:node('S0')},[]);const cmp=h.engine.compareOutcomes(A,B);assert.equal(cmp.damageDelta,3);assert.equal(cmp.boardDelta.ownAttack,-10);assert.equal(cmp.resourceDelta.hand,-2);
+}
+// OC-27 lower immediate damage can preserve stronger next-turn lethal.
+{
+ const h=makeHarness({S0:node('S0')},[]);const A={sequenceId:'A',lethalStatus:LETHAL_STATUS.NO_CONFIRMED_LETHAL,survivalStatus:SURVIVAL_STATUS.CONFIRMED_SURVIVAL,uncertainty:[],immediateOutcome:{damageAmount:15,leaderHP:20,opponentLeaderHP:5,drainAmount:0,healAmount:0,boardState:{followerCount:0,totalAttack:0},opponentBoardState:{followerCount:0,totalAttack:0},handResources:{pp:0,ep:0,sep:0,handCount:0}},futureOutcome:{opponentResponses:[]}};const B=deep(A);B.sequenceId='B';B.lethalStatus=LETHAL_STATUS.NEXT_TURN_LETHAL_FORCED;B.immediateOutcome.damageAmount=12;B.immediateOutcome.boardState={followerCount:2,totalAttack:10};const c=h.engine.compareOutcomes(A,B);assert.ok(c.damageDelta>0);assert.ok(c.lethalTimingDelta.orderDelta>0);
+}
+// OC-28 higher immediate damage can spend more resources.
+{
+ const h=makeHarness({S0:node('S0')},[]);const A={sequenceId:'A',lethalStatus:LETHAL_STATUS.NO_CONFIRMED_LETHAL,survivalStatus:SURVIVAL_STATUS.CONFIRMED_SURVIVAL,uncertainty:[],immediateOutcome:{damageAmount:10,leaderHP:20,opponentLeaderHP:10,drainAmount:0,healAmount:0,boardState:{followerCount:0,totalAttack:0},opponentBoardState:{followerCount:0,totalAttack:0},handResources:{pp:0,ep:0,sep:0,handCount:0}},futureOutcome:{opponentResponses:[]}};const B=deep(A);B.sequenceId='B';B.immediateOutcome.damageAmount=7;B.immediateOutcome.handResources.pp=3;B.immediateOutcome.handResources.handCount=2;const c=h.engine.compareOutcomes(A,B);assert.ok(c.damageDelta>0);assert.ok(c.resourceDelta.pp<0&&c.resourceDelta.hand<0);
+}
+// OC-29 survival difference retained.
+{
+ const S0=node('S0'),S1=node('S1'),O0=node('O0',{activePlayer:'P2'}),D=node('D',{activePlayer:'P2',terminal:true,winner:'P2',loser:'P1'});D.players.P1.leaderHp=0;
+ const {out}=evalOne({S0,S1,O0,D},[{from:'S0',to:'S1',id:'PLAY'},{from:'S1',to:'O0',id:'ET1',type:'END_TURN'},{from:'O0',to:'D',id:'KILL'}]);assert.equal(out.survivalStatus,SURVIVAL_STATUS.CONFIRMED_DEATH);
+}
+// OC-30 P-A1 UNKNOWN/illegal input is not continued.
+{
+ const h=makeHarness({S0:node('S0'),S1:node('S1')},[{from:'S0',to:'S1',id:'PLAY'}]);const a=h.action('S0','PLAY');const bad={...a,legality:'UNKNOWN'};const out=h.engine.evaluateSequence(h.state('S0'),[bad]);assert.equal(out.status,STATUS.UNRESOLVED);assert.ok(out.reasonCodes.includes(REASON.ILLEGAL_SEQUENCE_INPUT));
+}
+
+// Required comparison Case A: 15 damage empty hand vs 12 damage + board/hand -> future lethal distinction.
+{
+ const h=makeHarness({S0:node('S0')},[]),A={sequenceId:'A',lethalStatus:LETHAL_STATUS.NO_CONFIRMED_LETHAL,survivalStatus:SURVIVAL_STATUS.CONFIRMED_SURVIVAL,uncertainty:[],immediateOutcome:{damageAmount:15,leaderHP:20,opponentLeaderHP:5,drainAmount:0,healAmount:0,boardState:{followerCount:0,totalAttack:0},opponentBoardState:{followerCount:0,totalAttack:0},handResources:{pp:0,ep:0,sep:0,handCount:0}},futureOutcome:{opponentResponses:[]}},B=deep(A);B.sequenceId='B';B.lethalStatus=LETHAL_STATUS.NEXT_TURN_LETHAL_POSSIBLE;B.immediateOutcome.damageAmount=12;B.immediateOutcome.boardState={followerCount:2,totalAttack:10};B.immediateOutcome.handResources.handCount=2;assert.ok(h.engine.compareOutcomes(A,B).lethalTimingDelta.orderDelta>0);
+}
+// Required comparison Case B: board left vs clear, Drain risk captured.
+{
+ const h=makeHarness({S0:node('S0')},[]),A={sequenceId:'A',lethalStatus:LETHAL_STATUS.NO_CONFIRMED_LETHAL,survivalStatus:SURVIVAL_STATUS.CONFIRMED_SURVIVAL,uncertainty:[],immediateOutcome:{damageAmount:8,leaderHP:20,opponentLeaderHP:12,drainAmount:0,healAmount:0,boardState:{followerCount:1,totalAttack:5},opponentBoardState:{followerCount:1,totalAttack:3},handResources:{pp:0,ep:0,sep:0,handCount:1}},futureOutcome:{opponentResponses:[{opponentDrainAmount:4}]}},B=deep(A);B.sequenceId='B';B.immediateOutcome.damageAmount=5;B.futureOutcome.opponentResponses=[{opponentDrainAmount:0}];assert.equal(h.engine.compareOutcomes(A,B).futureOpponentDrainRiskDelta,4);
+}
+// Required comparison Ca
