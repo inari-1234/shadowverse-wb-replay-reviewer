@@ -27,9 +27,11 @@ function assist(){const q=cf(),src=q?.branches.find(b=>b.id===val('#asSource')),
 // P-E2 is an optional presentation layer. Keep the frozen recognition module list unchanged
 // and bootstrap it after the existing runtime is ready so recognition/analysis behavior is untouched.
 function loadCoachIntegration(){
-  if(W.CoachIntegration||typeof document==='undefined')return Promise.resolve(W.CoachIntegration||null);
-  const old=document.querySelector('script[data-pe2-bootstrap="coach-integration"]');if(old)return new Promise(resolve=>{old.addEventListener?.('load',()=>resolve(W.CoachIntegration||null),{once:true});setTimeout(()=>{if(W.CoachIntegration)resolve(W.CoachIntegration)},0)});
-  return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='./coach-integration.js';s.defer=true;s.dataset.pe2Bootstrap='coach-integration';s.onload=()=>resolve(W.CoachIntegration||null);s.onerror=()=>reject(new Error('P-E2 coach integration load failed'));(document.head||document.documentElement).appendChild(s)})
+  const doc=typeof document==='undefined'?null:document,host=doc&&(doc.head||doc.documentElement);
+  if(W.CoachIntegration||!doc||typeof doc.createElement!=='function'||!host)return Promise.resolve(W.CoachIntegration||null);
+  const old=typeof doc.querySelector==='function'?doc.querySelector('script[data-pe2-bootstrap="coach-integration"]'):null;
+  if(old)return new Promise(resolve=>{old.addEventListener?.('load',()=>resolve(W.CoachIntegration||null),{once:true});setTimeout(()=>{if(W.CoachIntegration)resolve(W.CoachIntegration)},0)});
+  return new Promise((resolve,reject)=>{const s=doc.createElement('script');s.src='./coach-integration.js';s.defer=true;s.dataset.pe2Bootstrap='coach-integration';s.onload=()=>resolve(W.CoachIntegration||null);s.onerror=()=>reject(new Error('P-E2 coach integration load failed'));host.appendChild(s)})
 }
 
 W.CounterfactualReview={version:VERSION,storageKey:CS,cf,branchEval,renderCf,loadCurrentCf,newCf,saveCf,sameTurnTemplate,renderAssistTemplate,renderAssistResults,refreshAssist,assist,expose,loadCoachIntegration};
