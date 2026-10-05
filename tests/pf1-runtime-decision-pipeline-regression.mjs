@@ -17,7 +17,7 @@ await t('PF1-05 register authority',()=>assert.equal(P.registerAuthority({id:'mo
 await t('PF1-06 modules',async()=>{const m=await P.loadModules();assert.ok(m.LegalActionSequence&&m.OutcomeBacktracking&&m.ComparisonDecision)});
 await t('PF1-07 evaluate window',async()=>{const r=await P.evaluateWindow('w1',{window:{id:'w1'}});assert.equal(r.status,'OK');assert.ok(r.outcomeCount>=2);assert.ok(r.decision)});
 await t('PF1-08 P-D1 decision',()=>assert.equal(P.getForWindow('w1').decision.status,'OK'));
-await t('PF1-09 immediate lethal best',()=>assert.ok(P.getForWindow('w1').decision.bestCandidateId));
+await t('PF1-09 pairwise decision preserved',()=>assert.ok(P.getForWindow('w1').decision.ranking.pairwise.length>0));
 await t('PF1-10 P-E2 receives',async()=>{await Promise.resolve();await Promise.resolve();const r=WB.CoachIntegration.getForWindow('w1');assert.ok(r);assert.equal(r.sourceAuthority,'P-F1/P-D1')});
 await t('PF1-11 P-E1 explanation',()=>assert.ok(WB.CoachIntegration.getForWindow('w1').explanation.headline.length>0));
 await t('PF1-12 pipeline metadata',()=>assert.equal(P.getForWindow('w1').sourceAuthority,'P-C1->P-D1'));
