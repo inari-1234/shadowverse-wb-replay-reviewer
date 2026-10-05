@@ -1,0 +1,36 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+const handlers={};const WB={optionalModules:[],registerModule(){},on:(n,f)=>{(handlers[n]??=[]).push(f)},emit:(n,d)=>{for(const f of handlers[n]||[])f(d)},onReady:f=>f(),recordError(){},log(){}};
+const session={decisionWindows:[{id:'w1',turn:5},{id:'w2',turn:6}]};const sandbox={window:{WB,__wbReplaySessionV1:session},console,Date,Promise,setTimeout,clearTimeout,queueMicrotask};vm.createContext(sandbox);
+for(const f of ['../legal-action-sequence.js','../outcome-backtracking.js','../comparison-decision.js','../coach-explanation.js','../coach-integration.js','../runtime-decision-pipeline.js'])new vm.Script(fs.readFileSync(new URL(f,import.meta.url),'utf8')).runInContext(sandbox);
+const P=WB.RuntimeDecisionPipeline,clone=x=>JSON.parse(JSON.stringify(x));
+function baseState(){return{id:'s0',active:'A',players:{A:{leaderHp:20,pp:0,maxPP:0,ep:0,sep:0,hand:[],field:[{kind:'FOLLOWER',instanceId:'f1',cardId:'F1',attack:3,defense:2,canAttack:true,canAttackLeader:true,summonedThisTurn:false,attacked:false},{kind:'FOLLOWER',instanceId:'f2',cardId:'F2',attack:2,defense:2,canAttack:true,canAttackLeader:true,summonedThisTurn:false,attacked:false}],fieldLimit:5,evolveWindowOpen:false,superEvolveWindowOpen:false,canEndTurn:true},B:{leaderHp:5,pp:0,maxPP:0,ep:0,sep:0,hand:[],field:[],fieldLimit:5,evolveWindowOpen:false,superEvolveWindowOpen:false,canEndTurn:true}}}}
+const other=p=>p==='A'?'B':'A';
+const adapter={getActivePlayer:s=>s.active,getOpponentPlayer:(s,p)=>other(p),getPlayerView:(s,p)=>({...s.players[p],opponentPlayer:other(p)}),getStateId:s=>s.id||adapter.fingerprint(s),fingerprint:s=>JSON.stringify(s),validateState:()=>true,applyCoreAction:(state,a)=>{const s=clone(state),actor=a.actorPlayer,opp=other(actor);if(a.actionType==='ATTACK'){const f=s.players[actor].field.find(x=>x.instanceId===a.source?.instanceId);if(!f)return{status:'ERROR',state:null,reasons:['SOURCE_MISSING']};if(a.target?.zone==='LEADER')s.players[opp].leaderHp-=Number(f.attack)||0;f.attacked=true;f.canAttack=false}else if(a.actionType==='END_TURN'){s.active=opp;for(const f of s.players[opp].field){f.attacked=false;f.canAttack=true}}s.id='s:'+Math.abs(hash(JSON.stringify(s)));return{status:'OK',state:s,reasons:[]}},getOutcomeEvents:(before,after)=>{const out=[];for(const p of ['A','B']){const d=before.players[p].leaderHp-after.players[p].leaderHp;if(d>0)out.push({type:'DAMAGE',targetPlayer:p,amount:d,certainty:'CONFIRMED'})}return out}};
+function hash(s){let h=0;for(let i=0;i<s.length;i++)h=((h<<5)-h+s.charCodeAt(i))|0;return h}
+const rules={resolveAfterAction:state=>({status:'OK',state,reasons:[]}),getAuthorityStatus:()=>({status:'RESOLVED',reasons:[]}),getTerminalStatus:s=>s.players.B.leaderHp<=0?{terminal:true,status:'TERMINAL',winner:'A',loser:'B'}:s.players.A.leaderHp<=0?{terminal:true,status:'TERMINAL',winner:'B',loser:'A'}:{terminal:false,status:'ACTIVE'},getOutcomeEvents:adapter.getOutcomeEvents};
+let n=0;const t=async(name,fn)=>{await fn();n++};
+await t('PF1-01 API',()=>assert.equal(P.version,'pf1-runtime-decision-pipeline-v1.0.0'));
+await t('PF1-02 initial hold',()=>{const s=P.authorityStatus();assert.equal(s.ready,false);assert.ok(s.missing.includes('stateAdapter'))});
+await t('PF1-03 missing authority session hold',async()=>assert.equal((await P.evaluateSession({})).status,'HOLD'));
+await t('PF1-04 register incomplete',()=>assert.equal(P.registerAuthority({id:'bad'}).ready,false));
+await t('PF1-05 register authority',()=>assert.equal(P.registerAuthority({id:'mock-runtime',stateAdapter:adapter,ruleEngine:rules,getPositionState:()=>baseState(),sequenceLimits:{maxDepth:4,maxNodes:80,maxSequences:30},outcomeLimits:{maxDepth:3,maxNodes:100,maxBranches:20,maxOpponentResponses:12,maxContinuations:20,maxTurns:2}}).ready,true));
+await t('PF1-06 modules',async()=>{const m=await P.loadModules();assert.ok(m.LegalActionSequence&&m.OutcomeBacktracking&&m.ComparisonDecision)});
+await t('PF1-07 evaluate window',async()=>{const r=await P.evaluateWindow('w1',{window:{id:'w1'}});assert.equal(r.status,'OK');assert.ok(r.outcomeCount>=2);assert.ok(r.decision)});
+await t('PF1-08 P-D1 decision',()=>assert.equal(P.getForWindow('w1').decision.status,'OK'));
+await t('PF1-09 immediate lethal best',()=>assert.ok(P.getForWindow('w1').decision.bestCandidateId));
+await t('PF1-10 P-E2 receives',async()=>{await Promise.resolve();await Promise.resolve();const r=WB.CoachIntegration.getForWindow('w1');assert.ok(r);assert.equal(r.sourceAuthority,'P-F1/P-D1')});
+await t('PF1-11 P-E1 explanation',()=>assert.ok(WB.CoachIntegration.getForWindow('w1').explanation.headline.length>0));
+await t('PF1-12 pipeline metadata',()=>assert.equal(P.getForWindow('w1').sourceAuthority,'P-C1->P-D1'));
+await t('PF1-13 external P-C1 outcomes',async()=>{const o=[{sequenceId:'A',status:'OK',lethalStatus:'IMMEDIATE_LETHAL',survivalStatus:'CONFIRMED_SURVIVAL',damageAmount:5,opponentLeaderHP:0,uncertainty:[]},{sequenceId:'B',status:'OK',lethalStatus:'NO_CONFIRMED_LETHAL',survivalStatus:'CONFIRMED_SURVIVAL',damageAmount:3,opponentLeaderHP:2,uncertainty:[]}],r=await P.evaluateOutcomes('w2',o,{source:'test'});assert.equal(r.status,'OK');assert.equal(r.decision.bestCandidateId,'A')});
+await t('PF1-14 event chain to P-E2',async()=>{await Promise.resolve();assert.equal(WB.CoachIntegration.getForWindow('w2').explanation.bestCandidateId,'A')});
+await t('PF1-15 unique snapshot',()=>assert.equal(P.snapshot().count,2));
+await t('PF1-16 clone boundary',()=>{const x=P.getForWindow('w1');x.decision.classification='MUTATED';assert.notEqual(P.getForWindow('w1').decision.classification,'MUTATED')});
+await t('PF1-17 evaluate session',async()=>{const r=await P.evaluateSession({cancelled:false});assert.equal(r.status,'OK');assert.equal(r.processed,2)});
+await t('PF1-18 no cancelled auto run',async()=>{const before=P.snapshot().count;for(const f of handlers['match-analysis-complete']||[])f({cancelled:true});await Promise.resolve();assert.equal(P.snapshot().count,before)});
+await t('PF1-19 complete auto run',async()=>{for(const f of handlers['match-analysis-complete']||[])f({cancelled:false});await new Promise(r=>setTimeout(r,20));assert.ok(P.snapshot().count>=2)});
+await t('PF1-20 no PositionState fallback',async()=>{P.registerAuthority({id:'nostate',stateAdapter:adapter,ruleEngine:rules,getPositionState:()=>null});const r=await P.evaluateWindow('x');assert.equal(r.status,'HOLD');assert.equal(r.reason,'POSITION_STATE_UNAVAILABLE')});
+await t('PF1-21 no fake authority',()=>assert.equal(P.authorityStatus().ready,true));
+await t('PF1-22 clear authority',()=>assert.equal(P.clearAuthority().ready,false));
+await t('PF1-23 video reset clears',()=>{for(const f of handlers['video-reset']||[])f({});assert.equal(P.snapshot().count,0)});
+await t('PF1-24 optional module',()=>assert.ok(WB.optionalModules.some(x=>x.name==='runtime-decision-pipeline')));
+assert.equal(n,24);console.log(`P-F1 RUNTIME DECISION PIPELINE REGRESSION PASS: ${n}/${n}`);
