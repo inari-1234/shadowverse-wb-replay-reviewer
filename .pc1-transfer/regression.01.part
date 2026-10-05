@@ -1,0 +1,71 @@
+;
+ const {out}=evalOne({S0,S1},[{from:'S0',to:'S1',id:'PLAY'}]);assert.equal(out.healAmount,4);assert.equal(out.drainAmount,0);
+}
+// OC-11 next-turn lethal confirmed.
+{
+ const S0=node('S0'),S1=node('S1'),O0=node('O0',{activePlayer:'P2'}),M0=node('M0',{activePlayer:'P1'}),T=node('T',{activePlayer:'P1',terminal:true,winner:'P1',loser:'P2'});T.players.P2.leaderHp=0;
+ const edges=[{from:'S0',to:'S1',id:'PLAY'},{from:'S1',to:'O0',id:'ET1',type:'END_TURN'},{from:'O0',to:'M0',id:'ET2',type:'END_TURN'},{from:'M0',to:'T',id:'KILL',type:'ATTACK'}];
+ const {out}=evalOne({S0,S1,O0,M0,T},edges);assert.equal(out.lethalStatus,LETHAL_STATUS.NEXT_TURN_LETHAL_FORCED);
+}
+// OC-12 Ward blocks next-turn lethal.
+{
+ const S0=node('S0'),S1=node('S1'),O0=node('O0',{activePlayer:'P2'}),M0=node('M0',{activePlayer:'P1'}),M1=node('M1',{activePlayer:'P1'}),E=node('E',{activePlayer:'P2'});M0.players.P2.field=[follower('ward',{ward:true,hp:5})];M1.players.P2.field=[];
+ const edges=[{from:'S0',to:'S1',id:'PLAY'},{from:'S1',to:'O0',id:'ET1',type:'END_TURN'},{from:'O0',to:'M0',id:'ET2',type:'END_TURN'},{from:'M0',to:'M1',id:'WARD_HIT',type:'ATTACK',target:{zone:'FIELD'}},{from:'M1',to:'E',id:'ET3',type:'END_TURN'}];
+ const {out}=evalOne({S0,S1,O0,M0,M1,E},edges);assert.equal(out.lethalStatus,LETHAL_STATUS.NO_CONFIRMED_LETHAL);
+}
+// OC-13 opponent removal deletes board lethal.
+{
+ const S0=node('S0'),S1=node('S1'),O0=node('O0',{activePlayer:'P2'}),O1=node('O1',{activePlayer:'P2'}),M0=node('M0',{activePlayer:'P1'}),E=node('E',{activePlayer:'P2'});S1.players.P1.field=[follower('threat',{attack:10})];O0.players.P1.field=[follower('threat',{attack:10})];O1.players.P1.field=[];M0.players.P1.field=[];
+ const edges=[{from:'S0',to:'S1',id:'PLAY'},{from:'S1',to:'O0',id:'ET1',type:'END_TURN'},{from:'O0',to:'O1',id:'REMOVE'},{from:'O1',to:'M0',id:'ET2',type:'END_TURN'},{from:'M0',to:'E',id:'ET3',type:'END_TURN'}];
+ const {out}=evalOne({S0,S1,O0,O1,M0,E},edges);assert.equal(out.lethalStatus,LETHAL_STATUS.NO_CONFIRMED_LETHAL);
+}
+// OC-14 lethal remains after opponent response.
+{
+ const S0=node('S0'),S1=node('S1'),O0=node('O0',{activePlayer:'P2'}),O1=node('O1',{activePlayer:'P2'}),M0=node('M0',{activePlayer:'P1'}),T=node('T',{terminal:true,winner:'P1',loser:'P2'});T.players.P2.leaderHp=0;
+ const edges=[{from:'S0',to:'S1',id:'PLAY'},{from:'S1',to:'O0',id:'ET1',type:'END_TURN'},{from:'O0',to:'O1',id:'REMOVE'},{from:'O1',to:'M0',id:'ET2',type:'END_TURN'},{from:'M0',to:'T',id:'SPELL_KILL'}];
+ const {out}=evalOne({S0,S1,O0,O1,M0,T},edges);assert.equal(out.lethalStatus,LETHAL_STATUS.NEXT_TURN_LETHAL_FORCED);
+}
+// OC-15 opponent heal moves out of lethal range.
+{
+ const S0=node('S0'),S1=node('S1'),O0=node('O0',{activePlayer:'P2'}),O1=node('O1',{activePlayer:'P2'}),M0=node('M0',{activePlayer:'P1'}),E=node('E',{activePlayer:'P2'});S1.players.P2.leaderHp=3;O0.players.P2.leaderHp=3;O1.players.P2.leaderHp=8;O1.lastOutcomeEvents=[{type:'HEAL',player:'P2',amount:5,certainty:'CONFIRMED'}];M0.players.P2.leaderHp=8;
+ const edges=[{from:'S0',to:'S1',id:'PLAY'},{from:'S1',to:'O0',id:'ET1',type:'END_TURN'},{from:'O0',to:'O1',id:'HEAL'},{from:'O1',to:'M0',id:'ET2',type:'END_TURN'},{from:'M0',to:'E',id:'ET3',type:'END_TURN'}];
+ const {out}=evalOne({S0,S1,O0,O1,M0,E},edges);assert.equal(out.lethalStatus,LETHAL_STATUS.NO_CONFIRMED_LETHAL);assert.ok(out.opponentResponses.some(r=>r.opponentHealAmount>=5));
+}
+// OC-16 board left behind provides Drain target.
+{
+ const S0=node('S0'),S1=node('S1'),O0=node('O0',{activePlayer:'P2'}),O1=node('O1',{activePlayer:'P2'}),M0=node('M0',{activePlayer:'P1'});S1.players.P1.field=[follower('target')];O0.players.P1.field=[follower('target')];O1.players.P2.leaderHp=15;O1.lastOutcomeEvents=[{type:'DRAIN',player:'P2',targetPlayer:'P2',amount:3,certainty:'CONFIRMED'}];
+ const edges=[{from:'S0',to:'S1',id:'PLAY'},{from:'S1',to:'O0',id:'ET1',type:'END_TURN'},{from:'O0',to:'O1',id:'DRAIN'},{from:'O1',to:'M0',id:'ET2',type:'END_TURN'}];
+ const {out}=evalOne({S0,S1,O0,O1,M0},edges);assert.ok(out.opponentResponses.some(r=>r.opponentDrainAmount===3));
+}
+// OC-17 empty board removes confirmed Drain response.
+{
+ const S0=node('S0'),S1=node('S1'),O0=node('O0',{activePlayer:'P2'}),M0=node('M0',{activePlayer:'P1'});
+ const edges=[{from:'S0',to:'S1',id:'PLAY'},{from:'S1',to:'O0',id:'ET1',type:'END_TURN'},{from:'O0',to:'M0',id:'ET2',type:'END_TURN'}];
+ const {out}=evalOne({S0,S1,O0,M0},edges);assert.equal(Math.max(0,...out.opponentResponses.map(r=>r.opponentDrainAmount||0)),0);
+}
+// OC-18 unknown opponent hand is never materialized as a card response.
+{
+ const S0=node('S0'),S1=node('S1'),O0=node('O0',{activePlayer:'P2',unknownReasons:['UNKNOWN_CARD_AUTHORITY']}),M0=node('M0',{activePlayer:'P1'});
+ const edges=[{from:'S0',to:'S1',id:'PLAY'},{from:'S1',to:'O0',id:'ET1',type:'END_TURN'},{from:'O0',to:'M0',id:'ET2',type:'END_TURN'}];
+ const {out}=evalOne({S0,S1,O0,M0},edges);assert.ok(out.uncertainty.includes(REASON.OPPONENT_RESPONSE_UNKNOWN_HAND));assert.notEqual(out.lethalStatus,LETHAL_STATUS.NEXT_TURN_LETHAL_FORCED);
+}
+// OC-19 unknown draw never becomes confirmed lethal.
+{
+ const S0=node('S0'),S1=node('S1'),O0=node('O0',{activePlayer:'P2'}),M0=node('M0',{activePlayer:'P1',unknownReasons:['UNKNOWN_CARD_AUTHORITY']});M0.lastOutcomeEvents=[{type:'DRAW',player:'P1',certainty:'UNKNOWN'}];
+ const edges=[{from:'S0',to:'S1',id:'PLAY'},{from:'S1',to:'O0',id:'ET1',type:'END_TURN'},{from:'O0',to:'M0',id:'ET2',type:'END_TURN'}];
+ const {out}=evalOne({S0,S1,O0,M0},edges);assert.equal(out.futureOutcome.drawStatus,DRAW_STATUS.UNKNOWN_DRAW);assert.notEqual(out.lethalStatus,LETHAL_STATUS.NEXT_TURN_LETHAL_FORCED);
+}
+// OC-20 indeterminate rule ordering safely stops.
+{
+ const S0=node('S0'),S1=node('S1',{authorityStatus:'INDETERMINATE_RULE_ORDER'});
+ const {out}=evalOne({S0,S1},[{from:'S0',to:'S1',id:'PLAY'}]);assert.equal(out.lethalStatus,LETHAL_STATUS.LETHAL_UNKNOWN);assert.ok(out.uncertainty.includes(REASON.INDETERMINATE_RULE_ORDER)||out.reasonCodes.includes(REASON.INDETERMINATE_RULE_ORDER));
+}
+// OC-21 memoization across converged self-turn searches.
+{
+ const S0=node('S0'),S1=node('S1'),O0=node('O0',{activePlayer:'P2'}),OA=node('OA',{activePlayer:'P2'}),OB=node('OB',{activePlayer:'P2'}),MA=node('MA',{activePlayer:'P1',fingerprint:'M-SAME'}),MB=node('MB',{activePlayer:'P1',fingerprint:'M-SAME'}),EA=node('EA',{activePlayer:'P2'}),EB=node('EB',{activePlayer:'P2'});
+ const edges=[{from:'S0',to:'S1',id:'PLAY'},{from:'S1',to:'O0',id:'ET1',type:'END_TURN'},{from:'O0',to:'OA',id:'A'},{from:'O0',to:'OB',id:'B'},{from:'OA',to:'MA',id:'ETA',type:'END_TURN'},{from:'OB',to:'MB',id:'ETB',type:'END_TURN'},{from:'MA',to:'EA',id:'ENDM',type:'END_TURN'},{from:'MB',to:'EB',id:'ENDM',type:'END_TURN'}];
+ const {out}=evalOne({S0,S1,O0,OA,OB,MA,MB,EA,EB},edges);assert.ok(out.futureOutcome.search.memoHits>=1);
+}
+// OC-22 duplicate-state suppression.
+{
+ const S0=node('S0'),S1=node('S1'),O0=node('O0',{activePlayer:'P2'}),OA=node('OA',{activePlayer:'P2',fingerprint:'DUP'}
