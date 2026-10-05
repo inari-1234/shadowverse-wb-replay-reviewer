@@ -1,8 +1,8 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v85';
-// ui-opt6P P-D1 comparison/decision + P-C1 + P-A1 + existing recognition/replay regression
-// P-D1 candidate gate: dedicated comparison tests plus full legacy regression.
+const GATE_VERSION='recognition-quality-gate-v86';
+// ui-opt6P P-E1 coach explanation + P-D1 + P-C1 + P-A1 + existing recognition/replay regression
+// P-E1 candidate gate: explanation tests and authority-boundary static validation plus full legacy regression.
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
 const tests=[
@@ -37,6 +37,8 @@ const tests=[
   'tests/pc1-static-validation.mjs',
   'tests/pd1-comparison-decision-regression.mjs',
   'tests/pd1-static-validation.mjs',
+  'tests/pe1-coach-explanation-regression.mjs',
+  'tests/pe1-static-validation.mjs',
   'tests/turn-control-sync-regression.mjs',
   'tests/turn-prefix-regression.mjs',
   'tests/turn-terminal-tail-regression.mjs',
