@@ -1,0 +1,19 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read=n=>fs.readFileSync(new URL('../'+n,import.meta.url),'utf8');
+const ps=read('position-state-runtime.js'),rules=read('common-rule-engine-runtime.js'),binding=read('runtime-authority-binding.js'),pf1=read('runtime-decision-pipeline.js');
+assert.match(ps,/P-S1_RUNTIME_BINDING/);
+assert.match(ps,/OWN_BOARD_STRUCTURE_UNRESOLVED/);
+assert.match(ps,/UNKNOWN_ATTACK_EFFECT/);
+assert.match(rules,/TURN_PLAYER_FIRST\+registrationOrder/);
+assert.match(rules,/UNKNOWN_OPPONENT_RESPONSE/);
+assert.match(rules,/INDETERMINATE_RULE_ORDER/);
+assert.match(binding,/state-captured/);
+assert.match(binding,/P-F0A_RUNTIME_AUTHORITY_V1/);
+assert.match(binding,/id==='quickBlader'/);
+assert.match(binding,/P-F0A_UNMODELED_CARD_RULE/);
+assert.match(pf1,/loadAuthorityBinding/);
+assert.match(pf1,/runtime-authority-binding\.js/);
+for(const src of [ps,rules,binding]){assert.doesNotMatch(src,/new Function\s*\(/);assert.doesNotMatch(src,/\beval\s*\(/)}
+for(const forbidden of ['Math.random','guessCard','inferUnknownCard','assumeOpponentHand'])assert.doesNotMatch(ps+rules+binding,new RegExp(forbidden.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+console.log('P-F0A STATIC VALIDATION PASS');
