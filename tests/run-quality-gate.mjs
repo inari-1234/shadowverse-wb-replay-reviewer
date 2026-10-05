@@ -1,8 +1,8 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v88';
-// ui-opt6P P-F1 runtime decision pipeline + P-E2 + P-E1 + P-D1 + P-C1 + P-A1 + existing recognition/replay regression
-// P-F1 candidate gate: authoritative runtime-chain tests + boundary static validation + full legacy regression.
+const GATE_VERSION='recognition-quality-gate-v89';
+// ui-opt6P P-F0A runtime authority binding + P-F1 + P-E2 + P-E1 + P-D1 + P-C1 + P-A1 + existing recognition/replay regression
+// P-F0A candidate gate: PositionState/Common Rule runtime authority tests + boundary static validation + full legacy regression.
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
 const tests=[
@@ -43,6 +43,8 @@ const tests=[
   'tests/pe2-static-validation.mjs',
   'tests/pf1-runtime-decision-pipeline-regression.mjs',
   'tests/pf1-static-validation.mjs',
+  'tests/pf0a-runtime-authority-binding-regression.mjs',
+  'tests/pf0a-static-validation.mjs',
   'tests/turn-control-sync-regression.mjs',
   'tests/turn-prefix-regression.mjs',
   'tests/turn-terminal-tail-regression.mjs',
