@@ -1,5 +1,0 @@
-=cur.parentNodeId?map.get(cur.parentNodeId):null;}return path.reverse();}
- return Object.freeze({version:VERSION,STATUS,LETHAL_STATUS,SURVIVAL_STATUS,RESPONSE_TYPE,DRAW_STATUS,REASON,evaluateSequence,evaluateSequences,compareOutcomes,backtrack,captureState:snapshot});
-}
-WB.OutcomeBacktracking=Object.freeze({version:VERSION,STATUS,LETHAL_STATUS,SURVIVAL_STATUS,RESPONSE_TYPE,DRAW_STATUS,REASON,create,stableStringify});if(typeof WB.registerModule==='function')WB.registerModule('outcome-backtracking',VERSION);
-})();
