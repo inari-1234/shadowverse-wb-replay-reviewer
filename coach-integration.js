@@ -1,7 +1,7 @@
 (()=>{'use strict';
 const W=window.WB;if(!W)return;
 const VERSION='pe2-coach-integration-v1.0.0',EVENT='comparison-decision-ready';
-const items=new Map();let authorityPromise=null;
+const items=new Map();let authorityPromise=null,runtimePromise=null;
 const clone=v=>v==null?v:JSON.parse(JSON.stringify(v));
 const text=v=>v==null?'':String(v);
 function optionalModule(name,version){W.optionalModules??=[];const row={name,version};if(!W.optionalModules.some(x=>x.name===name&&x.version===version))W.optionalModules.push(row);return row}
@@ -21,6 +21,18 @@ function loadAuthority(){
     (document.head||document.documentElement).appendChild(s)
   });
   return authorityPromise
+}
+function loadRuntimePipeline(){
+  if(W.RuntimeDecisionPipeline)return Promise.resolve(W.RuntimeDecisionPipeline);
+  if(runtimePromise)return runtimePromise;
+  runtimePromise=new Promise((resolve,reject)=>{
+    if(typeof document==='undefined'){resolve(null);return}
+    const existing=document.querySelector('script[data-pf1-bootstrap="runtime-decision-pipeline"]');
+    const finish=()=>W.RuntimeDecisionPipeline?resolve(W.RuntimeDecisionPipeline):reject(new Error('P-F1 RuntimeDecisionPipeline unavailable'));
+    if(existing){existing.addEventListener?.('load',finish,{once:true});setTimeout(()=>{if(W.RuntimeDecisionPipeline)finish()},0);return}
+    const s=document.createElement('script');s.src='./runtime-decision-pipeline.js';s.defer=true;s.dataset.pf1Bootstrap='runtime-decision-pipeline';s.onload=finish;s.onerror=()=>reject(new Error('P-F1 RuntimeDecisionPipeline load failed'));(document.head||document.documentElement).appendChild(s)
+  }).catch(err=>{runtimePromise=null;throw err});
+  return runtimePromise
 }
 function normalizeDetail(detail={}){const windowId=text(detail.windowId||detail.reviewWindowId),decision=detail.decision||null;return{windowId,decision,sourceAuthority:detail.sourceAuthority||'P-D1',receivedAt:detail.receivedAt||new Date().toISOString()}}
 function snapshot(){return{version:VERSION,basis:'P-D1 Decision -> P-E1 CoachExplanation -> P-E2 presentation',count:items.size,items:[...items.values()].map(clone)}}
@@ -53,5 +65,5 @@ async function ingestDecision(detail={}){
 }
 function clear(){items.clear();expose();if(typeof document!=='undefined')for(const el of document.querySelectorAll('[data-comparison-coach="1"]'))el.remove();return true}
 function bind(){W.on(EVENT,detail=>{ingestDecision(detail).catch(err=>W.recordError?.('pe2-coach-integration',err))});for(const ev of ['state-captured','review-evaluated','review-state-changed','scene-saved','scenes-cleared','task-finished','match-analysis-complete'])W.on(ev,scheduleDecorate);W.on('video-reset',clear)}
-W.CoachIntegration=Object.freeze({version:VERSION,eventName:EVENT,loadAuthority,normalizeDetail,ingestDecision,getForWindow,presentationModel,createCard,decorate,snapshot,clear});optionalModule('coach-integration',VERSION);bind();W.onReady(()=>{loadAuthority().then(()=>{ensureStyle();decorate();W.log?.('optional-module-ready',{module:'coach-integration',version:VERSION,authority:'P-E1',inputAuthority:'P-D1'})}).catch(err=>W.recordError?.('pe2-coach-integration-load',err))});expose();
+W.CoachIntegration=Object.freeze({version:VERSION,eventName:EVENT,loadAuthority,loadRuntimePipeline,normalizeDetail,ingestDecision,getForWindow,presentationModel,createCard,decorate,snapshot,clear});optionalModule('coach-integration',VERSION);bind();W.onReady(()=>{loadAuthority().then(()=>{ensureStyle();decorate();W.log?.('optional-module-ready',{module:'coach-integration',version:VERSION,authority:'P-E1',inputAuthority:'P-D1'});return loadRuntimePipeline()}).then(p=>{if(p)W.log?.('optional-module-linked',{from:'coach-integration',to:'runtime-decision-pipeline'})}).catch(err=>W.recordError?.('pe2-coach-integration-load',err))});expose();
 })();
