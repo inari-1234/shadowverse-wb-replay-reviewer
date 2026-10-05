@@ -4,6 +4,8 @@ for(const api of ['ingestDecision','getForWindow','presentationModel','createCar
 for(const required of ['comparison-decision-ready','CoachExplanation','P-D1','data-comparison-coach','Meaningful Alternative','Alternativeが有力になる条件','__wbComparisonCoachV1'])assert.ok(src.includes(required),required);
 for(const forbidden of ['generateLegalActions','applyAction(','getPlayerView(','getTerminalStatus(','stateFingerprint(','OutcomeBacktracking.create','ComparisonDecision.evaluateDecision','ComparisonDecision.compareCandidates','rankCandidates('])assert.equal(src.includes(forbidden),false,`P-E2 recomputation forbidden: ${forbidden}`);
 assert.ok(cf.includes("./coach-integration.js"));assert.ok(cf.includes('loadCoachIntegration'));
-assert.ok(sw.includes("'./coach-explanation.js'"));assert.ok(sw.includes("'./coach-integration.js'"));
+assert.equal(sw.includes("'./coach-explanation.js'"),false,'optional P-E1 asset must not alter frozen precache list');
+assert.equal(sw.includes("'./coach-integration.js'"),false,'optional P-E2 asset must not alter frozen precache list');
+assert.ok(sw.includes('cache.put(req,res.clone())'),'optional same-origin assets remain runtime-cacheable after network fetch');
 assert.equal(src.includes('innerHTML='),false,'comparison coach content must use textContent/DOM APIs');
 console.log('P-E2 STATIC VALIDATION PASS');
