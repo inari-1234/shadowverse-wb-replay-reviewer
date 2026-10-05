@@ -14,6 +14,8 @@ assert.match(binding,/id==='quickBlader'/);
 assert.match(binding,/P-F0A_UNMODELED_CARD_RULE/);
 assert.match(pf1,/loadAuthorityBinding/);
 assert.match(pf1,/runtime-authority-binding\.js/);
+assert.doesNotMatch(ps,/Date\.now\s*\(/);
+assert.match(ps,/step:\(next\.history\|\|\[\]\)\.length\+1/);
 for(const src of [ps,rules,binding]){assert.doesNotMatch(src,/new Function\s*\(/);assert.doesNotMatch(src,/\beval\s*\(/)}
 for(const forbidden of ['Math.random','guessCard','inferUnknownCard','assumeOpponentHand'])assert.doesNotMatch(ps+rules+binding,new RegExp(forbidden.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
 console.log('P-F0A STATIC VALIDATION PASS');
