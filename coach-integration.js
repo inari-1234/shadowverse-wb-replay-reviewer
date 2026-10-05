@@ -1,0 +1,57 @@
+(()=>{'use strict';
+const W=window.WB;if(!W)return;
+const VERSION='pe2-coach-integration-v1.0.0',EVENT='comparison-decision-ready';
+const items=new Map();let authorityPromise=null;
+const clone=v=>v==null?v:JSON.parse(JSON.stringify(v));
+const text=v=>v==null?'':String(v);
+function optionalModule(name,version){W.optionalModules??=[];const row={name,version};if(!W.optionalModules.some(x=>x.name===name&&x.version===version))W.optionalModules.push(row);return row}
+function loadAuthority(){
+  if(W.CoachExplanation)return Promise.resolve(W.CoachExplanation);
+  if(authorityPromise)return authorityPromise;
+  authorityPromise=new Promise((resolve,reject)=>{
+    if(typeof document==='undefined'){reject(new Error('document unavailable'));return}
+    const existing=document.querySelector('script[data-pe2-authority="coach-explanation"]');
+    const finish=()=>W.CoachExplanation?resolve(W.CoachExplanation):reject(new Error('P-E1 CoachExplanation unavailable'));
+    if(existing){existing.addEventListener?.('load',finish,{once:true});setTimeout(finish,0);return}
+    const s=document.createElement('script'),original=W.registerModule;
+    s.src='./coach-explanation.js';s.defer=true;s.dataset.pe2Authority='coach-explanation';
+    W.registerModule=(name,version)=>name==='coach-explanation'?optionalModule(name,version):original(name,version);
+    const restore=()=>{if(W.registerModule!==original)W.registerModule=original};
+    s.onload=()=>{restore();finish()};s.onerror=()=>{restore();reject(new Error('P-E1 CoachExplanation load failed'))};
+    (document.head||document.documentElement).appendChild(s)
+  });
+  return authorityPromise
+}
+function normalizeDetail(detail={}){const windowId=text(detail.windowId||detail.reviewWindowId),decision=detail.decision||null;return{windowId,decision,sourceAuthority:detail.sourceAuthority||'P-D1',receivedAt:detail.receivedAt||new Date().toISOString()}}
+function snapshot(){return{version:VERSION,basis:'P-D1 Decision -> P-E1 CoachExplanation -> P-E2 presentation',count:items.size,items:[...items.values()].map(clone)}}
+function expose(){window.__wbComparisonCoachV1=snapshot();return window.__wbComparisonCoachV1}
+function getForWindow(windowId){const row=items.get(text(windowId));return row?clone(row):null}
+function presentationModel(row){const e=row?.explanation||row;if(!e)return null;return{windowId:row?.windowId||null,mode:e.mode||'INSUFFICIENT_EVIDENCE',claim:e.claim||'HOLD',classification:e.classification||'INSUFFICIENT_EVIDENCE',bestCandidateId:e.bestCandidateId||null,alternativeCandidateId:e.meaningfulAlternativeCandidateId||e.alternative?.candidateId||null,headline:text(e.headline),whyBest:(e.whyBest||[]).map(text),alternativeReasons:(e.alternative?.reasons||[]).map(text),reversalConditions:(e.alternative?.reversalConditions||[]).map(text),cautions:(e.cautions||[]).map(text),evidenceSummary:(e.evidenceSummary||[]).map(text),criticalDifference:clone(e.criticalDifference||null)}}
+function addText(parent,tag,value,cls=''){if(!value)return null;const el=document.createElement(tag);if(cls)el.className=cls;el.textContent=value;parent.appendChild(el);return el}
+function addList(parent,title,rows,cls=''){if(!rows?.length)return null;const box=document.createElement('div');if(cls)box.className=cls;addText(box,'b',title);const ul=document.createElement('ul');for(const r of rows)addText(ul,'li',r);box.appendChild(ul);parent.appendChild(box);return box}
+function claimLabel(claim){return claim==='CONFIRMED'?'確定':claim==='CONDITIONAL'?'条件付き':'保留'}
+function createCard(row){
+  const m=presentationModel(row);if(!m||typeof document==='undefined')return null;
+  const card=document.createElement('section');card.className=`comparisonCoach comparisonCoach-${m.claim.toLowerCase()}`;card.dataset.comparisonCoach='1';card.dataset.comparisonWindow=m.windowId||'';
+  const head=document.createElement('div');head.className='comparisonCoachHeader';addText(head,'b','比較コーチ');addText(head,'span',claimLabel(m.claim),'comparisonCoachClaim');card.appendChild(head);
+  addText(card,'p',m.headline,'comparisonCoachHeadline');
+  addList(card,'Bestの理由',m.whyBest,'comparisonCoachReasons');
+  if(m.alternativeCandidateId){const alt=document.createElement('div');alt.className='comparisonCoachAlternative';addText(alt,'b',`Meaningful Alternative: ${m.alternativeCandidateId}`);addList(alt,'Alternativeの長所',m.alternativeReasons);addList(alt,'Alternativeが有力になる条件',m.reversalConditions);card.appendChild(alt)}
+  addList(card,'注意・未確定条件',m.cautions,'comparisonCoachCautions');
+  if(m.evidenceSummary.length){const d=document.createElement('details');d.className='comparisonCoachEvidence';const s=document.createElement('summary');s.textContent='比較根拠を見る';d.appendChild(s);addList(d,'P-D1 Evidence',m.evidenceSummary);card.appendChild(d)}
+  return card
+}
+function ensureStyle(){if(typeof document==='undefined'||document.querySelector('style[data-pe2-style]'))return;const s=document.createElement('style');s.dataset.pe2Style='1';s.textContent='.comparisonCoach{margin-top:10px;padding:11px;border:1px solid #b9ddc4;border-radius:12px;background:#f3f8f4;color:var(--text,#171b24)}.comparisonCoachHeader{display:flex;align-items:center;justify-content:space-between;gap:10px}.comparisonCoachHeader>b{font-size:13px}.comparisonCoachClaim{padding:2px 7px;border-radius:999px;background:#dff2e4;color:#166534;font-size:10px;font-weight:900}.comparisonCoachHeadline{margin:8px 0 0;font-size:13px;font-weight:850;line-height:1.5}.comparisonCoach>div{margin-top:8px}.comparisonCoach ul{margin:5px 0 0 18px;padding:0}.comparisonCoach li{margin:3px 0;font-size:12px;line-height:1.45}.comparisonCoachAlternative{padding:8px 9px;border:1px solid #dce1e8;border-radius:9px;background:#fff}.comparisonCoachCautions{padding:8px 9px;border:1px solid #e9a23b;border-radius:9px;background:#fff8df;color:#7a4305}.comparisonCoachEvidence{margin-top:8px;border-top:1px solid #dce1e8;padding-top:7px}.comparisonCoachEvidence>summary{cursor:pointer;font-size:11px;color:#667085}.comparisonCoach-conditional{border-color:#e9a23b;background:#fffaf0}.comparisonCoach-conditional .comparisonCoachClaim,.comparisonCoach-hold .comparisonCoachClaim{background:#ffe7a3;color:#7a4305}.comparisonCoach-hold{border-color:#d0d5dd;background:#f8f9fa}';(document.head||document.documentElement).appendChild(s)}
+function decorate(){
+  if(typeof document==='undefined')return 0;ensureStyle();let count=0;
+  for(const [windowId,row] of items){const host=document.querySelector(`[data-review-window-id="${typeof CSS!=='undefined'&&CSS.escape?CSS.escape(windowId):windowId.replace(/["\\]/g,'')}" ]`)||document.querySelector(`[data-review-window-id="${windowId.replace(/"/g,'&quot;')}"]`);if(!host)continue;host.querySelector('[data-comparison-coach="1"]')?.remove();const card=createCard(row);if(!card)continue;const oldCoach=host.querySelector('.reviewCoach');if(oldCoach)host.insertBefore(card,oldCoach);else host.appendChild(card);count++}
+  expose();return count
+}
+function scheduleDecorate(){if(typeof queueMicrotask==='function')queueMicrotask(decorate);else setTimeout(decorate,0)}
+async function ingestDecision(detail={}){
+  const d=normalizeDetail(detail);if(!d.windowId||!d.decision)return null;const authority=await loadAuthority(),explanation=authority.explainDecision(d.decision),row={version:VERSION,windowId:d.windowId,sourceAuthority:d.sourceAuthority,receivedAt:d.receivedAt,decisionIdentity:{status:d.decision.status||null,classification:d.decision.classification||null,bestCandidateId:d.decision.bestCandidateId||null,meaningfulAlternativeCandidateId:d.decision.meaningfulAlternativeCandidateId||null},explanation:clone(explanation)};items.set(d.windowId,row);expose();scheduleDecorate();return clone(row)
+}
+function clear(){items.clear();expose();if(typeof document!=='undefined')for(const el of document.querySelectorAll('[data-comparison-coach="1"]'))el.remove();return true}
+function bind(){W.on(EVENT,detail=>{ingestDecision(detail).catch(err=>W.recordError?.('pe2-coach-integration',err))});for(const ev of ['state-captured','review-evaluated','review-state-changed','scene-saved','scenes-cleared','task-finished','match-analysis-complete'])W.on(ev,scheduleDecorate);W.on('video-reset',clear)}
+W.CoachIntegration=Object.freeze({version:VERSION,eventName:EVENT,loadAuthority,normalizeDetail,ingestDecision,getForWindow,presentationModel,createCard,decorate,snapshot,clear});optionalModule('coach-integration',VERSION);bind();W.onReady(()=>{loadAuthority().then(()=>{ensureStyle();decorate();W.log?.('optional-module-ready',{module:'coach-integration',version:VERSION,authority:'P-E1',inputAuthority:'P-D1'})}).catch(err=>W.recordError?.('pe2-coach-integration-load',err))});expose();
+})();
