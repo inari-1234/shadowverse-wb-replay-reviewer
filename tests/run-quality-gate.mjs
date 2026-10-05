@@ -1,7 +1,7 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v83';
-// ui-opt6P P-A1 legal action / sequence generator + existing recognition/replay regression
+const GATE_VERSION='recognition-quality-gate-v84';
+// ui-opt6P P-C1 outcome backtracking + P-A1 + existing recognition/replay regression
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
 const tests=[
@@ -32,6 +32,8 @@ const tests=[
   'tests/state-review-boundary-regression.mjs',
   'tests/tactical-rules-boundary-regression.mjs',
   'tests/pa1-legal-action-sequence-regression.mjs',
+  'tests/pc1-outcome-backtracking-regression.mjs',
+  'tests/pc1-static-validation.mjs',
   'tests/turn-control-sync-regression.mjs',
   'tests/turn-prefix-regression.mjs',
   'tests/turn-terminal-tail-regression.mjs',
