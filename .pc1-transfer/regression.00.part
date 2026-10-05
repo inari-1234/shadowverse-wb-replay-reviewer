@@ -1,0 +1,100 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+
+const WB={registerModule(){}};
+const sandbox={window:{WB},console};
+vm.createContext(sandbox);
+new vm.Script(fs.readFileSync(new URL('../outcome-backtracking.js',import.meta.url),'utf8')).runInContext(sandbox);
+const P=WB.OutcomeBacktracking,{LETHAL_STATUS,SURVIVAL_STATUS,RESPONSE_TYPE,DRAW_STATUS,REASON,STATUS}=P;
+const deep=v=>JSON.parse(JSON.stringify(v));
+
+function player(over={}){return {leaderHp:20,pp:5,maxPP:5,ep:1,sep:1,fieldLimit:5,hand:[],field:[],destroyedCount:0,playCount:0,...deep(over)};}
+function node(name,over={}){return {id:name,node:name,activePlayer:'P1',players:{P1:player(),P2:player()},terminal:false,winner:null,loser:null,lastOutcomeEvents:[],...deep(over)};}
+function follower(id,over={}){return {instanceId:id,cardId:id,kind:'FOLLOWER',attack:2,hp:2,canAttack:true,canAttackLeader:true,targetable:true,ward:false,...over};}
+function hand(id,over={}){return {instanceId:`h:${id}`,cardId:id,...over};}
+function makeHarness(nodes,edges,{options={}}={}){
+ const table=Object.fromEntries(Object.entries(nodes).map(([k,v])=>[k,deep(v)]));
+ const edgeTable={}; for(const e of edges){(edgeTable[e.from]??=[]).push(e);}
+ const fp=s=>String(s.fingerprint??s.node);
+ const adapter={
+  getStateId:s=>s.id,
+  getActivePlayer:s=>s.activePlayer,
+  getOpponentPlayer:(_s,p)=>p==='P1'?'P2':'P1',
+  getPlayerView:(s,p)=>({...deep(s.players[p]),opponentPlayer:p==='P1'?'P2':'P1'}),
+  getOutcomeEvents:(_b,a)=>deep(a.lastOutcomeEvents||[])
+ };
+ const ruleEngine={
+  getAuthorityStatus:s=>s.authorityStatus?{status:s.authorityStatus,reasons:s.authorityReasons||[]}:{status:'RESOLVED'},
+  getTerminalStatus:s=>s.terminal?{terminal:true,winner:s.winner,loser:s.loser,reasons:s.terminalReasons||['LEADER_LETHAL']}:{terminal:false}
+ };
+ const actionEngine={
+  stateFingerprint:fp,
+  generateLegalActions(s,{sequenceDepth=0}={}){
+   if(s.authorityStatus==='INDETERMINATE_RULE_ORDER')return {status:'UNRESOLVED',actions:[],unknown:[],reasonCodes:['INDETERMINATE_RULE_ORDER']};
+   if(s.authorityStatus==='UNRESOLVED')return {status:'UNRESOLVED',actions:[],unknown:[],reasonCodes:s.authorityReasons||['UNRESOLVED_LEGALITY']};
+   if(s.terminal)return {status:'TERMINAL',actions:[],unknown:[],reasonCodes:['TERMINAL_STATE']};
+   const actions=(edgeTable[s.node]||[]).filter(e=>e.actor==null||e.actor===s.activePlayer).map(e=>({actionId:e.id,actionType:e.type||'PLAY_CARD',actorPlayer:s.activePlayer,source:e.source||null,target:e.target||null,cost:e.cost||null,requiredState:{stateId:s.id,fingerprint:fp(s)},resultingState:null,ruleAuthority:'TEST:P-A1',legality:e.legality||'LEGAL',uncertainty:null,sequenceDepth,reasonCodes:e.reasonCodes||['LEGAL_TEST']}));
+   const unknown=(s.unknownReasons||[]).map(r=>({legality:'UNKNOWN',reasonCodes:[r]}));
+   return {status:'OK',stateId:s.id,stateFingerprint:fp(s),actions:actions.filter(a=>a.legality==='LEGAL'),rejected:actions.filter(a=>a.legality==='ILLEGAL'),unknown,reasonCodes:[]};
+  },
+  applyAction(s,a){
+   if(!a||a.legality!=='LEGAL')return {status:'UNRESOLVED',state:null,reasonCodes:['UNRESOLVED_LEGALITY']};
+   if(!a.requiredState||a.requiredState.fingerprint!==fp(s))return {status:'ERROR',state:null,reasonCodes:['ILLEGAL_STATE_CHANGED']};
+   const e=(edgeTable[s.node]||[]).find(x=>x.id===a.actionId);
+   if(!e)return {status:'ERROR',state:null,reasonCodes:['UNRESOLVED_LEGALITY']};
+   if(e.status==='UNRESOLVED')return {status:'UNRESOLVED',state:e.to?deep(table[e.to]):deep(s),reasonCodes:e.reasonCodes||['UNKNOWN_EFFECT_RULE']};
+   if(e.status==='ERROR')return {status:'ERROR',state:null,reasonCodes:e.reasonCodes||['UNKNOWN_EFFECT_RULE']};
+   const ns=deep(table[e.to]); if(!ns)throw new Error(`missing node ${e.to}`);
+   const out={...a,resultingState:{stateId:ns.id,fingerprint:fp(ns)}};
+   return {status:ns.terminal?'TERMINAL':'OK',state:ns,stateId:ns.id,stateFingerprint:fp(ns),action:out,reasonCodes:e.resultReasons||[]};
+  }
+ };
+ const engine=P.create({actionEngine,stateAdapter:adapter,ruleEngine},{maxDepth:6,maxNodes:100,maxBranches:20,maxOpponentResponses:20,maxContinuations:30,maxTurns:2,...options});
+ const state=name=>deep(table[name]);
+ const action=(name,id)=>actionEngine.generateLegalActions(state(name)).actions.find(a=>a.actionId===id);
+ return {engine,state,action,actionEngine,adapter,ruleEngine};
+}
+function evalOne(nodes,edges,inputId='PLAY',{start='S0',limits={}}={}){const h=makeHarness(nodes,edges);const a=h.action(start,inputId);assert.ok(a,`missing input action ${inputId}`);return {h,out:h.engine.evaluateSequence(h.state(start),[a],limits)};}
+
+// OC-01 immediate damage.
+{
+ const S0=node('S0'),S1=node('S1');S1.players.P2.leaderHp=15;
+ const {out}=evalOne({S0,S1},[{from:'S0',to:'S1',id:'PLAY'}]);
+ assert.equal(out.damageAmount,5);
+}
+// OC-02 immediate lethal.
+{
+ const S0=node('S0'),T=node('T',{terminal:true,winner:'P1',loser:'P2'});T.players.P2.leaderHp=0;
+ const {out}=evalOne({S0,T},[{from:'S0',to:'T',id:'PLAY'}]);
+ assert.equal(out.lethalStatus,LETHAL_STATUS.IMMEDIATE_LETHAL);
+}
+// OC-03 terminal pruning: no future response exploration.
+{
+ const S0=node('S0'),T=node('T',{terminal:true,winner:'P1',loser:'P2'});T.players.P2.leaderHp=0;
+ const {out}=evalOne({S0,T},[{from:'S0',to:'T',id:'PLAY'}]);
+ assert.equal(out.futureOutcome.opponentResponses.length,0);assert.ok(out.reasonCodes.includes(REASON.TERMINAL_PRUNED));
+}
+// OC-04 board retained.
+{
+ const S0=node('S0'),S1=node('S1');S1.players.P1.field=[follower('a',{attack:4})];
+ const {out}=evalOne({S0,S1},[{from:'S0',to:'S1',id:'PLAY'}]);assert.equal(out.boardState.followerCount,1);assert.equal(out.boardState.totalAttack,4);
+}
+// OC-05 / 06 / 07 PP, EP, SEP retained.
+{
+ const S0=node('S0'),S1=node('S1');Object.assign(S1.players.P1,{pp:2,ep:0,sep:0});
+ const {out}=evalOne({S0,S1},[{from:'S0',to:'S1',id:'PLAY'}]);assert.equal(out.PP,2);assert.equal(out.EP,0);assert.equal(out.SEP,0);
+}
+// OC-08 hand resources retained, including persistent counters.
+{
+ const S0=node('S0'),S1=node('S1');S1.players.P1.hand=[hand('x'),hand('mystery',{known:false})];S1.players.P1.flag=2;S1.players.P1.crest=['c1'];
+ const {out}=evalOne({S0,S1},[{from:'S0',to:'S1',id:'PLAY'}]);assert.equal(out.handResources.handCount,2);assert.equal(out.handResources.unknownHandCount,1);assert.equal(out.persistentResources.flag,2);
+}
+// OC-09 drain recovers HP.
+{
+ const S0=node('S0');S0.players.P1.leaderHp=10;const S1=node('S1');S1.players.P1.leaderHp=13;S1.players.P2.leaderHp=17;S1.lastOutcomeEvents=[{type:'DRAIN',player:'P1',targetPlayer:'P1',amount:3,certainty:'CONFIRMED'},{type:'DAMAGE',targetPlayer:'P2',amount:3,certainty:'CONFIRMED'}];
+ const {out}=evalOne({S0,S1},[{from:'S0',to:'S1',id:'PLAY'}]);assert.equal(out.drainAmount,3);assert.equal(out.healAmount,3);
+}
+// OC-10 direct heal.
+{
+ const S0=node('S0');S0.players.P1.leaderHp=10;const S1=node('S1');S1.players.P1.leaderHp=14;S1.lastOutcomeEvents=[{type:'HEAL',player:'P1',amount:4,certainty:'CONFIRMED'}]
