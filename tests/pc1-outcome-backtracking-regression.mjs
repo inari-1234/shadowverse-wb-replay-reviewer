@@ -146,13 +146,19 @@ function evalOne(nodes,edges,inputId='PLAY',{start='S0',limits={}}={}){const h=m
 {
  const S0=node('S0'),S1=node('S1'),O0=node('O0',{activePlayer:'P2',unknownReasons:['UNKNOWN_CARD_AUTHORITY']}),M0=node('M0',{activePlayer:'P1'});
  const edges=[{from:'S0',to:'S1',id:'PLAY'},{from:'S1',to:'O0',id:'ET1',type:'END_TURN'},{from:'O0',to:'M0',id:'ET2',type:'END_TURN'}];
- const {out}=evalOne({S0,S1,O0,M0},edges);assert.ok(out.uncertainty.includes(REASON.OPPONENT_RESPONSE_UNKNOWN_HAND));assert.notEqual(out.lethalStatus,LETHAL_STATUS.NEXT_TURN_LETHAL_FORCED);
+ const {out}=evalOne({S0,S1,O0,M0},edges);assert.ok(out.uncertainty.includes(REASON.OPPONENT_RESPONSE_UNKNOWN_HAND));assert.notEqual(out.lethalStatus,LETHAL_STATUS.NEXT_TURN_LETHAL_FORCED);assert.ok(out.opponentResponses.some(r=>r.responseType===RESPONSE_TYPE.UNKNOWN_HAND_DEPENDENT_RESPONSE));
 }
 // OC-19 unknown draw never becomes confirmed lethal.
 {
  const S0=node('S0'),S1=node('S1'),O0=node('O0',{activePlayer:'P2'}),M0=node('M0',{activePlayer:'P1',unknownReasons:['UNKNOWN_CARD_AUTHORITY']});M0.lastOutcomeEvents=[{type:'DRAW',player:'P1',certainty:'UNKNOWN'}];
  const edges=[{from:'S0',to:'S1',id:'PLAY'},{from:'S1',to:'O0',id:'ET1',type:'END_TURN'},{from:'O0',to:'M0',id:'ET2',type:'END_TURN'}];
  const {out}=evalOne({S0,S1,O0,M0},edges);assert.equal(out.futureOutcome.drawStatus,DRAW_STATUS.UNKNOWN_DRAW);assert.notEqual(out.lethalStatus,LETHAL_STATUS.NEXT_TURN_LETHAL_FORCED);
+}
+// Extra: unknown effect is preserved as a rule uncertainty, not mislabeled as unknown hand.
+{
+ const S0=node('S0'),S1=node('S1'),O0=node('O0',{activePlayer:'P2',unknownReasons:['UNKNOWN_EFFECT_RULE']}),M0=node('M0',{activePlayer:'P1'});
+ const edges=[{from:'S0',to:'S1',id:'PLAY'},{from:'S1',to:'O0',id:'ET1',type:'END_TURN'},{from:'O0',to:'M0',id:'ET2',type:'END_TURN'}];
+ const {out}=evalOne({S0,S1,O0,M0},edges);assert.ok(out.uncertainty.includes(REASON.UNKNOWN_EFFECT_RULE));assert.equal(out.uncertainty.includes(REASON.OPPONENT_RESPONSE_UNKNOWN_HAND),false);
 }
 // OC-20 indeterminate rule ordering safely stops.
 {
