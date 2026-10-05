@@ -24,7 +24,15 @@ function renderAssistResults(){const o=W.$('#asResults'),q=cf()?.branches.filter
 function refreshAssist(){const s=W.$('#asSource'),q=cf()?.branches.filter(b=>b.state?.sideToAct==='相手')||[];if(!s)return;const old=s.value;s.innerHTML=q.map(b=>`<option value="${b.id}">${W.escape(b.name)} / ${b.state?.turn??'?'}T</option>`).join('')||'<option value="">相手手番の起点がありません</option>';if(q.some(b=>b.id===old))s.value=old;renderAssistTemplate();renderAssistResults()}
 function assist(){const q=cf(),src=q?.branches.find(b=>b.id===val('#asSource')),name=String(val('#asName')).trim();if(!src||!name){const st=W.$('#asStatus');if(st)st.textContent='相手手番の起点と返し名を指定してください。';return}const tpl=sameTurnTemplate(src),s=clone(src.state),fg=parseFlags(val('#asFlags')),boardRaw=String(val('#asBoard')).trim(),otherRaw=String(val('#asOther')).trim();s.sideToAct='自分';s.opponentHP=num('#asOppHp');s.selfHP=num('#asSelfHp');s.opponentWard=val('#asWard')||'unknown';s.pirateFlagCountdowns=fg.values;s.pirateFlagsKnown=fg.known;s.knownBoardLeaderDamage=boardRaw===''?null:Math.max(0,Number(boardRaw)||0);s.boardDamageKnown=boardRaw!=='';s.otherConfirmedLeaderDamage=otherRaw===''?null:Math.max(0,Number(otherRaw)||0);s.otherDamageKnown=otherRaw!=='';if(s.tactical?.resources){s.tactical.resources.pirateFlags={known:fg.known,values:fg.values.slice()};s.tactical.resources.otherConfirmedDamage={known:otherRaw!=='',value:otherRaw===''?null:Math.max(0,Number(otherRaw)||0)}}if(tpl){for(const k of ['pp','extraPP','ep','sep'])s[k]=tpl[k]??s[k]}else{s.pp=null;s.extraPP=s.ep=s.sep='unknown'}const r=calculate(s),b={id:'a'+Date.now().toString(36),name,kind:'counterfactual',parentId:src.id,state:s,knowledgeCutoffSeconds:src.knowledgeCutoffSeconds,note:String(val('#asNote')).trim(),origin:'branch-assist-clean',automation:{resourceStatus:tpl?'from-saved-lethal-snapshot':'missing-template',lethalResult:{status:r.status,lethalRoutes:r.lethalRoutes,unknown:r.unknown}}};q.branches.push(b);save(CS,cd);expose();renderCf();W.$('#asStatus').textContent=r.lethalRoutes.length?`「${name}」：リーサル候補 ${r.lethalRoutes.join(' / ')}`:r.status==='incomplete-do-not-declare-no-lethal'?`「${name}」：未確認情報あり。リーサルなしとは断定しません。`:`「${name}」：主要既知ルート内ではリーサルなし`}
 
-W.CounterfactualReview={version:VERSION,storageKey:CS,cf,branchEval,renderCf,loadCurrentCf,newCf,saveCf,sameTurnTemplate,renderAssistTemplate,renderAssistResults,refreshAssist,assist,expose};
+// P-E2 is an optional presentation layer. Keep the frozen recognition module list unchanged
+// and bootstrap it after the existing runtime is ready so recognition/analysis behavior is untouched.
+function loadCoachIntegration(){
+  if(W.CoachIntegration||typeof document==='undefined')return Promise.resolve(W.CoachIntegration||null);
+  const old=document.querySelector('script[data-pe2-bootstrap="coach-integration"]');if(old)return new Promise(resolve=>{old.addEventListener?.('load',()=>resolve(W.CoachIntegration||null),{once:true});setTimeout(()=>{if(W.CoachIntegration)resolve(W.CoachIntegration)},0)});
+  return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='./coach-integration.js';s.defer=true;s.dataset.pe2Bootstrap='coach-integration';s.onload=()=>resolve(W.CoachIntegration||null);s.onerror=()=>reject(new Error('P-E2 coach integration load failed'));(document.head||document.documentElement).appendChild(s)})
+}
+
+W.CounterfactualReview={version:VERSION,storageKey:CS,cf,branchEval,renderCf,loadCurrentCf,newCf,saveCf,sameTurnTemplate,renderAssistTemplate,renderAssistResults,refreshAssist,assist,expose,loadCoachIntegration};
 W.onReady(()=>{
   W.$('#cfLoadState')?.addEventListener('click',loadCurrentCf);
   W.$('#cfSave')?.addEventListener('click',saveCf);
@@ -32,7 +40,8 @@ W.onReady(()=>{
   W.$('#asSource')?.addEventListener('change',renderAssistTemplate);
   W.$('#asCreate')?.addEventListener('click',assist);
   W.on('video-reset',()=>{cfDraft=null;expose();renderCf()});
+  loadCoachIntegration().catch(err=>W.recordError?.('pe2-bootstrap',err));
   expose();renderCf();
-  W.log('module-ready',{module:'counterfactual-review',version:VERSION,independentState:true,branchAssist:true,storageKey:CS,reviewEngineDependency:'calculate+state+publishReviewState'});
+  W.log('module-ready',{module:'counterfactual-review',version:VERSION,independentState:true,branchAssist:true,storageKey:CS,reviewEngineDependency:'calculate+state+publishReviewState',optionalCoachIntegration:'pe2'});
 });
 })();
