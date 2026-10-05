@@ -1,8 +1,8 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v84';
-// ui-opt6P P-C1 outcome backtracking + P-A1 + existing recognition/replay regression
-// Final P-C1 candidate gate trigger after unknown-classification corrective.
+const GATE_VERSION='recognition-quality-gate-v85';
+// ui-opt6P P-D1 comparison/decision + P-C1 + P-A1 + existing recognition/replay regression
+// P-D1 candidate gate: dedicated comparison tests plus full legacy regression.
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
 const tests=[
@@ -35,6 +35,8 @@ const tests=[
   'tests/pa1-legal-action-sequence-regression.mjs',
   'tests/pc1-outcome-backtracking-regression.mjs',
   'tests/pc1-static-validation.mjs',
+  'tests/pd1-comparison-decision-regression.mjs',
+  'tests/pd1-static-validation.mjs',
   'tests/turn-control-sync-regression.mjs',
   'tests/turn-prefix-regression.mjs',
   'tests/turn-terminal-tail-regression.mjs',
