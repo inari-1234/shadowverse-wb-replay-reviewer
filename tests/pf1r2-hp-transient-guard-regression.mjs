@@ -45,6 +45,8 @@ function ingestState(capture){
 }
 WB.ReplaySession={snapshot(){return structuredClone(session)},ingestState};
 new vm.Script(authoritySource,{filename:'runtime-authority-binding.js'}).runInContext(sandbox);
+await Promise.resolve();
+await Promise.resolve();
 const A=WB.RuntimeAuthorityBinding;
 
 assert.equal(A.hpGuardVersion,'pf1r2-hp-transient-guard-v1.0.0');
