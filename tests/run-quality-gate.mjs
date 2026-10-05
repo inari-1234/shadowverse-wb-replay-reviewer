@@ -2,7 +2,7 @@ import {spawnSync} from 'node:child_process';
 
 const GATE_VERSION='recognition-quality-gate-v84';
 // ui-opt6P P-C1 outcome backtracking + P-A1 + existing recognition/replay regression
-// Final P-C1 candidate gate trigger.
+// Final P-C1 candidate gate trigger after unknown-classification corrective.
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
 const tests=[
