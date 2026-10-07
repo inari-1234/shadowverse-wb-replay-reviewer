@@ -1,8 +1,8 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v93';
-// ui-opt6P P-F1-R2 fresh real-video evidence + isolated transient HP safety guard + P-F0B decision-window authority capture + P-F1-R1 real-video E2E + P-F0A + P-F1 + P-E2 + P-E1 + P-D1 + P-C1 + P-A1 + existing recognition/replay regression
-// P-F1-R2 gate: fresh-run evidence must distinguish CHAIN_OK / SAFE_HOLD / CAPTURE_FAILED; isolated A->B->A HP OCR conflicts against equal turn endpoints must not become Review/Decision authority.
+const GATE_VERSION='recognition-quality-gate-v94';
+// ui-opt6P P-F1-R2 fresh real-video evidence + isolated transient HP safety guard + pre-action runtime anchor + P-F0B decision-window authority capture + P-F1-R1 real-video E2E + P-F0A + P-F1 + P-E2 + P-E1 + P-D1 + P-C1 + P-A1 + existing recognition/replay regression
+// P-F1-R2 gate: fresh-run evidence must distinguish CHAIN_OK / SAFE_HOLD / CAPTURE_FAILED; isolated A->B->A HP OCR conflicts against equal turn endpoints must not become Review/Decision authority; directly adjacent PP-spend before a board swing may move runtime authority to the observed pre-action state without asserting causality.
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
 const tests=[
@@ -52,6 +52,7 @@ const tests=[
   'tests/pf1r2-fresh-evidence-regression.mjs',
   'tests/pf1r2-static-validation.mjs',
   'tests/pf1r2-hp-transient-guard-regression.mjs',
+  'tests/pf1r2-preaction-anchor-regression.mjs',
   'tests/turn-control-sync-regression.mjs',
   'tests/turn-prefix-regression.mjs',
   'tests/turn-terminal-tail-regression.mjs',
