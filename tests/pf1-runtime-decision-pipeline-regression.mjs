@@ -9,7 +9,7 @@ const adapter={getActivePlayer:s=>s.active,getOpponentPlayer:(s,p)=>other(p),get
 function hash(s){let h=0;for(let i=0;i<s.length;i++)h=((h<<5)-h+s.charCodeAt(i))|0;return h}
 const rules={resolveAfterAction:state=>({status:'OK',state,reasons:[]}),getAuthorityStatus:()=>({status:'RESOLVED',reasons:[]}),getTerminalStatus:s=>s.players.B.leaderHp<=0?{terminal:true,status:'TERMINAL',winner:'A',loser:'B'}:s.players.A.leaderHp<=0?{terminal:true,status:'TERMINAL',winner:'B',loser:'A'}:{terminal:false,status:'ACTIVE'},getOutcomeEvents:adapter.getOutcomeEvents};
 let n=0;const t=async(name,fn)=>{await fn();n++};
-await t('PF1-01 API',()=>assert.equal(P.version,'pf1-runtime-decision-pipeline-v1.0.0'));
+await t('PF1-01 API',()=>assert.equal(P.version,'pf1-runtime-decision-pipeline-v1.1.0'));
 await t('PF1-02 initial hold',()=>{const s=P.authorityStatus();assert.equal(s.ready,false);assert.ok(s.missing.includes('stateAdapter'))});
 await t('PF1-03 missing authority session hold',async()=>assert.equal((await P.evaluateSession({})).status,'HOLD'));
 await t('PF1-04 register incomplete',()=>assert.equal(P.registerAuthority({id:'bad'}).ready,false));
@@ -29,8 +29,10 @@ await t('PF1-17 evaluate session',async()=>{const r=await P.evaluateSession({can
 await t('PF1-18 no cancelled auto run',async()=>{const before=P.snapshot().count;for(const f of handlers['match-analysis-complete']||[])f({cancelled:true});await Promise.resolve();assert.equal(P.snapshot().count,before)});
 await t('PF1-19 complete auto run',async()=>{for(const f of handlers['match-analysis-complete']||[])f({cancelled:false});await new Promise(r=>setTimeout(r,20));assert.ok(P.snapshot().count>=2)});
 await t('PF1-20 no PositionState fallback',async()=>{P.registerAuthority({id:'nostate',stateAdapter:adapter,ruleEngine:rules,getPositionState:()=>null});const r=await P.evaluateWindow('x');assert.equal(r.status,'HOLD');assert.equal(r.reason,'POSITION_STATE_UNAVAILABLE')});
-await t('PF1-21 no fake authority',()=>assert.equal(P.authorityStatus().ready,true));
-await t('PF1-22 clear authority',()=>assert.equal(P.clearAuthority().ready,false));
-await t('PF1-23 video reset clears',()=>{for(const f of handlers['video-reset']||[])f({});assert.equal(P.snapshot().count,0)});
-await t('PF1-24 optional module',()=>assert.ok(WB.optionalModules.some(x=>x.name==='runtime-decision-pipeline')));
-assert.equal(n,24);console.log(`P-F1 RUNTIME DECISION PIPELINE REGRESSION PASS: ${n}/${n}`);
+await t('PF1-21 exact capture missing code preserved',async()=>{P.registerAuthority({id:'capture-missing',stateAdapter:adapter,ruleEngine:rules,getPositionState:()=>{const e=new Error('missing');e.code='DECISION_AUTHORITY_CAPTURE_MISSING';e.detail={runId:'r1'};throw e}});const r=await P.evaluateWindow('x');assert.equal(r.status,'HOLD');assert.equal(r.reason,'DECISION_AUTHORITY_CAPTURE_MISSING');assert.equal(r.detail.runId,'r1')});
+await t('PF1-22 anchor ambiguity code preserved',async()=>{P.registerAuthority({id:'anchor-ambiguous',stateAdapter:adapter,ruleEngine:rules,getPositionState:()=>{const e=new Error('ambiguous');e.code='PREACTION_ANCHOR_AMBIGUOUS';throw e}});const r=await P.evaluateWindow('x');assert.equal(r.status,'HOLD');assert.equal(r.reason,'PREACTION_ANCHOR_AMBIGUOUS')});
+await t('PF1-23 no fake authority',()=>assert.equal(P.authorityStatus().ready,true));
+await t('PF1-24 clear authority',()=>assert.equal(P.clearAuthority().ready,false));
+await t('PF1-25 video reset clears',()=>{for(const f of handlers['video-reset']||[])f({});assert.equal(P.snapshot().count,0)});
+await t('PF1-26 optional module',()=>assert.ok(WB.optionalModules.some(x=>x.name==='runtime-decision-pipeline')));
+assert.equal(n,26);console.log(`P-F1 RUNTIME DECISION PIPELINE REGRESSION PASS: ${n}/${n}`);

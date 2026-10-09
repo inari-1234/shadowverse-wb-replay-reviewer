@@ -64,12 +64,12 @@ await waitFor(()=>P.snapshot().count===6,'all real Decision Windows evaluated');
 const rows=P.snapshot().items;
 await t('PF1R1-17 match-analysis event automatically evaluates six windows',async()=>assert.equal(rows.length,6));
 await t('PF1R1-18 every real window safely HOLDs',async()=>assert.ok(rows.every(x=>x.status==='HOLD')));
-await t('PF1R1-19 HOLD reason is no authoritative sequence candidates',async()=>assert.ok(rows.every(x=>x.reason==='NO_SEQUENCE_CANDIDATES')));
-await t('PF1R1-20 P-A1 reports unresolved generation rather than guessing',async()=>assert.ok(rows.every(x=>x.detail?.stage==='P-A1'&&x.detail?.generationStatus==='UNRESOLVED')));
-await t('PF1R1-21 unresolved reasons preserve board authority gap',async()=>assert.ok(rows.every(x=>(x.detail?.reasonCodes||[]).includes('OWN_BOARD_STRUCTURE_UNRESOLVED'))));
-await t('PF1R1-22 unresolved reasons preserve Ward authority gap',async()=>assert.ok(rows.every(x=>(x.detail?.reasonCodes||[]).includes('OPPONENT_WARD_UNRESOLVED'))));
-await t('PF1R1-23 no comparison decision is invented from insufficient evidence',async()=>assert.equal(events.filter(x=>x.name==='comparison-decision-ready').length,0));
-await t('PF1R1-24 P-E2 renders no fake Coach result',async()=>assert.equal(WB.CoachIntegration.snapshot().count,0));
+await t('PF1R1-19 exact Decision Authority capture is now mandatory',async()=>assert.ok(rows.every(x=>x.reason==='DECISION_AUTHORITY_CAPTURE_MISSING')));
+await t('PF1R1-20 old State Capture history cannot substitute for fresh window authority',async()=>assert.ok(rows.every(x=>x.detail?.binding==null)));
+await t('PF1R1-21 no replay-state fallback can create a PositionState',async()=>assert.ok(rows.every(x=>x.detail?.code==='DECISION_AUTHORITY_CAPTURE_MISSING'||x.reason==='DECISION_AUTHORITY_CAPTURE_MISSING')));
+await t('PF1R1-22 no comparison decision is invented from insufficient evidence',async()=>assert.equal(events.filter(x=>x.name==='comparison-decision-ready').length,0));
+await t('PF1R1-23 P-E2 renders no fake Coach result',async()=>assert.equal(WB.CoachIntegration.snapshot().count,0));
+await t('PF1R1-24 old diagnostic remains safety evidence only, not Fresh PASS evidence',async()=>assert.equal(B.snapshot().freshEvidence,null));
 
 assert.equal(errors.length,0,'real-video E2E replay must not raise runtime errors');
 assert.equal(passed,24);

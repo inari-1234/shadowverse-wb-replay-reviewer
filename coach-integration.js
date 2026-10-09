@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const W=window.WB;if(!W)return;
-const VERSION='pe2-coach-integration-v1.0.0',EVENT='comparison-decision-ready';
+const VERSION='pe2-coach-integration-v1.0.1',EVENT='comparison-decision-ready';
 const items=new Map();let authorityPromise=null,runtimePromise=null;
 const clone=v=>v==null?v:JSON.parse(JSON.stringify(v));
 const text=v=>v==null?'':String(v);
@@ -34,7 +34,7 @@ function loadRuntimePipeline(){
   }).catch(err=>{runtimePromise=null;throw err});
   return runtimePromise
 }
-function normalizeDetail(detail={}){const windowId=text(detail.windowId||detail.reviewWindowId),decision=detail.decision||null;return{windowId,decision,sourceAuthority:detail.sourceAuthority||'P-D1',receivedAt:detail.receivedAt||new Date().toISOString()}}
+function normalizeDetail(detail={}){const windowId=text(detail.windowId||detail.reviewWindowId),decision=detail.decision||null;return{windowId,decision,sourceAuthority:detail.sourceAuthority||'P-D1',receivedAt:detail.receivedAt||new Date().toISOString(),runId:detail.runId||null}}
 function snapshot(){return{version:VERSION,basis:'P-D1 Decision -> P-E1 CoachExplanation -> P-E2 presentation',count:items.size,items:[...items.values()].map(clone)}}
 function expose(){window.__wbComparisonCoachV1=snapshot();return window.__wbComparisonCoachV1}
 function getForWindow(windowId){const row=items.get(text(windowId));return row?clone(row):null}
@@ -61,7 +61,7 @@ function decorate(){
 }
 function scheduleDecorate(){if(typeof queueMicrotask==='function')queueMicrotask(decorate);else setTimeout(decorate,0)}
 async function ingestDecision(detail={}){
-  const d=normalizeDetail(detail);if(!d.windowId||!d.decision)return null;const authority=await loadAuthority(),explanation=authority.explainDecision(d.decision),row={version:VERSION,windowId:d.windowId,sourceAuthority:d.sourceAuthority,receivedAt:d.receivedAt,decisionIdentity:{status:d.decision.status||null,classification:d.decision.classification||null,bestCandidateId:d.decision.bestCandidateId||null,meaningfulAlternativeCandidateId:d.decision.meaningfulAlternativeCandidateId||null},explanation:clone(explanation)};items.set(d.windowId,row);expose();scheduleDecorate();return clone(row)
+  const d=normalizeDetail(detail);if(!d.windowId||!d.decision)return null;const authority=await loadAuthority(),explanation=authority.explainDecision(d.decision),row={version:VERSION,windowId:d.windowId,runId:d.runId,sourceAuthority:d.sourceAuthority,receivedAt:d.receivedAt,decisionIdentity:{status:d.decision.status||null,classification:d.decision.classification||null,bestCandidateId:d.decision.bestCandidateId||null,meaningfulAlternativeCandidateId:d.decision.meaningfulAlternativeCandidateId||null},explanation:clone(explanation)};items.set(d.windowId,row);expose();scheduleDecorate();return clone(row)
 }
 function clear(){items.clear();expose();if(typeof document!=='undefined')for(const el of document.querySelectorAll('[data-comparison-coach="1"]'))el.remove();return true}
 function bind(){W.on(EVENT,detail=>{ingestDecision(detail).catch(err=>W.recordError?.('pe2-coach-integration',err))});for(const ev of ['state-captured','review-evaluated','review-state-changed','scene-saved','scenes-cleared','task-finished','match-analysis-complete'])W.on(ev,scheduleDecorate);W.on('video-reset',clear)}

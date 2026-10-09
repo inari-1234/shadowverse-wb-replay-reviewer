@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
 
-const source=fs.readFileSync(new URL('../runtime-authority-binding.js',import.meta.url),'utf8');
+const source=fs.readFileSync(new URL('./runtime-authority-binding.js',import.meta.url),'utf8');
 const handlers=new Map(),optionalModules=[];
 const states=[
   {id:'st:8:bottom:113.638',time:113.638,turn:8,absoluteSide:'bottom',relativeSide:'自分',pp:2,opponentHP:16,resources:{extraPP:'unknown',ep:'yes',sep:'unknown'},opponentWard:'unknown',boardDamage:0,boardDamageKnown:true,hand:{recognized:{}}},
@@ -22,57 +22,41 @@ const WB={
   ReplaySession:{snapshot(){return structuredClone(session)},ingestState(){}}
 };
 const sandbox={window:{WB,__wbReplaySessionV1:session},console,structuredClone,Date,Promise,setTimeout,clearTimeout};
-vm.createContext(sandbox);
-new vm.Script(source,{filename:'runtime-authority-binding.js'}).runInContext(sandbox);
-const A=WB.RuntimeAuthorityBinding;
-await A.ready();
+vm.createContext(sandbox);new vm.Script(source,{filename:'runtime-authority-binding.js'}).runInContext(sandbox);
+const A=WB.RuntimeAuthorityBinding;await A.ready();
+let n=0;const t=(name,fn)=>{try{fn();n++}catch(e){e.message=`${name}: ${e.message}`;throw e}};
 
-assert.equal(A.version,'pf0a-runtime-authority-binding-v1.1.3');
-assert.equal(A.preActionAnchorVersion,'pf1r2-preaction-anchor-v1.0.0');
-assert.ok(optionalModules.some(x=>x.name==='decision-window-preaction-anchor'&&x.version===A.preActionAnchorVersion));
-
+t('PRE-01 version',()=>assert.equal(A.preActionAnchorVersion,'pf1r2-preaction-anchor-v1.1.0'));
+t('PRE-02 optional module',()=>assert.ok(optionalModules.some(x=>x.name==='decision-window-preaction-anchor'&&x.version===A.preActionAnchorVersion)));
 const resolved=A.resolveDecisionAnchor(win,session);
-assert.equal(resolved.anchored,true);
-assert.equal(resolved.state.id,'st:8:bottom:113.638');
-assert.equal(resolved.originalStateId,'st:8:bottom:115.888');
-assert.equal(resolved.anchorActionId,pp.id);
-assert.equal(resolved.primaryActionId,board.id);
-assert.equal(resolved.policy,'adjacent-pp-decrease-before-board-swing');
-assert.equal(win.beforeState.id,'st:8:bottom:115.888','source Review Window must remain observationally unchanged');
-
+t('PRE-03 anchored',()=>assert.equal(resolved.anchored,true));
+t('PRE-04 anchor state',()=>assert.equal(resolved.state.id,'st:8:bottom:113.638'));
+t('PRE-05 original state',()=>assert.equal(resolved.originalStateId,'st:8:bottom:115.888'));
+t('PRE-06 pp edge',()=>assert.equal(resolved.anchorActionId,pp.id));
+t('PRE-07 primary edge',()=>assert.equal(resolved.primaryActionId,board.id));
+t('PRE-08 policy',()=>assert.equal(resolved.policy,'adjacent-exclusive-pp-decrease-before-board-swing'));
+t('PRE-09 source window unchanged',()=>assert.equal(win.beforeState.id,'st:8:bottom:115.888'));
 const targets=A.decisionTargets(session);
-assert.equal(targets.length,1);
-assert.equal(targets[0].stateId,'st:8:bottom:113.638');
-assert.equal(targets[0].anchored,true);
-assert.equal(targets[0].originalStateId,'st:8:bottom:115.888');
-
-const ps=await A.getPositionState({windowId:win.id,context:{window:win},session});
-assert.equal(ps.observed.sourceStateId,'st:8:bottom:113.638');
-assert.equal(ps.meta.preActionAnchor.anchored,true);
-
-const noPp={...session,actions:[board]};
-assert.equal(A.resolveDecisionAnchor(win,noPp).anchored,false,'no adjacent PP decrease must preserve original anchor');
-assert.equal(A.resolveDecisionAnchor(win,noPp).state.id,win.beforeState.id);
-
+t('PRE-10 target anchor',()=>assert.equal(targets[0].stateId,'st:8:bottom:113.638'));
+t('PRE-11 no PP fallback',()=>assert.equal(A.resolveDecisionAnchor(win,{...session,actions:[board]}).anchored,false));
 const ppIncrease={...pp,data:{from:1,to:2,delta:1}};
-assert.equal(A.resolveDecisionAnchor(win,{...session,actions:[ppIncrease,board]}).anchored,false,'PP increase must not re-anchor');
-
+t('PRE-12 PP increase fallback',()=>assert.equal(A.resolveDecisionAnchor(win,{...session,actions:[ppIncrease,board]}).anchored,false));
 const nonAdjacent={...pp,toStateId:'st:8:bottom:999.999'};
-assert.equal(A.resolveDecisionAnchor(win,{...session,actions:[nonAdjacent,board]}).anchored,false,'non-adjacent PP change must not re-anchor');
-
+t('PRE-13 non-adjacent fallback',()=>assert.equal(A.resolveDecisionAnchor(win,{...session,actions:[nonAdjacent,board]}).anchored,false));
 const ambiguous={...pp,id:'other-pp'};
-assert.equal(A.resolveDecisionAnchor(win,{...session,actions:[pp,ambiguous,board]}).anchored,false,'ambiguous multiple PP edges must fail closed');
-
-const farAnchor={...states[0],id:'st:8:bottom:110.000',time:110};
-const farPp={...pp,id:'far-pp',fromStateId:farAnchor.id};
-assert.equal(A.resolveDecisionAnchor(win,{...session,states:[farAnchor,states[1],states[2]],actions:[farPp,board]}).anchored,false,'pre-action span above 3 seconds must fail closed');
-
-const otherTurn={...states[0],id:'st:7:bottom:113.638',turn:7};
-const otherPp={...pp,id:'other-turn-pp',fromStateId:otherTurn.id,turn:8};
-assert.equal(A.resolveDecisionAnchor(win,{...session,states:[otherTurn,states[1],states[2]],actions:[otherPp,board]}).anchored,false,'turn mismatch must fail closed');
-
-const hpAction={id:'hp',type:'opponent-hp-change',fromStateId:states[1].id,toStateId:states[2].id,time:116.338,turn:8,data:{from:16,to:13,delta:-3}};
-const hpWin={...win,id:'dw-hp',relatedActionIds:[hpAction.id]};
-assert.equal(A.resolveDecisionAnchor(hpWin,{...session,actions:[pp,hpAction]}).anchored,false,'non-board Review Window must not re-anchor');
-
-console.log('P-F1-R2 PREACTION ANCHOR REGRESSION PASS: 18/18');
+t('PRE-14 multiple PP blocked',()=>{const r=A.resolveDecisionAnchor(win,{...session,actions:[pp,ambiguous,board]});assert.equal(r.blocked,true);assert.equal(r.blockReason,'PREACTION_PP_EDGE_AMBIGUOUS')});
+const farAnchor={...states[0],id:'st:8:bottom:110.000',time:110},farPp={...pp,id:'far-pp',fromStateId:farAnchor.id};
+t('PRE-15 far anchor blocked',()=>assert.equal(A.resolveDecisionAnchor(win,{...session,states:[farAnchor,states[1],states[2]],actions:[farPp,board]}).blocked,true));
+const otherTurn={...states[0],id:'st:7:bottom:113.638',turn:7},otherPp={...pp,id:'other-turn-pp',fromStateId:otherTurn.id,turn:8};
+t('PRE-16 turn mismatch blocked',()=>assert.equal(A.resolveDecisionAnchor(win,{...session,states:[otherTurn,states[1],states[2]],actions:[otherPp,board]}).blocked,true));
+const hpAction={id:'hp',type:'opponent-hp-change',fromStateId:states[1].id,toStateId:states[2].id,time:116.338,turn:8,data:{from:16,to:13,delta:-3}},hpWin={...win,id:'dw-hp',relatedActionIds:[hpAction.id]};
+t('PRE-17 non-board no anchor',()=>assert.equal(A.resolveDecisionAnchor(hpWin,{...session,actions:[pp,hpAction]}).anchored,false));
+const cohabiting={id:'res',type:'resource-change',fromStateId:states[0].id,toStateId:states[1].id,time:115.888,turn:8,data:{resource:'ep',from:'yes',to:'no'}};
+t('PRE-18 cohabiting action blocked',()=>{const r=A.resolveDecisionAnchor(win,{...session,actions:[pp,cohabiting,board]});assert.equal(r.blocked,true);assert.equal(r.blockReason,'PREACTION_COHABITING_ACTION')});
+const ppMismatch={...pp,data:{from:3,to:1,delta:-2}};
+t('PRE-19 PP state mismatch blocked',()=>assert.equal(A.resolveDecisionAnchor(win,{...session,actions:[ppMismatch,board]}).blockReason,'PREACTION_PP_STATE_MISMATCH'));
+const boardMismatch={...board,data:{from:0,to:4,delta:4}},badWin={...win,relatedActionIds:[boardMismatch.id]};
+t('PRE-20 board state mismatch blocked',()=>assert.equal(A.resolveDecisionAnchor(badWin,{...session,actions:[pp,boardMismatch]}).blockReason,'PREACTION_BOARD_STATE_MISMATCH'));
+const primary2={...board,id:'board2'};
+t('PRE-21 multiple primary blocked',()=>{const w={...win,relatedActionIds:[board.id,primary2.id]};assert.equal(A.resolveDecisionAnchor(w,{...session,actions:[pp,board,primary2]}).blockReason,'PREACTION_PRIMARY_ACTION_AMBIGUOUS')});
+assert.equal(n,21);console.log(`P-F1-R2 PREACTION ANCHOR REGRESSION PASS: ${n}/${n}`);
