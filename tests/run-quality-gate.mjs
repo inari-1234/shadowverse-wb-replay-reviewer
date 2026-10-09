@@ -1,8 +1,8 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v107';
+const GATE_VERSION='recognition-quality-gate-v108';
 // ui-opt6R 09-23 offline expected-result oracle + visible cross-axis trade-off authority + P-E1R1/P-E2R1 + P-F1-R2-PM + P-D1R1 + P-F1-R2-G.
-// Live presentation gate: exact fresh authority must replace visible review start/state independently of comparison success; video playback start, authoritative comparison suppression, and candidate runtime code authority remain covered.
+// Fresh live gate: exact authority must present independently of comparison success, and exact capture resource/hand semantics must produce the same legal Quick/evolve opportunity used by the offline oracle.
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
 const tests=[
@@ -64,6 +64,7 @@ const tests=[
   'tests/pf1r2-learning-candidate-oracle-regression.mjs',
   'tests/pf1r2-live-presentation-regression.mjs',
   'tests/pf1r2-authority-only-presentation-regression.mjs',
+  'tests/pf1r2-live-position-state-parity-regression.mjs',
   'tests/pf1r2-authority-playback-regression.mjs',
   'tests/pf1r2-runtime-code-authority-regression.mjs',
   'tests/pf1r2-runtime-client-isolation-regression.mjs',
