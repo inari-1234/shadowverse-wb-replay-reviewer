@@ -75,11 +75,25 @@
     }
   },
   "handContext": [
-    {"cardId": "quickBlader", "cost": 1, "authority": "verified-simple"},
-    {"cardId": "barbaros", "cost": 7, "authority": "unmodeled-current-rule"},
-    {"cardId": "zetaBeatrix", "cost": 4, "authority": "unmodeled-current-rule"}
+    {
+      "cardId": "quickBlader",
+      "cost": 1,
+      "authority": "verified-simple"
+    },
+    {
+      "cardId": "barbaros",
+      "cost": 7,
+      "authority": "unmodeled-current-rule"
+    },
+    {
+      "cardId": "zetaBeatrix",
+      "cost": 4,
+      "authority": "unmodeled-current-rule"
+    }
   ],
-  "commonUncertainty": ["UNKNOWN_HAND_DEPENDENT_RESPONSE"],
+  "commonUncertainty": [
+    "UNKNOWN_HAND_DEPENDENT_RESPONSE"
+  ],
   "expected": {
     "quickCandidateGenerated": true,
     "quickEvolveCandidateGenerated": true,
@@ -111,6 +125,9 @@
       "playedMoveStatus",
       "reasonDirection",
       "confidence"
-    ]
+    ],
+    "quickOnlyCandidateGenerated": true,
+    "coachTradeOffHeadline": "候補ごとに異なる長所があるため、推奨手を1つに絞れません。",
+    "playedMoveLabel": "刹那のクイックブレイダー＋進化"
   }
 }
