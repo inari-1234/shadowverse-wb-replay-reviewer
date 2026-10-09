@@ -1,0 +1,43 @@
+name: Finalize P-F1-R2 Live Corrective
+on:
+  push:
+    branches:
+      - candidate/p-f1-r2-authority-only-presentation
+    paths:
+      - '.github/workflows/finalize-p-f1-r2-live-corrective.yml'
+permissions:
+  contents: write
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: candidate/p-f1-r2-authority-only-presentation
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Finalize candidate
+        run: python .github/scripts/finalize_p_f1_r2_live_corrective.py
+      - name: Dedicated validation
+        run: |
+          git diff --check
+          node tests/pf1r2-authority-only-presentation-regression.mjs
+          node tests/pf1r2-live-position-state-parity-regression.mjs
+          node tests/pf1r2-live-capture-pipeline-regression.mjs
+          node tests/pf1r2-0923-offline-expected-regression.mjs
+          node tests/pf1r2-played-move-authority-regression.mjs
+          node tests/pf1r2-runtime-code-authority-regression.mjs
+          node tests/pf1r2-runtime-client-isolation-regression.mjs
+      - name: Full Quality Gate v109
+        run: node tests/run-quality-gate.mjs
+      - name: Commit finalized candidate
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "[live-corrective-finalized] P-F1-R2 exact live authority parity and runtime build"
+          git push origin HEAD:candidate/p-f1-r2-authority-only-presentation
