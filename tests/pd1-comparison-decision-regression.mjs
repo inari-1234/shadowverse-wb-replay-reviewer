@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
 const WB={registerModule(){}};const sandbox={window:{WB},console};vm.createContext(sandbox);new vm.Script(fs.readFileSync(new URL('../comparison-decision.js',import.meta.url),'utf8')).runInContext(sandbox);
-const D=WB.ComparisonDecision,{CLASSIFICATION,AXIS}=D;
+const D=WB.ComparisonDecision,{CLASSIFICATION,AXIS,AXIS_RESULT}=D;
 const deep=v=>JSON.parse(JSON.stringify(v));
 function c(id,over={}){const base={status:'OK',sequenceId:id,lethalStatus:'NO_CONFIRMED_LETHAL',survivalStatus:'CONFIRMED_SURVIVAL',damageAmount:0,leaderHP:20,opponentLeaderHP:20,boardState:{followerCount:0,totalAttack:0,totalDefense:0,wardCount:0,nextTurnAttackPotential:0},resourceRemaining:{pp:0,ep:0,sep:0,handCount:0},resourceSpend:{pp:0,ep:0,sep:0,hand:0},opponentResponses:[],continuations:[],ruleAuthority:{status:'RESOLVED'},uncertainty:[],reasonCodes:[],futureOutcome:{drawStatus:'NO_DRAW_EVIDENCE',search:{truncated:false,unknownReasonCodes:[]}}};const out={...base,...deep(over)};out.boardState={...base.boardState,...deep(over.boardState||{})};out.resourceRemaining={...base.resourceRemaining,...deep(over.resourceRemaining||{})};out.resourceSpend={...base.resourceSpend,...deep(over.resourceSpend||{})};out.futureOutcome={...base.futureOutcome,...deep(over.futureOutcome||{})};out.futureOutcome.search={...base.futureOutcome.search,...deep((over.futureOutcome&&over.futureOutcome.search)||{})};return out;}
 const pair=(a,b)=>D.compareCandidates(a,b);
@@ -32,10 +32,10 @@ const pair=(a,b)=>D.compareCandidates(a,b);
 {const r=pair(c('A',{survivalStatus:'POSSIBLE_SURVIVAL'}),c('B',{survivalStatus:'CONFIRMED_SURVIVAL'}));assert.equal(r.preferredCandidateId,'B');}
 // PD-13 Forced Lethal vs Possible Lethal
 {const r=pair(c('A',{lethalStatus:'NEXT_TURN_LETHAL_FORCED'}),c('B',{lethalStatus:'NEXT_TURN_LETHAL_POSSIBLE'}));assert.equal(r.preferredCandidateId,'A');}
-// PD-14 Lower uncertainty wins otherwise equivalent comparison
-{const A=c('A'),B=c('B',{uncertainty:['SEARCH_TRUNCATED'],futureOutcome:{search:{truncated:true}}});const r=pair(A,B);assert.equal(r.preferredCandidateId,'A');assert.ok(r.reasonCodes.includes('LOWER_UNCERTAINTY')||r.classification===CLASSIFICATION.CONTEXT_DEPENDENT);}
-// PD-15 Unknown Hand dependent outcome
-{const r=pair(c('A',{damageAmount:3}),c('B',{damageAmount:4,uncertainty:['UNKNOWN_HAND']}));assert.equal(r.classification,CLASSIFICATION.CONTEXT_DEPENDENT);}
+// PD-14 Uncertainty-only difference is confidence, not move strength
+{const A=c('A'),B=c('B',{uncertainty:['SEARCH_TRUNCATED'],futureOutcome:{search:{truncated:true}}});const r=pair(A,B);assert.equal(r.preferredCandidateId,null);assert.equal(r.classification,CLASSIFICATION.EQUIVALENT);assert.equal(r.axisResults[AXIS.UNCERTAINTY],AXIS_RESULT.A_BETTER);assert.ok(!r.reasonCodes.includes('LOWER_UNCERTAINTY'));}
+// PD-15 One-sided unknown hand without concrete reversal evidence does not erase visible dominance
+{const r=pair(c('A',{damageAmount:3,opponentLeaderHP:17}),c('B',{damageAmount:4,opponentLeaderHP:16,uncertainty:['UNKNOWN_HAND']}));assert.equal(r.classification,CLASSIFICATION.DOMINATES);assert.equal(r.preferredCandidateId,'B');assert.ok(!r.reasonCodes.includes('UNKNOWN_HAND_DEPENDENCY'));}
 // PD-16 Unknown Draw dependent future lethal
 {const r=pair(c('A',{lethalStatus:'NEXT_TURN_LETHAL_POSSIBLE',uncertainty:['UNKNOWN_DRAW'],futureOutcome:{drawStatus:'UNKNOWN_DRAW'}}),c('B'));assert.equal(r.classification,CLASSIFICATION.CONTEXT_DEPENDENT);}
 // PD-17 Unknown Rule prevents safe decision
@@ -46,8 +46,8 @@ const pair=(a,b)=>D.compareCandidates(a,b);
 {const A=c('A',{damageAmount:5,opponentLeaderHP:15,boardState:{followerCount:2,totalAttack:6},resourceRemaining:{pp:2,handCount:2}}),B=c('B',{damageAmount:2,opponentLeaderHP:18,boardState:{followerCount:1,totalAttack:2},resourceRemaining:{pp:1,handCount:1}});const r=pair(A,B);assert.equal(r.classification,CLASSIFICATION.DOMINATES);assert.equal(r.preferredCandidateId,'A');}
 // PD-20 Trade-off classification
 {const r=pair(c('A',{damageAmount:7,opponentLeaderHP:13}),c('B',{boardState:{followerCount:2,totalAttack:8}}));assert.equal(r.classification,CLASSIFICATION.TRADE_OFF);}
-// PD-21 Context-dependent classification
-{const r=pair(c('A',{boardState:{followerCount:1,totalAttack:4}}),c('B',{damageAmount:2,uncertainty:['UNKNOWN_HAND']}));assert.equal(r.classification,CLASSIFICATION.CONTEXT_DEPENDENT);}
+// PD-21 Unknown hand without concrete reversal evidence leaves visible board-vs-damage trade-off as TRADE_OFF
+{const r=pair(c('A',{boardState:{followerCount:1,totalAttack:4}}),c('B',{damageAmount:2,opponentLeaderHP:18,uncertainty:['UNKNOWN_HAND']}));assert.equal(r.classification,CLASSIFICATION.TRADE_OFF);assert.equal(r.preferredCandidateId,null);assert.ok(!r.reasonCodes.includes('UNKNOWN_HAND_DEPENDENCY'));}
 // PD-22 Insufficient evidence
 {const r=pair(c('A',{status:'UNRESOLVED'}),c('B'));assert.equal(r.classification,CLASSIFICATION.INSUFFICIENT_EVIDENCE);}
 // PD-23 Meaningful Alternative selection
@@ -78,4 +78,6 @@ const pair=(a,b)=>D.compareCandidates(a,b);
 {const src=fs.readFileSync(new URL('../comparison-decision.js',import.meta.url),'utf8');for(const forbidden of ['generateLegalActions','applyAction(','getPlayerView(','getTerminalStatus(','stateFingerprint('])assert.equal(src.includes(forbidden),false,forbidden);}
 // PD-36 P-C1 uncertainty preserved exactly
 {const u=['UNKNOWN_HAND','SEARCH_TRUNCATED','LETHAL_DEPENDS_ON_UNKNOWN_DRAW'];const A=c('A',{uncertainty:u}),B=c('B');const r=pair(A,B);assert.equal(JSON.stringify(r.uncertainty.a),JSON.stringify(u));assert.equal(JSON.stringify(A.uncertainty),JSON.stringify(u));}
-console.log('P-D1 REGRESSION PASS: 36/36');
+// PD-37 Concrete one-sided unknown-hand response risk can make ranking context-dependent
+{const A=c('A',{damageAmount:5,opponentLeaderHP:15,uncertainty:['UNKNOWN_HAND_DEPENDENT_RESPONSE'],opponentResponses:[{responseType:'UNKNOWN_HAND_DEPENDENT_RESPONSE',opponentDrainAmount:4,opponentHealAmount:4}]});const B=c('B',{damageAmount:3,opponentLeaderHP:17});const r=pair(A,B);assert.equal(r.classification,CLASSIFICATION.CONTEXT_DEPENDENT);assert.equal(r.preferredCandidateId,null);assert.ok(r.reasonCodes.includes('UNKNOWN_HAND_DEPENDENCY'));assert.ok(r.uncertainty.rankReversalEvidence.some(x=>x.type==='UNKNOWN_HAND'));}
+console.log('P-D1 REGRESSION PASS: 37/37');
