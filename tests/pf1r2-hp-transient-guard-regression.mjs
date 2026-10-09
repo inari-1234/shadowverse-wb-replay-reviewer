@@ -48,7 +48,7 @@ new vm.Script(authoritySource,{filename:'runtime-authority-binding.js'}).runInCo
 const A=WB.RuntimeAuthorityBinding;
 await A.ready();
 
-assert.equal(A.hpGuardVersion,'pf1r2-hp-transient-guard-v1.0.0');
+assert.equal(A.hpGuardVersion,'pf1r2-hp-transient-guard-v1.1.0');
 assert.ok(optionalModules.some(x=>x.name==='replay-hp-transient-guard'&&x.version===A.hpGuardVersion));
 
 const diagnosticPattern=[
@@ -69,7 +69,7 @@ assert.equal(corrected.correctionCount,1);
 assert.equal(corrected.corrections[0].stateId,'st:6:bottom:74.128');
 assert.equal(corrected.corrections[0].rawHp,15);
 assert.equal(corrected.corrections[0].endpointHp,18);
-assert.equal(corrected.corrections[0].reason,'isolated-transient-hp-vs-equal-turn-endpoints');
+assert.equal(corrected.corrections[0].reason,'isolated-transient-hp-vs-same-turn-baseline');
 const suspect=session.states.find(x=>x.id==='st:6:bottom:74.128');
 assert.equal(suspect.opponentHP,null,'isolated OCR HP must become unknown in normalized ReplaySession');
 assert.equal(suspect.pp,0,'non-HP fields must be preserved');
@@ -91,12 +91,12 @@ assert.equal(session.states[1].opponentHP,15);
 setSession([baseState(72.328,18),baseState(73.678,15),baseState(74.128,15),baseState(75.478,18)]);
 const corroborated=A.stabilizeReplayHp({turns:[{turn:6,absoluteSide:'bottom',fromTime:72.328,toTime:75.478,hpFrom:18,hpTo:18}]});
 assert.equal(corroborated.status,'NOOP','multiple off-endpoint observations must be retained');
-assert.equal(corroborated.skipped[0].reason,'multiple-off-endpoint-observations');
+assert.equal(corroborated.skipped[0].reason,'multiple-off-baseline-observations');
 
 setSession([baseState(72.328,18),baseState(74.128,15),baseState(75.478,null)]);
 const unbracketed=A.stabilizeReplayHp({turns:[{turn:6,absoluteSide:'bottom',fromTime:72.328,toTime:75.478,hpFrom:18,hpTo:18}]});
 assert.equal(unbracketed.status,'NOOP','guard requires endpoint-value observations on both sides');
-assert.equal(unbracketed.skipped[0].reason,'endpoint-bracketing-missing');
+assert.equal(unbracketed.skipped[0].reason,'baseline-bracketing-missing');
 
 for(const fn of handlers.get('video-reset')||[])fn({});
 assert.equal(A.snapshot().lastHpGuard,null,'video-reset must clear guard state');
