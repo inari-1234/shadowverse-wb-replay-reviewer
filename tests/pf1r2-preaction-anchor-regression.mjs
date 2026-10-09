@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
 
-const source=fs.readFileSync(new URL('./runtime-authority-binding.js',import.meta.url),'utf8');
+const source=fs.readFileSync(new URL('../runtime-authority-binding.js',import.meta.url),'utf8');
 const handlers=new Map(),optionalModules=[];
 const states=[
   {id:'st:8:bottom:113.638',time:113.638,turn:8,absoluteSide:'bottom',relativeSide:'自分',pp:2,opponentHP:16,resources:{extraPP:'unknown',ep:'yes',sep:'unknown'},opponentWard:'unknown',boardDamage:0,boardDamageKnown:true,hand:{recognized:{}}},

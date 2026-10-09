@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
 
-const source=fs.readFileSync(new URL('./runtime-authority-binding.js',import.meta.url),'utf8');
+const source=fs.readFileSync(new URL('../runtime-authority-binding.js',import.meta.url),'utf8');
 const listeners=new Map(),logs=[],optionalModules=[];
 let coachItems=[];
 const WB={

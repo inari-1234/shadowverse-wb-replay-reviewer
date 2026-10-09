@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
 
-const bindingSource=fs.readFileSync(new URL('./runtime-authority-binding.js',import.meta.url),'utf8');
+const bindingSource=fs.readFileSync(new URL('../runtime-authority-binding.js',import.meta.url),'utf8');
 const handlers=new Map(),optionalModules=[];
 const video={currentTime:120};
 const anchor={id:'st:8:bottom:113.638',time:113.638,turn:8,absoluteSide:'bottom',relativeSide:'自分',pp:2,opponentHP:16,resources:{extraPP:'unknown',ep:'yes',sep:'unknown'},opponentWard:'unknown',boardDamage:0,boardDamageKnown:true,hand:{recognized:{quickBlader:{known:true,count:1,confidence:.9221}}}};
