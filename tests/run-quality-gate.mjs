@@ -1,8 +1,8 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v95';
-// ui-opt6P P-F1-R2-G fresh E2E gate tightening + fresh real-video evidence + isolated transient HP safety guard + pre-action runtime anchor + P-F0B decision-window authority capture + P-F1-R1 real-video E2E + P-F0A + P-F1 + P-E2 + P-E1 + P-D1 + P-C1 + P-A1 + existing recognition/replay regression
-// P-F1-R2-G gate: each successful Fresh chain must bind anchor exact capture + after exact capture + P-F1 result + Coach to one runId/nonce and one Decision Window. Missing capture, stale/cross-run evidence, or ambiguous pre-action anchoring must fail closed.
+const GATE_VERSION='recognition-quality-gate-v96';
+// ui-opt6P P-D1R1 comparison semantic corrective + P-F1-R2-G fresh E2E gate tightening + existing recognition/replay regression
+// P-D1R1 gate: terminal PP is not move strength; uncertainty-only differences cannot dominate; intra-axis trade-offs remain material; evidence is directional; common opponent-hand unknowns are not candidate differences.
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
 const tests=[
@@ -36,6 +36,7 @@ const tests=[
   'tests/pc1-outcome-backtracking-regression.mjs',
   'tests/pc1-static-validation.mjs',
   'tests/pd1-comparison-decision-regression.mjs',
+  'tests/pd1r1-comparison-semantic-corrective-regression.mjs',
   'tests/pd1-static-validation.mjs',
   'tests/pe1-coach-explanation-regression.mjs',
   'tests/pe1-static-validation.mjs',
@@ -93,13 +94,7 @@ const tests=[
 let failed=0;
 for(const file of tests){
   const r=spawnSync(process.execPath,[file],{stdio:'inherit'});
-  if(r.status!==0){
-    failed++;
-    console.error(`QUALITY GATE FAIL: ${file} (exit ${r.status})`);
-  }
+  if(r.status!==0){failed++;console.error(`QUALITY GATE FAIL: ${file} (exit ${r.status})`);}
 }
-if(failed){
-  console.error(`QUALITY GATE FAIL: ${failed}/${tests.length} tests failed`);
-  process.exit(1);
-}
+if(failed){console.error(`QUALITY GATE FAIL: ${failed}/${tests.length} tests failed`);process.exit(1);}
 console.log(`QUALITY GATE PASS: ${tests.length}/${tests.length}`);
