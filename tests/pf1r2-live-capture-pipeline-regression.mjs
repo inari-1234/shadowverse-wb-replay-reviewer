@@ -20,8 +20,8 @@ const anchorCapture={
 const afterCapture={
   at:'2026-09-23T00:00:02.000Z',captureMode:'decision-authority',partial:false,
   context:{time:116.338,turn:8,absoluteSide:'bottom',relativeSide:'自分'},
-  confirmed:{time:116.338,turn:8,absoluteSide:'bottom',relativeSide:'自分',pp:1,opponentHP:16,extraPP:'no',ep:'yes',sep:'yes',opponentWard:'none',boardDamage:3,boardDamageKnown:true,hand:{recognized:{}}},
-  resources:{ui:{extra:'no',ep:'yes',sep:'yes'}},ward:{state:'none'},
+  confirmed:{time:116.338,turn:8,absoluteSide:'bottom',relativeSide:'自分',pp:1,opponentHP:16,extraPP:'no',ep:'unknown',sep:'unknown',opponentWard:'none',boardDamage:3,boardDamageKnown:true,hand:{recognized:{}}},
+  resources:{ui:{extra:'no',ep:'unknown',sep:'unknown'}},ward:{state:'none'},
   hand:{result:{recognized:{}}},board:{result:{accepted:true,followers:[],faceDamageConfirmed:true,value:3}}
 };
 const cardAuthority={get(cardId){const c=WB.CardDB.get(cardId);if(!c)return null;if(cardId!=='quickBlader')return{id:cardId,known:false,authority:`CARD_DB:${cardId}:UNMODELED`};return{id:c.id,known:true,authority:'CARD_DB:quickBlader:VERIFIED_SIMPLE',cardType:'FOLLOWER',cost:c.cost,attack:c.atk,defense:c.life,storm:true,rush:false,occupiesField:true,requiresTarget:false,requiresChoice:false,coreOnlySafe:true}}};
@@ -56,8 +56,10 @@ assert.equal(decision.classification,D.CLASSIFICATION.TRADE_OFF);
 assert.equal(decision.bestCandidateId,null);
 PM.clear();
 PM.indexCapture(anchorCapture);PM.indexCapture(afterCapture);
-const binding={runId:'pf1r2-live-capture:1',windowId:'dw-8-live',complete:true,anchorExact:true,afterExact:true,anchorStateId:P.observationFromCapture(anchorCapture).sourceStateId,afterStateId:P.observationFromCapture(afterCapture).sourceStateId};
-const playedMove=PM.identify({windowId:'dw-8-live',runId:binding.runId,binding,sequences:[quickEvolve,idle],outcomes:[qOutcome,iOutcome]});
+const runStart=Date.parse('2026-09-23T00:00:00.000Z');
+const runId=`pf1r2g:${runStart}:1:live-capture-parity`;
+const binding={runId,windowId:'dw-8-live',complete:true,anchorExact:true,afterExact:true,anchorStateId:P.observationFromCapture(anchorCapture).sourceStateId,afterStateId:P.observationFromCapture(afterCapture).sourceStateId};
+const playedMove=PM.identify({windowId:'dw-8-live',runId,binding,sequences:[quickEvolve,idle],outcomes:[qOutcome,iOutcome]});
 assert.equal(playedMove.status,'CONFIRMED');
 assert.equal(playedMove.playedCandidateId,qOutcome.sequenceId);
 assert.ok(playedMove.matchedActions.some(a=>a.actionType==='PLAY_CARD'&&a.source?.cardId==='quickBlader'));
