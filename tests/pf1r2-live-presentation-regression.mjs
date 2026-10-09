@@ -27,6 +27,7 @@ vm.createContext(sandbox);new vm.Script(source,{filename:'coach-integration.js'}
 const C=WB.CoachIntegration;
 assert.equal(typeof C.authorityPresentationForWindow,'function','live presentation authority helper must exist');
 assert.equal(typeof C.applyAuthorityPresentation,'function','live presentation DOM binder must exist');
+assert.equal(typeof C.syncFromRuntime,'function','missed-event same-run runtime backfill must exist');
 
 const p=C.authorityPresentationForWindow('dw-8','fresh-1');
 assert.ok(p,'complete exact fresh binding must create presentation');
@@ -64,5 +65,19 @@ C.suppressLegacyCoach(host,true);
 assert.equal(oldCoach.hidden,true,'authoritative comparison coach must suppress conflicting legacy hold coach');
 C.suppressLegacyCoach(host,false);
 assert.equal(oldCoach.hidden,false);
+
+// Simulate P-E2 loading after comparison-decision-ready was missed. The runtime result
+// is recoverable only when its run still matches an exact fresh binding.
+const decision={status:'OK',classification:'TRADE_OFF',bestCandidateId:null,meaningfulAlternativeCandidateId:null,ranking:{pairwise:[]},reasonCodes:[]};
+WB.RuntimeDecisionPipeline.snapshot=()=>({items:[{status:'OK',windowId:'dw-8',decision,playedMove:{status:'CONFIRMED'},sourceAuthority:'P-F1/P-D1/P-F1-R2-PM',meta:{runId:'fresh-1'},at:'2026-10-09T00:00:00.000Z'}]});
+let sync=await C.syncFromRuntime('fresh-1');
+assert.equal(sync.ingested,1,'same-run exact runtime row must backfill missed event');
+assert.equal(C.getForWindow('dw-8').runId,'fresh-1');
+
+C.clear();
+WB.RuntimeDecisionPipeline.snapshot=()=>({items:[{status:'OK',windowId:'dw-8',decision,playedMove:{status:'CONFIRMED'},sourceAuthority:'P-F1/P-D1/P-F1-R2-PM',meta:{runId:'stale-run'},at:'2026-10-09T00:00:00.000Z'}]});
+sync=await C.syncFromRuntime();
+assert.equal(sync.ingested,0,'stale runtime result must not cross fresh-run presentation boundary');
+assert.equal(C.getForWindow('dw-8'),null);
 
 console.log('P-F1-R2 LIVE PRESENTATION REGRESSION PASS');
