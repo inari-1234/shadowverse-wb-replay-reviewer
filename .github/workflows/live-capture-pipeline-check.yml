@@ -1,0 +1,21 @@
+name: Live Capture Pipeline Check
+on:
+  push:
+    branches:
+      - candidate/p-f1-r2-authority-only-presentation
+    paths:
+      - '.github/workflows/live-capture-pipeline-check.yml'
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: |
+          node tests/pf1r2-live-position-state-parity-regression.mjs
+          node tests/pf1r2-live-capture-pipeline-regression.mjs
