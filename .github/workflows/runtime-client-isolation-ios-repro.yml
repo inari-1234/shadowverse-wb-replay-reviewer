@@ -1,0 +1,99 @@
+name: Runtime Client Isolation iOS Repro
+
+on:
+  push:
+    branches:
+      - candidate/p-f1-r2-runtime-client-isolation-ios
+
+permissions:
+  contents: read
+
+jobs:
+  ios-stale-sw-isolation:
+    runs-on: macos-15
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Boot available iPhone Simulator
+        id: sim
+        shell: bash
+        run: |
+          set -euo pipefail
+          UDID="$(python3 - <<'PY'
+          import json,subprocess
+          data=json.loads(subprocess.check_output(['xcrun','simctl','list','devices','available','-j']))
+          candidates=[]
+          for runtime,devices in data.get('devices',{}).items():
+              if 'iOS' not in runtime: continue
+              for d in devices:
+                  if d.get('isAvailable') and str(d.get('name','')).startswith('iPhone'):
+                      candidates.append((runtime,d['name'],d['udid']))
+          if not candidates: raise SystemExit('No available iPhone Simulator')
+          candidates.sort(key=lambda x:x[0],reverse=True)
+          latest=candidates[0][0]
+          same=[x for x in candidates if x[0]==latest]
+          preferred=['iPhone 17 Pro','iPhone 16 Pro','iPhone 17','iPhone 16']
+          hit=None
+          for name in preferred:
+              hit=next((x for x in same if x[1]==name),None)
+              if hit: break
+          print((hit or same[0])[2])
+          PY
+          )"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+
+      - name: Reproduce stale SW and prove automatic isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          RESULT="$RUNNER_TEMP/runtime-client-isolation-result.json"
+          python3 tests/ios-simulator/serve_benchmark.py --root "$GITHUB_WORKSPACE" --port 8765 --output "$RESULT" > "$RUNNER_TEMP/runtime-client-isolation-server.log" 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:8765/tests/ios-simulator/runtime-client-isolation-repro.html >/dev/null && break
+            sleep 1
+          done
+          xcrun simctl openurl "${{ steps.sim.outputs.udid }}" "http://127.0.0.1:8765/tests/ios-simulator/runtime-client-isolation-repro.html"
+          for i in {1..90}; do
+            if [ -s "$RESULT" ]; then break; fi
+            sleep 1
+          done
+          xcrun simctl io "${{ steps.sim.outputs.udid }}" screenshot "$RUNNER_TEMP/runtime-client-isolation-ios.png" || true
+          cat "$RUNNER_TEMP/runtime-client-isolation-server.log" || true
+          test -s "$RESULT"
+          cat "$RESULT"
+          python3 - "$RESULT" <<'PY'
+          import json,sys
+          d=json.load(open(sys.argv[1]))
+          a=d.get('authority') or {}
+          summary={
+              'status':d.get('status'),
+              'marker':d.get('marker'),
+              'statusText':d.get('statusText'),
+              'buildId':d.get('buildId'),
+              'verified':a.get('verified'),
+              'total':a.get('total'),
+              'authorityOk':a.get('ok'),
+              'controller':d.get('controller')
+          }
+          print('RUNTIME_CLIENT_ISOLATION_SUMMARY',json.dumps(summary,ensure_ascii=False))
+          assert d.get('status')=='PASS', summary
+          assert d.get('marker')==d.get('buildId'), summary
+          assert a.get('ok') is True and a.get('verified')==20 and a.get('total')==20, summary
+          assert d.get('controller') is False, summary
+          PY
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-client-isolation-ios-repro
+          path: |
+            ${{ runner.temp }}/runtime-client-isolation-result.json
+            ${{ runner.temp }}/runtime-client-isolation-ios.png
+            ${{ runner.temp }}/runtime-client-isolation-server.log
+          if-no-files-found: warn
