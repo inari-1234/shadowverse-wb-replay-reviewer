@@ -1,0 +1,62 @@
+name: Runtime Authority Host Probe
+
+on:
+  push:
+    branches:
+      - candidate/p-f1-r2-runtime-authority-ios-repro
+    paths:
+      - '.github/workflows/runtime-authority-host-probe.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Probe candidate delivery hosts
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json,re,hashlib,base64,urllib.request,urllib.error,time
+          text=open('index.html',encoding='utf-8').read()
+          m=re.search(r'window\.__wbRuntimeAssetManifest=(\{.*?\});',text,re.S)
+          if not m: raise SystemExit('manifest not found')
+          manifest=json.loads(m.group(1))
+          nonce=str(int(time.time()*1000))
+          hosts={
+            'rawgithack':'https://raw.githack.com/inari-1234/shadowverse-wb-replay-reviewer/candidate-live/{name}?_wb='+nonce,
+            'rawgithub':'https://raw.githubusercontent.com/inari-1234/shadowverse-wb-replay-reviewer/candidate-live/{name}?_wb='+nonce,
+            'jsdelivr':'https://cdn.jsdelivr.net/gh/inari-1234/shadowverse-wb-replay-reviewer@candidate-live/{name}?_wb='+nonce,
+          }
+          out={'buildId':manifest['buildId'],'total':len(manifest['assets']),'hosts':{}}
+          for host,tpl in hosts.items():
+            rows=[]
+            for name in manifest['assets']:
+              url=tpl.format(name=name)
+              expected=manifest['integrity'][name]
+              try:
+                req=urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0','Cache-Control':'no-cache'})
+                with urllib.request.urlopen(req,timeout=20) as r:
+                  data=r.read(); status=getattr(r,'status',200); headers={k.lower():v for k,v in r.headers.items()}
+                actual='sha256-'+base64.b64encode(hashlib.sha256(data).digest()).decode()
+                rows.append({'name':name,'ok':actual==expected,'status':status,'bytes':len(data),'expected':expected,'actual':actual,'cache':headers.get('x-cache') or headers.get('cf-cache-status') or headers.get('age'),'url':url})
+              except Exception as e:
+                rows.append({'name':name,'ok':False,'error':repr(e),'url':url})
+            out['hosts'][host]={'verified':sum(1 for r in rows if r['ok']),'total':len(rows),'rows':rows}
+            print(host, out['hosts'][host]['verified'],'/',len(rows))
+            for r in rows:
+              if not r['ok']:
+                print(' FAIL',r['name'],r.get('status'),r.get('error'),r.get('actual'),r.get('expected'))
+                break
+          open('/tmp/runtime-authority-host-probe.json','w',encoding='utf-8').write(json.dumps(out,ensure_ascii=False,indent=2)+'\n')
+          print(json.dumps({k:{'verified':v['verified'],'total':v['total']} for k,v in out['hosts'].items()},ensure_ascii=False))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runtime-authority-host-probe
+          path: /tmp/runtime-authority-host-probe.json
+          if-no-files-found: warn
