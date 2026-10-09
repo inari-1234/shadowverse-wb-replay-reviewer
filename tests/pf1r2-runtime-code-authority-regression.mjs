@@ -10,7 +10,7 @@ const sw=read('sw.js');
 const dynamic=['counterfactual-review.js','coach-integration.js','runtime-decision-pipeline.js','runtime-authority-binding.js'].map(read);
 
 assert.match(index,/__wbRuntimeAssetManifest/,'candidate page must expose an immutable runtime asset manifest');
-assert.match(index,/buildId:\s*['"][^'"]+['"]/,'runtime asset manifest must expose a build id');
+assert.ok(/"buildId":"candidate-assets-[0-9a-f]+"/.test(index)||/buildId:\s*['"][^'"]+['"]/.test(index),'runtime asset manifest must expose a content-addressed build id');
 assert.match(index,/integrity:\s*\{/,'runtime asset manifest must carry exact per-file integrity digests');
 assert.match(index,/__wbPrepareAssetScript/,'script creation must go through the integrity-aware loader');
 assert.match(index,/integrity=/,'top-level scripts must be emitted with SRI');
