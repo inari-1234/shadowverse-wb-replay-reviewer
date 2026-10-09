@@ -1,0 +1,16 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const pm=fs.readFileSync(new URL('../played-move-authority.js',import.meta.url),'utf8');
+const pipe=fs.readFileSync(new URL('../runtime-decision-pipeline.js',import.meta.url),'utf8');
+const must=(src,s,msg)=>assert.ok(src.includes(s),msg||`missing ${s}`);
+must(pm,"pf1r2-played-move-authority-v1.1.0");
+must(pm,"CONFIRMED:'CONFIRMED'");must(pm,"UNKNOWN:'UNKNOWN'");must(pm,"AMBIGUOUS:'AMBIGUOUS'");
+must(pm,'attackableBoardDamage');must(pm,'nextTurnAttackPotential');
+must(pm,'ATTACKABLE_LEADER_DAMAGE_POTENTIAL');
+must(pm,'STATE_RECOGNITION_ATTACKABLE_BOARD_DAMAGE');
+must(pm,'P-C1_BOARD_NEXT_TURN_ATTACK_POTENTIAL');
+must(pm,'INSUFFICIENT_OBSERVED_DELTA');must(pm,'changed.length<2');
+must(pm,'MULTIPLE_CANDIDATE_MATCH');must(pm,'playedCandidateId');
+assert.ok(!/attackableBoardDamage\s*:\s*finite\(board\.totalAttack/.test(pm),'totalAttack must not substitute for observed attackable board damage');
+must(pipe,"playedMove:clone(playedMove)");must(pipe,"sourceAuthority:'P-F1/P-D1/P-F1-R2-PM'");
+must(pipe,'PLAYED_MOVE_AUTHORITY_UNAVAILABLE');
+console.log('P-F1-R2-PM STATIC VALIDATION PASS');
