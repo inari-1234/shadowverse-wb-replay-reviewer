@@ -240,16 +240,15 @@ input[type=text],input[type=number],select,textarea{background:#fff;color:var(--
 
 </style>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-<script defer src="./app-core.js"></script>
-<script defer src="./turn-recognition.js"></script>
-<script defer src="./mulligan-class.js"></script>
-<script defer src="./card-db.js"></script>
-<script defer src="./hand-recognition.js"></script>
-<script defer src="./state-recognition.js"></script>
-<script defer src="./replay-session.js"></script>
-<script defer src="./review-engine.js"></script>
-<script defer src="./counterfactual-review.js"></script>
-<script defer src="./diagnostics.js"></script>
+<script>
+(()=>{
+  const localScripts=['app-core.js','turn-recognition.js','mulligan-class.js','card-db.js','hand-recognition.js','state-recognition.js','replay-session.js','review-engine.js','counterfactual-review.js','diagnostics.js'];
+  const pageUrl=new URL(location.href),candidate=pageUrl.pathname.includes('/candidate-live/')||pageUrl.searchParams.get('channel')==='candidate',nonce=candidate?(pageUrl.searchParams.get('_wb')||String(Date.now())):'';
+  window.__wbCandidateAssetNonce=nonce||null;
+  window.__wbAssetUrl=src=>{if(!candidate)return src;const u=new URL(src,location.href);u.searchParams.set('_wb',nonce);return u.href};
+  for(const src of localScripts)document.write('<script defer src="'+window.__wbAssetUrl('./'+src)+'"><\/script>');
+})();
+</script>
 </head>
 <body>
 <header><h1>シャドバWB リプレイ診断 v4.13.94</h1><p>Build 2026.10.02-clean-13-94-stablecoarseorder1uiopt5r1candidate1 / 最小操作UI candidate / live更新対応</p></header>
