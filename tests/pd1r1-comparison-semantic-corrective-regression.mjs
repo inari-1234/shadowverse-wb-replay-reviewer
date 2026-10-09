@@ -64,7 +64,17 @@ check('D1R1-05','common unknown opponent hand is not a candidate difference',()=
   assert.ok(!r.reasonCodes.includes('UNKNOWN_HAND_DEPENDENCY'));
 });
 
+check('D1R1-06','non-terminal P-C1 outcome keeps remaining PP as a live resource',()=>{
+  const A=c('A',{resourceRemaining:{pp:2},futureOutcome:{opponentResponses:[]}}),B=c('B',{resourceRemaining:{pp:0},futureOutcome:{opponentResponses:[]}});
+  delete A.turnEnded;delete B.turnEnded;
+  A.graph={nodes:[{phase:'SOURCE'},{phase:'TURN_ADVANCE'}]};
+  B.graph={nodes:[{phase:'SOURCE'},{phase:'TURN_ADVANCE'}]};
+  const r=D.compareCandidates(A,B);
+  assert.equal(r.axisResults?.[D.AXIS.RESOURCE],D.AXIS_RESULT?.A_BETTER);
+  assert.equal(r.preferredCandidateId,'A');
+});
+
 console.log(JSON.stringify({suite:'P-D1R1 comparison semantic corrective',passed,failed:failures.length,failures},null,2));
 if(failures.length)process.exit(1);
-assert.equal(passed,5);
-console.log('P-D1R1 COMPARISON SEMANTIC CORRECTIVE REGRESSION PASS: 5/5');
+assert.equal(passed,6);
+console.log('P-D1R1 COMPARISON SEMANTIC CORRECTIVE REGRESSION PASS: 6/6');
