@@ -31,7 +31,7 @@ function loadCoachIntegration(){
   if(W.CoachIntegration||!doc||typeof doc.createElement!=='function'||!host)return Promise.resolve(W.CoachIntegration||null);
   const old=typeof doc.querySelector==='function'?doc.querySelector('script[data-pe2-bootstrap="coach-integration"]'):null;
   if(old)return new Promise(resolve=>{old.addEventListener?.('load',()=>resolve(W.CoachIntegration||null),{once:true});setTimeout(()=>{if(W.CoachIntegration)resolve(W.CoachIntegration)},0)});
-  return new Promise((resolve,reject)=>{const s=doc.createElement('script');s.src='./coach-integration.js';s.defer=true;s.dataset.pe2Bootstrap='coach-integration';s.onload=()=>resolve(W.CoachIntegration||null);s.onerror=()=>reject(new Error('P-E2 coach integration load failed'));host.appendChild(s)})
+  return new Promise((resolve,reject)=>{const s=doc.createElement('script');s.src=window.__wbAssetUrl?window.__wbAssetUrl('./coach-integration.js'):'./coach-integration.js';s.defer=true;s.dataset.pe2Bootstrap='coach-integration';s.onload=()=>resolve(W.CoachIntegration||null);s.onerror=()=>reject(new Error('P-E2 coach integration load failed'));host.appendChild(s)})
 }
 
 W.CounterfactualReview={version:VERSION,storageKey:CS,cf,branchEval,renderCf,loadCurrentCf,newCf,saveCf,sameTurnTemplate,renderAssistTemplate,renderAssistResults,refreshAssist,assist,expose,loadCoachIntegration};

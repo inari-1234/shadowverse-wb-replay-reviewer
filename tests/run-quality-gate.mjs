@@ -1,6 +1,6 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v103';
+const GATE_VERSION='recognition-quality-gate-v104';
 // ui-opt6R 09-23 offline expected-result oracle + visible cross-axis trade-off authority + P-E1R1/P-E2R1 + P-F1-R2-PM + P-D1R1 + P-F1-R2-G.
 // Live presentation gate: exact fresh authority must replace the visible review start/state, video playback start, and authoritative comparison must suppress the conflicting legacy hold coach.
 console.log(`QUALITY GATE ${GATE_VERSION}`);
@@ -75,6 +75,7 @@ const tests=[
   'tests/ui-information-hierarchy-regression.mjs',
   'tests/ui-opt4a-regression.mjs',
   'tests/candidate-update-channel-regression.mjs',
+  'tests/candidate-asset-cache-regression.mjs',
   'tests/near-threshold-phase-probe-regression.mjs',
   'tests/near-threshold-oscillation-regression.mjs',
   'tests/anchor-boundary-probe-regression.mjs',
