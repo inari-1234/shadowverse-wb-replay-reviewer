@@ -14,7 +14,9 @@ assert.ok(/"buildId":"candidate-assets-[0-9a-f]+"/.test(index)||/buildId:\s*['"]
 assert.ok(index.includes('\"integrity\":{'),'runtime asset manifest must carry exact per-file integrity digests');
 assert.match(index,/__wbPrepareAssetScript/,'script creation must go through the integrity-aware loader');
 assert.match(index,/integrity=/,'top-level scripts must be emitted with SRI');
-assert.match(index,/__wbRuntimeBuildAuthorityPromise/,'candidate must start source verification independently of review output');
+assert.match(index,/__wbVerifyRuntimeBuildAuthority/,'candidate must expose lazy source verification independently of review output');
+assert.doesNotMatch(index,/Promise\.all\(manifest\.assets\.map\(verify\)\)/,'candidate must not launch all verification fetches before service-worker isolation');
+assert.match(index,/Math\.min\(4/,'runtime verification must cap mobile fetch concurrency');
 
 assert.match(app,/runtimeBuildAuthority/,'app runtime must expose build authority state');
 assert.match(app,/ensureRuntimeBuildAuthority/,'app runtime must expose an authority verifier');
