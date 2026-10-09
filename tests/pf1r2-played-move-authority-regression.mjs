@@ -1,7 +1,7 @@
 import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
 const source=fs.readFileSync(new URL('../played-move-authority.js',import.meta.url),'utf8');
 const handlers=new Map(),optionalModules=[];const WB={optionalModules,stateCaptureHistory:[],registerModule(){},log(){},on(n,f){if(!handlers.has(n))handlers.set(n,[]);handlers.get(n).push(f)},emit(n,d){for(const f of handlers.get(n)||[])f(d)}};
-const sandbox={window:{WB},console,Date,JSON,Number,String,Object,Array,Map,Set,Promise};vm.createContext(sandbox);new vm.Script(source,{filename:'played-move-authority.js'}).runInContext(sandbox);const P=WB.PlayedMoveAuthority;
+const sandbox={window:{WB},console,Date,JSON,Number,String,Object,Array,Map,Set,Promise};vm.createContext(sandbox);new vm.Script(source,{filename:'played-move-authority.js'}).runInContext(sandbox);const P=WB.PlayedMoveAuthority,plain=v=>JSON.parse(JSON.stringify(v));
 const start=Date.parse('2026-10-09T00:00:00.000Z'),runId=`pf1r2g:${start}:1:nonce-pm`,windowId='w8';
 function capture({time,pp,hp,board,ep='yes',sep='no',at}){return{at,context:{time,turn:8,absoluteSide:'bottom',relativeSide:'自分'},confirmed:{time,turn:8,absoluteSide:'bottom',relativeSide:'自分',pp,opponentHP:hp,ep,sep,boardDamage:board,boardDamageKnown:true}}}
 const anchorCap=capture({time:113.638,pp:2,hp:16,board:0,at:'2026-10-09T00:00:01.000Z'}),afterCap=capture({time:116.338,pp:1,hp:16,board:3,at:'2026-10-09T00:00:02.000Z'});P.indexCapture(anchorCap);P.indexCapture(afterCap);
@@ -15,8 +15,8 @@ t('PM-01 version',()=>assert.equal(P.version,'pf1r2-played-move-authority-v1.1.0
 t('PM-02 status contract',()=>assert.deepEqual(Object.values(P.STATUS),['CONFIRMED','UNKNOWN','AMBIGUOUS']));
 t('PM-03 exact anchor retained',()=>assert.equal(P.exactObservation(binding.anchorStateId,runId).pp,2));
 t('PM-04 exact after retained',()=>assert.equal(P.exactObservation(binding.afterStateId,runId).boardDamage,3));
-t('PM-05 observed projection names attackable board semantics',()=>assert.deepEqual(P.observedProjection(P.exactObservation(binding.afterStateId,runId)),{pp:1,opponentHP:16,attackableBoardDamage:3,ep:1,sep:0}));
-t('PM-06 candidate projection uses P-C1 attackable leader potential',()=>assert.deepEqual(P.candidateProjection(quick),{pp:1,opponentHP:16,attackableBoardDamage:3,ep:1,sep:0}));
+t('PM-05 observed projection names attackable board semantics',()=>assert.deepEqual(plain(P.observedProjection(P.exactObservation(binding.afterStateId,runId))),{pp:1,opponentHP:16,attackableBoardDamage:3,ep:1,sep:0}));
+t('PM-06 candidate projection uses P-C1 attackable leader potential',()=>assert.deepEqual(plain(P.candidateProjection(quick)),{pp:1,opponentHP:16,attackableBoardDamage:3,ep:1,sep:0}));
 let confirmed;t('PM-07 unique exact-state match confirms',()=>{confirmed=P.identify({windowId,runId,binding,sequences:[quickSeq,idleSeq],outcomes:[quick,idle]});assert.equal(confirmed.status,'CONFIRMED');assert.equal(confirmed.playedCandidateId,'seq-quick');assert.equal(confirmed.matchedCandidateId,'seq-quick');assert.equal(confirmed.matchCount,1)});
 t('PM-08 action is reported only after state match',()=>{assert.equal(confirmed.matchedAction.actionType,'PLAY_CARD');assert.equal(confirmed.matchedAction.source.cardId,'quickBlader')});
 t('PM-09 end-turn search suffix excluded from human action',()=>assert.equal(confirmed.matchedActions.some(x=>x.actionType==='END_TURN'),false));
