@@ -1,8 +1,8 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v96';
-// ui-opt6P P-D1R1 comparison semantic corrective + P-F1-R2-G fresh E2E gate tightening + existing recognition/replay regression
-// P-D1R1 gate: terminal PP is not move strength; uncertainty-only differences cannot dominate; intra-axis trade-offs remain material; evidence is directional; common opponent-hand unknowns are not candidate differences.
+const GATE_VERSION='recognition-quality-gate-v97';
+// ui-opt6P P-F1-R2-PM Played Move Authority + P-D1R1 semantic corrective + P-F1-R2-G fresh E2E gate tightening + existing recognition/replay regression
+// P-F1-R2-PM gate: same-run exact anchor/after binding, observed-state candidate matching, PP-only fail-closed, explicit attackable-board semantic bridge, UNKNOWN/AMBIGUOUS safeguards.
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
 const tests=[
@@ -44,6 +44,8 @@ const tests=[
   'tests/pe2-static-validation.mjs',
   'tests/pf1-runtime-decision-pipeline-regression.mjs',
   'tests/pf1-static-validation.mjs',
+  'tests/pf1r2-played-move-authority-regression.mjs',
+  'tests/pf1r2pm-static-validation.mjs',
   'tests/pf0a-runtime-authority-binding-regression.mjs',
   'tests/pf0a-static-validation.mjs',
   'tests/pf0b-decision-window-authority-regression.mjs',
