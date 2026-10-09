@@ -8,6 +8,8 @@ const evidence=(diagnostic?.events||[]).filter(x=>x?.type==='pf1r2-fresh-e2e-evi
 const fail=(reason,detail={})=>{console.error(JSON.stringify({verdict:'HOLD',reason,...detail},null,2));process.exit(3)};
 if(!evidence)fail('FRESH_EVIDENCE_MISSING');
 if(evidence.version!=='pf1r2-fresh-real-video-evidence-v1.1.0'||evidence.gateVersion!=='pf1r2-g-fresh-e2e-gate-v1.0.0')fail('FRESH_EVIDENCE_VERSION_INVALID',{version:evidence.version,gateVersion:evidence.gateVersion});
+const assetAuthority=evidence?.assetAuthority||diagnostic?.runtimeBuildAuthority||null;
+if(!assetAuthority||assetAuthority.ok!==true||typeof assetAuthority.buildId!=='string'||!assetAuthority.buildId||Number(assetAuthority.total||0)<1||Number(assetAuthority.verified||0)!==Number(assetAuthority.total))fail('RUNTIME_BUILD_AUTHORITY_INVALID',{assetAuthority});
 if(evidence.freshRun!==true)fail('FRESH_MARKER_MISSING');
 if(typeof evidence.runId!=='string'||!evidence.runId.trim()||typeof evidence.nonce!=='string'||!evidence.nonce.trim())fail('FRESH_RUN_IDENTITY_MISSING');
 if(evidence?.authority?.runId!==evidence.runId||evidence?.authority?.nonce!==evidence.nonce)fail('AUTHORITY_RUN_IDENTITY_MISMATCH');
