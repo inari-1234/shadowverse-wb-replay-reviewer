@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const W=window.WB;if(!W)return;
-const VERSION='pe2-coach-integration-v1.1.1',EVENT='comparison-decision-ready',PRESENTATION_VERSION='pf1r2-live-presentation-v1.0.0';
+const VERSION='pe2-coach-integration-v1.1.0',EVENT='comparison-decision-ready',PRESENTATION_VERSION='pf1r2-live-presentation-v1.0.0';
 const items=new Map();let authorityPromise=null,runtimePromise=null;
 const clone=v=>v==null?v:JSON.parse(JSON.stringify(v));
 const text=v=>v==null?'':String(v);
