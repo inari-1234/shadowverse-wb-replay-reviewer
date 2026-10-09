@@ -2,7 +2,13 @@ import fs from 'node:fs';import assert from 'node:assert/strict';const src=fs.re
 for(const api of ['compareCandidates','evaluateDecision','rankCandidates','selectMeaningfulAlternative','extractCriticalDifferences'])assert.match(src,new RegExp(api));
 for(const cls of ['DOMINATES','TRADE_OFF','CONTEXT_DEPENDENT','EQUIVALENT','INSUFFICIENT_EVIDENCE'])assert.ok(src.includes(cls));
 for(const axis of ['IMMEDIATE_PRESSURE','FUTURE_LETHAL','BOARD_TEMPO','OPPONENT_BENEFIT_RISK','RESOURCE_ECONOMY','SURVIVAL','CONTINUATION_QUALITY','UNCERTAINTY'])assert.ok(src.includes(axis));
-for(const field of ['persistentResources','temporaryResources','outcomeDepth','RESOURCE_CONTEXT_DEPENDENT'])assert.ok(src.includes(field));
+for(const result of ['A_BETTER','B_BETTER','EQUIVALENT','TRADE_OFF','INSUFFICIENT_EVIDENCE'])assert.ok(src.includes(result));
+for(const field of ['persistentResources','temporaryResources','outcomeDepth','RESOURCE_CONTEXT_DEPENDENT','axisResults','tradeOffAxes','winnerCandidateId','loserCandidateId','difference','confidence','rankReversalEvidence','OBSERVATION_ONLY_TERMINAL_PP','hiddenOnlyRuleAuthority'])assert.ok(src.includes(field),field);
+assert.ok(src.includes("pd1-comparison-decision-v1.1.2"));
+assert.ok(src.includes("UNKNOWN_OPPONENT_RESPONSE"));assert.ok(src.includes("UNKNOWN_HIDDEN_BOARD"));
 for(const forbidden of ['generateLegalActions','applyAction(','getPlayerView(','getTerminalStatus(','stateFingerprint('])assert.equal(src.includes(forbidden),false,forbidden);
 assert.equal(/damage\s*\*\s*\d/i.test(src),false);assert.equal(/board\s*\*\s*\d/i.test(src),false);
+assert.ok(src.includes("k!==AXIS.UNCERTAINTY"),'uncertainty must be excluded from substantive move-strength aggregation');
+assert.ok(src.includes("commonAndDifferentialUnknown"),'common uncertainty must be separated from candidate-differential uncertainty');
+assert.ok(src.includes("contextReversalEvidence"),'context dependency must require rank-reversal evidence');
 console.log('P-D1 STATIC VALIDATION PASS');

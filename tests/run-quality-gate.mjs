@@ -1,8 +1,8 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v94';
-// ui-opt6P P-F1-R2 fresh real-video evidence + isolated transient HP safety guard + pre-action runtime anchor + P-F0B decision-window authority capture + P-F1-R1 real-video E2E + P-F0A + P-F1 + P-E2 + P-E1 + P-D1 + P-C1 + P-A1 + existing recognition/replay regression
-// P-F1-R2 gate: fresh-run evidence must distinguish CHAIN_OK / SAFE_HOLD / CAPTURE_FAILED; isolated A->B->A HP OCR conflicts against equal turn endpoints must not become Review/Decision authority; directly adjacent PP-spend before a board swing may move runtime authority to the observed pre-action state without asserting causality.
+const GATE_VERSION='recognition-quality-gate-v100';
+// ui-opt6R 09-23 offline expected-result oracle + visible cross-axis trade-off authority + P-E1R1/P-E2R1 + P-F1-R2-PM + P-D1R1 + P-F1-R2-G.
+// Offline gate: production P-A1/P-C1 path, Quick play+evolve state, exact PM binding, comparison semantics, coach handoff, and explicit proof that common hidden hand is not the cause of a null Best.
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
 const tests=[
@@ -36,13 +36,17 @@ const tests=[
   'tests/pc1-outcome-backtracking-regression.mjs',
   'tests/pc1-static-validation.mjs',
   'tests/pd1-comparison-decision-regression.mjs',
+  'tests/pd1r1-comparison-semantic-corrective-regression.mjs',
   'tests/pd1-static-validation.mjs',
   'tests/pe1-coach-explanation-regression.mjs',
   'tests/pe1-static-validation.mjs',
   'tests/pe2-coach-integration-regression.mjs',
   'tests/pe2-static-validation.mjs',
+  'tests/pe1r1-pe2r1-coach-semantic-corrective-regression.mjs',
   'tests/pf1-runtime-decision-pipeline-regression.mjs',
   'tests/pf1-static-validation.mjs',
+  'tests/pf1r2-played-move-authority-regression.mjs',
+  'tests/pf1r2pm-static-validation.mjs',
   'tests/pf0a-runtime-authority-binding-regression.mjs',
   'tests/pf0a-static-validation.mjs',
   'tests/pf0b-decision-window-authority-regression.mjs',
@@ -50,9 +54,12 @@ const tests=[
   'tests/pf1r1-real-video-e2e-regression.mjs',
   'tests/pf1r1-static-validation.mjs',
   'tests/pf1r2-fresh-evidence-regression.mjs',
+  'tests/pf1r2g-fresh-e2e-gate-regression.mjs',
   'tests/pf1r2-static-validation.mjs',
   'tests/pf1r2-hp-transient-guard-regression.mjs',
   'tests/pf1r2-preaction-anchor-regression.mjs',
+  'tests/pf1r2-0923-offline-expected-regression.mjs',
+  'tests/pf1r2-0923-visible-tradeoff-oracle-regression.mjs',
   'tests/turn-control-sync-regression.mjs',
   'tests/turn-prefix-regression.mjs',
   'tests/turn-terminal-tail-regression.mjs',
@@ -92,13 +99,7 @@ const tests=[
 let failed=0;
 for(const file of tests){
   const r=spawnSync(process.execPath,[file],{stdio:'inherit'});
-  if(r.status!==0){
-    failed++;
-    console.error(`QUALITY GATE FAIL: ${file} (exit ${r.status})`);
-  }
+  if(r.status!==0){failed++;console.error(`QUALITY GATE FAIL: ${file} (exit ${r.status})`);}
 }
-if(failed){
-  console.error(`QUALITY GATE FAIL: ${failed}/${tests.length} tests failed`);
-  process.exit(1);
-}
+if(failed){console.error(`QUALITY GATE FAIL: ${failed}/${tests.length} tests failed`);process.exit(1);}
 console.log(`QUALITY GATE PASS: ${tests.length}/${tests.length}`);
