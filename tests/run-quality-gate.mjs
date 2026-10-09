@@ -1,8 +1,8 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v97';
-// ui-opt6P P-F1-R2-PM Played Move Authority + P-D1R1 semantic corrective + P-F1-R2-G fresh E2E gate tightening + existing recognition/replay regression
-// P-F1-R2-PM gate: same-run exact anchor/after binding, observed-state candidate matching, PP-only fail-closed, explicit attackable-board semantic bridge, UNKNOWN/AMBIGUOUS safeguards.
+const GATE_VERSION='recognition-quality-gate-v98';
+// ui-opt6Q P-E1R1/P-E2R1 coach semantic corrective + P-F1-R2-PM Played Move Authority + P-D1R1 semantic corrective + P-F1-R2-G fresh E2E gate tightening.
+// Coach gate: directional reasons, Best/Alternative separation, Played Move comparison only when CONFIRMED, human-readable action names, hidden-info qualification, no internal jargon in user-facing text.
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
 const tests=[
@@ -42,6 +42,7 @@ const tests=[
   'tests/pe1-static-validation.mjs',
   'tests/pe2-coach-integration-regression.mjs',
   'tests/pe2-static-validation.mjs',
+  'tests/pe1r1-pe2r1-coach-semantic-corrective-regression.mjs',
   'tests/pf1-runtime-decision-pipeline-regression.mjs',
   'tests/pf1-static-validation.mjs',
   'tests/pf1r2-played-move-authority-regression.mjs',
