@@ -16,6 +16,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-      - run: |
+      - name: Exact-capture production parity
+        run: |
           node tests/pf1r2-live-position-state-parity-regression.mjs
           node tests/pf1r2-live-capture-pipeline-regression.mjs
