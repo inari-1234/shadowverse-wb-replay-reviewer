@@ -1,0 +1,39 @@
+name: Apply Runtime Client Isolation
+
+on:
+  push:
+    branches:
+      - candidate/p-f1-r2-runtime-client-isolation
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: ${{ !contains(github.event.head_commit.message, '[runtime-client-isolation-applied]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: candidate/p-f1-r2-runtime-client-isolation
+          fetch-depth: 0
+
+      - name: Apply corrective
+        run: python .github/scripts/apply_runtime_client_isolation.py
+
+      - name: Dedicated regression
+        run: |
+          git diff --check
+          node tests/pf1r2-runtime-code-authority-regression.mjs
+          node tests/pf1r2-runtime-client-isolation-regression.mjs
+          node tests/candidate-update-channel-regression.mjs
+
+      - name: Commit corrective
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app-core.js index.html latest.json tests/pf1r2-runtime-code-authority-regression.mjs tests/pf1r2-runtime-client-isolation-regression.mjs tests/run-quality-gate.mjs
+          git diff --cached --check
+          git commit -m "[runtime-client-isolation-applied] P-F1-R2 isolate stale service worker before authority verification"
+          git push origin HEAD:candidate/p-f1-r2-runtime-client-isolation
