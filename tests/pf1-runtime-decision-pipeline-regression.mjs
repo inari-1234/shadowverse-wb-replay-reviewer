@@ -9,7 +9,7 @@ const adapter={getActivePlayer:s=>s.active,getOpponentPlayer:(s,p)=>other(p),get
 function hash(s){let h=0;for(let i=0;i<s.length;i++)h=((h<<5)-h+s.charCodeAt(i))|0;return h}
 const rules={resolveAfterAction:state=>({status:'OK',state,reasons:[]}),getAuthorityStatus:()=>({status:'RESOLVED',reasons:[]}),getTerminalStatus:s=>s.players.B.leaderHp<=0?{terminal:true,status:'TERMINAL',winner:'A',loser:'B'}:s.players.A.leaderHp<=0?{terminal:true,status:'TERMINAL',winner:'B',loser:'A'}:{terminal:false,status:'ACTIVE'},getOutcomeEvents:adapter.getOutcomeEvents};
 let n=0;const t=async(name,fn)=>{await fn();n++};
-await t('PF1-01 API',()=>assert.equal(P.version,'pf1-runtime-decision-pipeline-v1.2.0'));
+await t('PF1-01 API',()=>assert.equal(P.version,'pf1-runtime-decision-pipeline-v1.2.1'));
 await t('PF1-02 initial hold',()=>{const s=P.authorityStatus();assert.equal(s.ready,false);assert.ok(s.missing.includes('stateAdapter'))});
 await t('PF1-03 missing authority session hold',async()=>assert.equal((await P.evaluateSession({})).status,'HOLD'));
 await t('PF1-04 register incomplete',()=>assert.equal(P.registerAuthority({id:'bad'}).ready,false));
