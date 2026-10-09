@@ -74,7 +74,21 @@ check('D1R1-06','non-terminal P-C1 outcome keeps remaining PP as a live resource
   assert.equal(r.preferredCandidateId,'A');
 });
 
+check('D1R1-07','P-C1 hidden-opponent authority is hidden-hand uncertainty, not unknown rule',()=>{
+  const hidden={status:'UNRESOLVED',reasons:['UNKNOWN_OPPONENT_RESPONSE','UNKNOWN_HIDDEN_BOARD']};
+  const common=['OPPONENT_RESPONSE_UNKNOWN_HAND','UNKNOWN_OPPONENT_RESPONSE'];
+  const A=c('A',{damageAmount:3,opponentLeaderHP:17,ruleAuthority:hidden,uncertainty:common}),B=c('B',{damageAmount:1,opponentLeaderHP:19,ruleAuthority:hidden,uncertainty:common});
+  const r=D.compareCandidates(A,B);
+  assert.equal(r.classification,D.CLASSIFICATION.DOMINATES);
+  assert.equal(r.preferredCandidateId,'A');
+  assert.equal(r.normalized.a.uncertainty.unknownRule,false);
+  assert.equal(r.normalized.b.uncertainty.unknownRule,false);
+  assert.equal(r.normalized.a.uncertainty.unknownHand,true);
+  assert.equal(r.normalized.b.uncertainty.unknownHand,true);
+  assert.ok(!r.reasonCodes.includes('UNKNOWN_RULE'));
+});
+
 console.log(JSON.stringify({suite:'P-D1R1 comparison semantic corrective',passed,failed:failures.length,failures},null,2));
 if(failures.length)process.exit(1);
-assert.equal(passed,6);
-console.log('P-D1R1 COMPARISON SEMANTIC CORRECTIVE REGRESSION PASS: 6/6');
+assert.equal(passed,7);
+console.log('P-D1R1 COMPARISON SEMANTIC CORRECTIVE REGRESSION PASS: 7/7');
