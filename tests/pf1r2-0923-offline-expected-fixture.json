@@ -1,0 +1,108 @@
+{
+  "version": "pf1r2-0923-offline-expected-fixture-v1",
+  "purpose": "Test oracle only; never runtime authority",
+  "source": {
+    "date": "2026-09-23",
+    "turn": 8,
+    "decisionWindow": {
+      "anchorTime": 113.638,
+      "originalWindowStartTime": 115.888,
+      "afterTime": 116.338
+    }
+  },
+  "fullCapture113188": {
+    "context": {
+      "time": 113.188,
+      "turn": 8,
+      "absoluteSide": "bottom",
+      "relativeSide": "自分"
+    },
+    "confirmed": {
+      "time": 113.188,
+      "turn": 8,
+      "relativeSide": "自分",
+      "pp": 2,
+      "opponentHP": 16,
+      "ep": "yes",
+      "boardDamage": 0,
+      "boardDamageKnown": true,
+      "hand": {
+        "recognized": {
+          "quickBlader": {
+            "id": "quickBlader",
+            "label": "刹那のクイックブレイダー",
+            "count": 1,
+            "confidence": 0.9221,
+            "positiveFrames": 4
+          }
+        }
+      }
+    }
+  },
+  "replayStates": {
+    "anchor113638": {
+      "id": "st:8:bottom:113.638",
+      "time": 113.638,
+      "turn": 8,
+      "absoluteSide": "bottom",
+      "relativeSide": "自分",
+      "pp": 2,
+      "opponentHP": 16,
+      "boardDamage": 0,
+      "boardDamageKnown": true
+    },
+    "original115888": {
+      "id": "st:8:bottom:115.888",
+      "time": 115.888,
+      "turn": 8,
+      "absoluteSide": "bottom",
+      "relativeSide": "自分",
+      "pp": 1,
+      "opponentHP": 16,
+      "boardDamage": 0,
+      "boardDamageKnown": true
+    },
+    "after116338": {
+      "id": "st:8:bottom:116.338",
+      "time": 116.338,
+      "turn": 8,
+      "absoluteSide": "bottom",
+      "relativeSide": "自分",
+      "pp": 1,
+      "opponentHP": 16,
+      "boardDamage": 3,
+      "boardDamageKnown": true
+    }
+  },
+  "handContext": [
+    {"cardId": "quickBlader", "cost": 1, "authority": "verified-simple"},
+    {"cardId": "barbaros", "cost": 7, "authority": "unmodeled-current-rule"},
+    {"cardId": "zetaBeatrix", "cost": 4, "authority": "unmodeled-current-rule"}
+  ],
+  "commonUncertainty": ["UNKNOWN_HAND_DEPENDENT_RESPONSE"],
+  "expected": {
+    "quickCandidateGenerated": true,
+    "quickEvolveCandidateGenerated": true,
+    "doNothingCandidateGenerated": true,
+    "unsupportedUnplayableCardsDoNotHold": true,
+    "terminalRemainingPPObservationOnly": true,
+    "commonOpponentHandUnknownDoesNotCreateContextDependencyByItself": true,
+    "playedMoveStatus": "CONFIRMED",
+    "playedMoveActionCardId": "quickBlader",
+    "playedMoveRequiresStateDelta": true,
+    "reasonDirection": "EXPLICIT",
+    "coachUsesHumanReadableQuickName": true,
+    "coachHidesInternalIds": true,
+    "confidence": "OFFLINE_EXPECTED_ORACLE",
+    "structuredGoldenFields": [
+      "recommendedCandidate",
+      "comparisonClass",
+      "winningAxes",
+      "losingAxes",
+      "tradeOffAxes",
+      "playedMoveStatus",
+      "reasonDirection",
+      "confidence"
+    ]
+  }
+}
