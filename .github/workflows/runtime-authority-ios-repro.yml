@@ -1,0 +1,100 @@
+name: Runtime Authority iOS Repro
+
+on:
+  push:
+    branches:
+      - candidate/p-f1-r2-runtime-authority-ios-repro
+    paths:
+      - 'tests/ios-simulator/runtime-authority-repro.html'
+      - '.github/workflows/runtime-authority-ios-repro.yml'
+      - 'index.html'
+      - '*.js'
+
+permissions:
+  contents: read
+
+jobs:
+  ios-runtime-authority:
+    runs-on: macos-15
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Boot available iPhone Simulator
+        id: sim
+        shell: bash
+        run: |
+          set -euo pipefail
+          UDID="$(python3 - <<'PY'
+          import json, subprocess
+          data=json.loads(subprocess.check_output(['xcrun','simctl','list','devices','available','-j']))
+          candidates=[]
+          for runtime,devices in data.get('devices',{}).items():
+              if 'iOS' not in runtime: continue
+              for d in devices:
+                  if d.get('isAvailable') and str(d.get('name','')).startswith('iPhone'):
+                      candidates.append((runtime,d['name'],d['udid']))
+          if not candidates:
+              raise SystemExit('No available iPhone Simulator device')
+          candidates.sort(key=lambda x:x[0],reverse=True)
+          latest=candidates[0][0]
+          same=[x for x in candidates if x[0]==latest]
+          preferred=['iPhone 17 Pro','iPhone 16 Pro','iPhone 17','iPhone 16']
+          for name in preferred:
+              hit=next((x for x in same if x[1]==name),None)
+              if hit:
+                  print(hit[2]);break
+          else:
+              print(same[0][2])
+          PY
+          )"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+
+      - name: Run exact candidate bootstrap authority in Safari
+        shell: bash
+        run: |
+          set -euo pipefail
+          RESULT="$RUNNER_TEMP/runtime-authority-result.json"
+          python3 tests/ios-simulator/serve_benchmark.py --root "$GITHUB_WORKSPACE" --port 8765 --output "$RESULT" > "$RUNNER_TEMP/runtime-authority-server.log" 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:8765/tests/ios-simulator/runtime-authority-repro.html >/dev/null && break
+            sleep 1
+          done
+          xcrun simctl openurl "${{ steps.sim.outputs.udid }}" "http://127.0.0.1:8765/tests/ios-simulator/runtime-authority-repro.html"
+          for i in {1..75}; do
+            if [ -s "$RESULT" ]; then break; fi
+            sleep 1
+          done
+          xcrun simctl io "${{ steps.sim.outputs.udid }}" screenshot "$RUNNER_TEMP/runtime-authority-ios.png" || true
+          cat "$RUNNER_TEMP/runtime-authority-server.log" || true
+          test -s "$RESULT"
+          cat "$RESULT"
+          python3 - "$RESULT" <<'PY'
+          import json,sys
+          d=json.load(open(sys.argv[1]))
+          a=d.get('authority') or {}
+          print('RUNTIME_AUTHORITY_SUMMARY', json.dumps({
+              'status':d.get('status'),
+              'secureContext':(d.get('frame') or {}).get('isSecureContext'),
+              'cryptoSubtle':(d.get('frame') or {}).get('subtle'),
+              'ok':a.get('ok'),
+              'verified':a.get('verified'),
+              'total':a.get('total'),
+              'errors':[{'name':r.get('name'),'error':r.get('error'),'actual':r.get('actual'),'expected':r.get('expected')} for r in (a.get('rows') or []) if not r.get('ok')][:5]
+          },ensure_ascii=False))
+          PY
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-authority-ios-repro
+          path: |
+            ${{ runner.temp }}/runtime-authority-result.json
+            ${{ runner.temp }}/runtime-authority-ios.png
+            ${{ runner.temp }}/runtime-authority-server.log
+          if-no-files-found: warn
