@@ -2,8 +2,8 @@ from pathlib import Path
 
 p=Path('position-state-runtime.js')
 s=p.read_text()
-old="const triCount=v=>v==='yes'?1:v==='no'?0:null;"
-new="const triCount=v=>v==='yes'?1:v==='no'?0:null;\nconst triAvailable=v=>v==='yes'?true:v==='no'?false:null;"
+old="function triCount(v){return v==='yes'?1:v==='no'?0:null}"
+new="function triCount(v){return v==='yes'?1:v==='no'?0:null}\nfunction triAvailable(v){return v==='yes'?true:v==='no'?false:null}"
 if old not in s:
     raise SystemExit('triCount target not found')
 s=s.replace(old,new,1)
