@@ -1,9 +1,11 @@
 import fs from 'node:fs';import assert from 'node:assert/strict';
 const src=fs.readFileSync(new URL('../coach-explanation.js',import.meta.url),'utf8');
-for(const api of ['buildExplanation','renderCoachText','explainDecision','explainPairwise'])assert.match(src,new RegExp(api));
+for(const api of ['buildExplanation','renderCoachText','explainDecision','explainPairwise','describeCandidate','directionalReasons'])assert.match(src,new RegExp(api));
 for(const mode of ['DECISIVE','TRADE_OFF','CONTEXT_DEPENDENT','EQUIVALENT','INSUFFICIENT_EVIDENCE'])assert.ok(src.includes(mode));
+assert.ok(src.includes("pe1-coach-explanation-v1.1.0"));assert.ok(src.includes('playedMoveComparison'));assert.ok(src.includes('CardDB'));assert.ok(src.includes('winnerCandidateId'));
 for(const forbidden of ['generateLegalActions','applyAction(','getPlayerView(','getTerminalStatus(','stateFingerprint(','OutcomeBacktracking.create','ComparisonDecision.evaluateDecision','ComparisonDecision.compareCandidates'])assert.equal(src.includes(forbidden),false,forbidden);
 for(const card of ['barbaros','zetaBeatrix','quickBlader'])assert.equal(src.includes(card),false,`card-specific inference forbidden: ${card}`);
 assert.equal(/damage\s*\*\s*\d/i.test(src),false);assert.equal(/Math\.random/.test(src),false);
 for(const code of ['UNKNOWN_HAND_DEPENDENCY','UNKNOWN_DRAW_DEPENDENCY','UNKNOWN_RULE','UNKNOWN_ORDERING','OPPONENT_DRAIN_RISK'])assert.ok(src.includes(code));
+for(const legacyUi of ['AをBest','Forced Lethal','Drainリスク','Meaningful Alternative'])assert.equal(src.includes(legacyUi),false,`legacy/internal coach text forbidden: ${legacyUi}`);
 console.log('P-E1 STATIC VALIDATION PASS');
