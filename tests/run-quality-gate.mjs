@@ -1,8 +1,8 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v98';
-// ui-opt6Q P-E1R1/P-E2R1 coach semantic corrective + P-F1-R2-PM Played Move Authority + P-D1R1 semantic corrective + P-F1-R2-G fresh E2E gate tightening.
-// Coach gate: directional reasons, Best/Alternative separation, Played Move comparison only when CONFIRMED, human-readable action names, hidden-info qualification, no internal jargon in user-facing text.
+const GATE_VERSION='recognition-quality-gate-v100';
+// ui-opt6R 09-23 offline expected-result oracle + visible cross-axis trade-off authority + P-E1R1/P-E2R1 + P-F1-R2-PM + P-D1R1 + P-F1-R2-G.
+// Offline gate: production P-A1/P-C1 path, Quick play+evolve state, exact PM binding, comparison semantics, coach handoff, and explicit proof that common hidden hand is not the cause of a null Best.
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
 const tests=[
@@ -58,6 +58,8 @@ const tests=[
   'tests/pf1r2-static-validation.mjs',
   'tests/pf1r2-hp-transient-guard-regression.mjs',
   'tests/pf1r2-preaction-anchor-regression.mjs',
+  'tests/pf1r2-0923-offline-expected-regression.mjs',
+  'tests/pf1r2-0923-visible-tradeoff-oracle-regression.mjs',
   'tests/turn-control-sync-regression.mjs',
   'tests/turn-prefix-regression.mjs',
   'tests/turn-terminal-tail-regression.mjs',

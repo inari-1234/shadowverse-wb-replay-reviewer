@@ -5,6 +5,13 @@ const ps=read('position-state-runtime.js'),rules=read('common-rule-engine-runtim
 assert.match(ps,/P-S1_RUNTIME_BINDING/);
 assert.match(ps,/OWN_BOARD_STRUCTURE_UNRESOLVED/);
 assert.match(ps,/UNKNOWN_ATTACK_EFFECT/);
+assert.match(ps,/pf0a-position-state-runtime-v1\.1\.0/);
+assert.match(ps,/type==='EVOLVE'/);
+assert.match(ps,/src\.attack=atk\+2/);
+assert.match(ps,/src\.defense=def\+2/);
+assert.match(ps,/me\.ep=ep-1/);
+assert.match(ps,/src\.canAttackLeader=src\.storm===true\?true/);
+assert.doesNotMatch(ps,/type==='EVOLVE'\|\|type==='SUPER_EVOLVE'/);
 assert.match(rules,/TURN_PLAYER_FIRST\+registrationOrder/);
 assert.match(rules,/UNKNOWN_OPPONENT_RESPONSE/);
 assert.match(rules,/INDETERMINATE_RULE_ORDER/);

@@ -3,7 +3,9 @@ for(const api of ['compareCandidates','evaluateDecision','rankCandidates','selec
 for(const cls of ['DOMINATES','TRADE_OFF','CONTEXT_DEPENDENT','EQUIVALENT','INSUFFICIENT_EVIDENCE'])assert.ok(src.includes(cls));
 for(const axis of ['IMMEDIATE_PRESSURE','FUTURE_LETHAL','BOARD_TEMPO','OPPONENT_BENEFIT_RISK','RESOURCE_ECONOMY','SURVIVAL','CONTINUATION_QUALITY','UNCERTAINTY'])assert.ok(src.includes(axis));
 for(const result of ['A_BETTER','B_BETTER','EQUIVALENT','TRADE_OFF','INSUFFICIENT_EVIDENCE'])assert.ok(src.includes(result));
-for(const field of ['persistentResources','temporaryResources','outcomeDepth','RESOURCE_CONTEXT_DEPENDENT','axisResults','tradeOffAxes','winnerCandidateId','loserCandidateId','difference','confidence','rankReversalEvidence','OBSERVATION_ONLY_TERMINAL_PP'])assert.ok(src.includes(field),field);
+for(const field of ['persistentResources','temporaryResources','outcomeDepth','RESOURCE_CONTEXT_DEPENDENT','axisResults','tradeOffAxes','winnerCandidateId','loserCandidateId','difference','confidence','rankReversalEvidence','OBSERVATION_ONLY_TERMINAL_PP','hiddenOnlyRuleAuthority'])assert.ok(src.includes(field),field);
+assert.ok(src.includes("pd1-comparison-decision-v1.1.2"));
+assert.ok(src.includes("UNKNOWN_OPPONENT_RESPONSE"));assert.ok(src.includes("UNKNOWN_HIDDEN_BOARD"));
 for(const forbidden of ['generateLegalActions','applyAction(','getPlayerView(','getTerminalStatus(','stateFingerprint('])assert.equal(src.includes(forbidden),false,forbidden);
 assert.equal(/damage\s*\*\s*\d/i.test(src),false);assert.equal(/board\s*\*\s*\d/i.test(src),false);
 assert.ok(src.includes("k!==AXIS.UNCERTAINTY"),'uncertainty must be excluded from substantive move-strength aggregation');
