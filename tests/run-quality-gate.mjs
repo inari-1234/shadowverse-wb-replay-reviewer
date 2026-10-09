@@ -1,6 +1,6 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v109';
+const GATE_VERSION='recognition-quality-gate-v110';
 // ui-opt6R 09-23 offline expected-result oracle + visible cross-axis trade-off authority + P-E1R1/P-E2R1 + P-F1-R2-PM + P-D1R1 + P-F1-R2-G.
 // Fresh live gate: exact authority must present independently of comparison success, and exact capture resource/hand semantics must produce the same legal Quick/evolve opportunity used by the offline oracle.
 console.log(`QUALITY GATE ${GATE_VERSION}`);
@@ -58,6 +58,7 @@ const tests=[
   'tests/pf1r2g-fresh-e2e-gate-regression.mjs',
   'tests/pf1r2-static-validation.mjs',
   'tests/pf1r2-hp-transient-guard-regression.mjs',
+  'tests/pf1r2-hp-transient-live-summary-regression.mjs',
   'tests/pf1r2-preaction-anchor-regression.mjs',
   'tests/pf1r2-0923-offline-expected-regression.mjs',
   'tests/pf1r2-0923-visible-tradeoff-oracle-regression.mjs',
