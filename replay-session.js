@@ -44,7 +44,7 @@ function openDb(){
 function requestResult(req){return new Promise((resolve,reject)=>{req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||new Error('IndexedDB request failed'))})}
 async function dbGet(store,key){const db=await openDb();if(!db)return null;try{return await requestResult(db.transaction(store,'readonly').objectStore(store).get(key))}catch(err){W.recordError('replay-session-db-get',err,{store});return null}}
 async function dbPut(store,value){const db=await openDb();if(!db)return false;try{await requestResult(db.transaction(store,'readwrite').objectStore(store).put(value));return true}catch(err){W.recordError('replay-session-db-put',err,{store});return false}}
-async function dbDelete(store,key){const db=await openDb();if(!db)return false;try{await requestResult(db.transaction(store,'readwrite').objectStore(store).delete(key));return true}catch(err){W.recordError('replay-session-db-delete',err,{store});return false}}
+async function dbDelete(store,key){const db=await openDb();if(!db)return false;try{return await requestResult(db.transaction(store,'readwrite').objectStore(store).delete(key))}catch(err){W.recordError('replay-session-db-delete',err,{store});return false}}
 
 function persistenceMode(){return typeof indexedDB==='undefined'?'memory':'indexeddb'}
 function sessionForStorage(s){const x=clone(s);if(!x)return null;x.scenes=(x.scenes||[]).map(({url,blob,...rest})=>rest);return x}
@@ -394,6 +394,12 @@ async function showReviewFrame(time,phase='before'){
 async function seekReviewWindow(time,phase='before'){return showReviewFrame(time,phase)}
 
 function reviewPlaybackModels(session=current){return reviewWindowModels(session).slice(-12)}
+function reviewPlaybackStart(model,authorityStart=null){return finite(authorityStart)??finite(model?.reviewStart)??finite(model?.reviewEnd)}
+function reviewAuthorityPlaybackStart(windowId){
+  const root=W.$('#reviewPoints'),buttons=root?.querySelectorAll?.('[data-review-video-window]')||[];
+  for(const button of buttons)if(String(button?.dataset?.reviewVideoWindow||'')===String(windowId||'')){const t=finite(button?.dataset?.reviewAuthorityStart);if(t!=null)return t}
+  return null
+}
 function updateReviewPlaybackUi(){
   const box=W.$('#reviewPlayback'),pos=W.$('#reviewPointPosition'),prev=W.$('#reviewPointPrev'),next=W.$('#reviewPointNext'),models=reviewPlaybackModels();
   if(box){box.classList.toggle('reviewPlaybackActive',reviewPlaybackReady);box.setAttribute('aria-hidden',reviewPlaybackReady?'false':'true')}
@@ -404,18 +410,18 @@ function updateReviewPlaybackUi(){
   return{ready:reviewPlaybackReady,index:activeReviewPlaybackIndex,count:models.length}
 }
 function setReviewPlaybackReady(ready){reviewPlaybackReady=!!ready;if(!reviewPlaybackReady)W.pauseVideo?.('review-playback-hide');return updateReviewPlaybackUi()}
-async function playReviewWindow(windowId){
+async function playReviewWindow(windowId,authorityStart=null){
   const status=W.$('#reviewNavigationStatus'),models=reviewPlaybackModels(),index=models.findIndex(x=>String(x.id||'')===String(windowId||''));
   if(index<0||!W.video||!Number.isFinite(W.video.duration)||W.task){if(status)status.textContent='解析完了後に振り返り動画を確認できます。';return false}
   activeReviewPlaybackIndex=index;setReviewPlaybackReady(true);
-  const model=models[index],start=finite(model.reviewStart)??finite(model.reviewEnd);if(start==null)return false;
+  const model=models[index],boundStart=finite(authorityStart)??reviewAuthorityPlaybackStart(windowId),start=reviewPlaybackStart(model,boundStart);if(start==null)return false;
   const target=Math.max(0,start-REVIEW_PLAYBACK_LEAD);W.pauseVideo?.('review-playback-select');
   try{
     await previewSeekTo(target,'review-playback-window');
     W.$('#reviewPlayback')?.scrollIntoView?.({behavior:'smooth',block:'start'});
     let played=false;if(typeof W.video.play==='function'){try{await W.video.play();played=true}catch{}}
     if(status)status.textContent=`振り返りポイント ${index+1}/${models.length}：${model.turn?model.turn+'T / ':''}${W.fmt(start)} の3秒前から${played?'再生しています。':'確認できます。'}`;
-    W.log?.('review-playback',{windowId:model.id||null,index:index+1,count:models.length,reviewStart:+start.toFixed(3),target:+target.toFixed(3),autoplay:played});
+    W.log?.('review-playback',{windowId:model.id||null,index:index+1,count:models.length,reviewStart:+start.toFixed(3),target:+target.toFixed(3),authorityStart:boundStart==null?null:+boundStart.toFixed(3),autoplay:played});
     updateReviewPlaybackUi();return true
   }catch(err){if(status)status.textContent='振り返り動画の移動エラー: '+(err?.message||String(err));return false}
 }
@@ -427,7 +433,7 @@ async function moveReviewPlayback(delta){
 
 function bindReviewNavigation(){
   const root=W.$('#reviewPoints'),sheet=W.$('#reviewFrameSheet'),close=W.$('#reviewFrameClose'),prev=W.$('#reviewPointPrev'),next=W.$('#reviewPointNext');if(!root)return false;
-  if(root.dataset.reviewNavigationBound!=='1'){root.dataset.reviewNavigationBound='1';root.addEventListener('click',e=>{const videoButton=e.target?.closest?.('[data-review-video-window]');if(videoButton&&root.contains(videoButton)){playReviewWindow(videoButton.dataset.reviewVideoWindow);return}const b=e.target?.closest?.('[data-review-frame-time]');if(!b||!root.contains(b))return;showReviewFrame(b.dataset.reviewFrameTime,b.dataset.reviewFramePhase||'before')})}
+  if(root.dataset.reviewNavigationBound!=='1'){root.dataset.reviewNavigationBound='1';root.addEventListener('click',e=>{const videoButton=e.target?.closest?.('[data-review-video-window]');if(videoButton&&root.contains(videoButton)){playReviewWindow(videoButton.dataset.reviewVideoWindow,videoButton.dataset.reviewAuthorityStart);return}const b=e.target?.closest?.('[data-review-frame-time]');if(!b||!root.contains(b))return;showReviewFrame(b.dataset.reviewFrameTime,b.dataset.reviewFramePhase||'before')})}
   if(prev&&prev.dataset.reviewPlaybackBound!=='1'){prev.dataset.reviewPlaybackBound='1';prev.addEventListener('click',()=>moveReviewPlayback(-1))}
   if(next&&next.dataset.reviewPlaybackBound!=='1'){next.dataset.reviewPlaybackBound='1';next.addEventListener('click',()=>moveReviewPlayback(1))}
   if(close&&close.dataset.reviewFrameBound!=='1'){close.dataset.reviewFrameBound='1';close.addEventListener('click',closeReviewFrame)}
@@ -450,7 +456,7 @@ function render(){
   if(at)at.innerHTML=s?.actions?.length?s.actions.slice(-20).map(x=>`<div class="branchItem"><b>${x.turn?x.turn+'T':'-'}</b><div>${W.escape(actionLabel(x))}<br><span class="muted">${x.time==null?'--:--.-':W.fmt(x.time)} / ${W.escape(x.confidence)}</span></div></div>`).join(''):'<p class="help">連続した状態取得がまだありません。3秒以内の同一ターン観測だけを詳細な状態変化として扱います。</p>'
 }
 
-W.ReplaySession={version:VERSION,schema:SESSION_SCHEMA,dbName:DB_NAME,persistenceMode,emptySession,migrateLoadedSession,normalizeCapture,deriveActions,deriveTimelineActions,deriveObservedEpisodes,observedEpisodeInterpretation,deriveObservationReviewPoints,deriveSupplementalReviewPoints,mergeReviewPoints,deriveReviewPoints,deriveDecisionWindows,attachDecisionWindows,reviewChangedKeys,reviewStateRows,reviewComparisonRows,reviewWindowModels,reviewPlaybackModels,renderReviewComparison,renderWindowCoach,renderCardUseCandidates,renderDecisionWindowCard,previewSeekTo,showReviewFrame,closeReviewFrame,seekReviewWindow,setReviewPlaybackReady,updateReviewPlaybackUi,playReviewWindow,moveReviewPlayback,bindReviewNavigation,ingestState,ingestReviewSignal,ingestScene,clearScenes,ingestReviewState,restoreCurrent,snapshot,rebuildDerived,render,flushDeferredRender};
+W.ReplaySession={version:VERSION,schema:SESSION_SCHEMA,dbName:DB_NAME,persistenceMode,emptySession,migrateLoadedSession,normalizeCapture,deriveActions,deriveTimelineActions,deriveObservedEpisodes,observedEpisodeInterpretation,deriveObservationReviewPoints,deriveSupplementalReviewPoints,mergeReviewPoints,deriveReviewPoints,deriveDecisionWindows,attachDecisionWindows,reviewChangedKeys,reviewStateRows,reviewComparisonRows,reviewWindowModels,reviewPlaybackModels,reviewPlaybackStart,reviewAuthorityPlaybackStart,renderReviewComparison,renderWindowCoach,renderCardUseCandidates,renderDecisionWindowCard,previewSeekTo,showReviewFrame,closeReviewFrame,seekReviewWindow,setReviewPlaybackReady,updateReviewPlaybackUi,playReviewWindow,moveReviewPlayback,bindReviewNavigation,ingestState,ingestReviewSignal,ingestScene,clearScenes,ingestReviewState,restoreCurrent,snapshot,rebuildDerived,render,flushDeferredRender};
 
 W.on('metadata',()=>{reviewPlaybackReady=true;activeReviewPlaybackIndex=0;updateReviewPlaybackUi();restoreCurrent().catch(err=>W.recordError('replay-session-restore',err))});
 W.on('timeline',detail=>{const s=ensureCurrent();if(s){s.turnTimeline=clone(detail?.timeline||W.turnTimeline||[]);schedulePersist()}});
@@ -465,5 +471,5 @@ W.on('task-finished',()=>flushDeferredRender());
 W.on('match-analysis-start',()=>{activeReviewPlaybackIndex=0;updateReviewPlaybackUi()});
 W.on('match-analysis-complete',detail=>{reviewPlaybackReady=!detail?.cancelled;activeReviewPlaybackIndex=0;updateReviewPlaybackUi()});
 W.on('video-reset',()=>{current=null;renderDeferred=false;reviewPlaybackReady=false;activeReviewPlaybackIndex=0;closeReviewFrame();updateReviewPlaybackUi();expose();render()});
-W.onReady(()=>{render();W.log('module-ready',{module:'replay-session',version:VERSION,persistence:persistenceMode(),maxContiguousGap:MAX_CONTIGUOUS_GAP,turnIdentity:'number+side',unknownSafe:true,nullNumericSafe:true,unknownHpBridge:'same-turn-observed-endpoints<=3s',observedEpisodes:'same-state-pair-noncausal-summary',causalAttribution:false,reviewPointDomains:'observation+supplemental-merged',decisionWindows:'same-turn-state-pair<=3s-noncausal',reviewWindowUi:'before-after-observed-importance-unknown-noncausal-navigation+coach-v1',reviewWindowPresentation:'diff-first-comparison+static-frame-preview+unknown-amber+coach-v1',cardUseCandidate:'two-evidence-candidate-only-no-action-v1',reviewPlayback:'selected-video-visible+post-analysis-3s-lead+preview-seek-only-v2',taskRenderCoalescing:true,sessionSchema:SESSION_SCHEMA})});
+W.onReady(()=>{render();W.log('module-ready',{module:'replay-session',version:VERSION,persistence:persistenceMode(),maxContiguousGap:MAX_CONTIGUOUS_GAP,turnIdentity:'number+side',unknownSafe:true,nullNumericSafe:true,unknownHpBridge:'same-turn-observed-endpoints<=3s',observedEpisodes:'same-state-pair-noncausal-summary',causalAttribution:false,reviewPointDomains:'observation+supplemental-merged',decisionWindows:'same-turn-state-pair<=3s-noncausal',reviewWindowUi:'before-after-observed-importance-unknown-noncausal-navigation+coach-v1',reviewWindowPresentation:'diff-first-comparison+static-frame-preview+unknown-amber+coach-v1',cardUseCandidate:'two-evidence-candidate-only-no-action-v1',reviewPlayback:'selected-video-visible+post-analysis-3s-lead+preview-seek-only-v2',reviewPlaybackAuthority:'fresh-exact-dom-override-v1',taskRenderCoalescing:true,sessionSchema:SESSION_SCHEMA})});
 })();
