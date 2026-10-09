@@ -1,0 +1,42 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Runtime client isolation iOS repro</title>
+<pre id="status">starting</pre>
+<iframe id="candidate" style="width:390px;height:700px;border:1px solid #999"></iframe>
+<script>
+(async()=>{
+  const status=document.querySelector('#status'),iframe=document.querySelector('#candidate');
+  const started=Date.now();let sent=false;
+  const post=async payload=>{if(sent)return;sent=true;status.textContent=JSON.stringify(payload,null,2);try{await fetch('/result',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)})}catch(_){}};
+  try{
+    if(!('serviceWorker'in navigator))throw new Error('serviceWorker unavailable');
+    const regs=await navigator.serviceWorker.getRegistrations();
+    for(const r of regs)await r.unregister();
+    const reg=await navigator.serviceWorker.register('../../stale-runtime-authority-sw.js?fixture=1',{scope:'../../',updateViaCache:'none'});
+    await reg.update();
+    const active=reg.active||reg.installing||reg.waiting;
+    if(!reg.active)await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('stale SW activation timeout')),10000);const check=()=>{if(reg.active){clearTimeout(timer);resolve()}else setTimeout(check,100)};check()});
+    iframe.src='../../index.html?channel=candidate&_wb=stale-sw-repro';
+    const poll=setInterval(async()=>{
+      if(sent)return clearInterval(poll);
+      if(Date.now()-started>45000){clearInterval(poll);return post({status:'TIMEOUT',iframeHref:iframe.contentWindow?.location?.href||null});}
+      try{
+        const w=iframe.contentWindow;if(!w||!w.location?.href)return;
+        const href=w.location.href,marker=new URL(href).searchParams.get('_wbiso');
+        const authority=w.WB?.runtimeBuildAuthority||w.__wbRuntimeBuildAuthority||null;
+        const text=w.document?.querySelector('#candidateChannelStatus')?.textContent||null;
+        if(authority?.ok===true){
+          clearInterval(poll);
+          const payload={status:'PASS',href,marker,statusText:text,authority,controller:!!w.navigator?.serviceWorker?.controller,buildId:w.__wbRuntimeAssetManifest?.buildId||null};
+          if(!marker){payload.status='FAIL_NO_ISOLATION_RELOAD'}
+          if(authority.verified!==20||authority.total!==20){payload.status='FAIL_AUTHORITY_COUNT'}
+          if(w.navigator?.serviceWorker?.controller){payload.status='FAIL_CONTROLLER_REMAINS'}
+          await post(payload);
+        }else if(text&&/解析停止/.test(text)){
+          clearInterval(poll);await post({status:'FAIL_STOPPED',href,marker,statusText:text,authority,controller:!!w.navigator?.serviceWorker?.controller});
+        }
+      }catch(err){clearInterval(poll);await post({status:'HARNESS_ERROR',message:err?.message||String(err),stack:err?.stack||null});}
+    },150);
+  }catch(err){await post({status:'SETUP_ERROR',message:err?.message||String(err),stack:err?.stack||null});}
+})();
+</script>
