@@ -31,8 +31,16 @@ const expectedRuntime=[
   'counterfactual-review.js',
   'diagnostics.js'
 ];
-const runtime=[...index.matchAll(/<script[^>]+src="\.\/([^"]+\.js)"/g)].map(m=>m[1]);
-assert.deepEqual(runtime,expectedRuntime,'index runtime must remain exactly the approved ten scripts in order');
+const staticRuntime=[...index.matchAll(/<script[^>]+src="\.\/([^"]+\.js)"/g)].map(m=>m[1]);
+const bootstrapBlock=index.match(/const localScripts=\[([^\]]+)\]/);
+const bootstrapRuntime=bootstrapBlock?[...bootstrapBlock[1].matchAll(/'([^']+\.js)'/g)].map(m=>m[1]):[];
+assert.ok(staticRuntime.length===0||bootstrapRuntime.length===0,'runtime scripts must use exactly one loading representation');
+const runtime=staticRuntime.length?staticRuntime:bootstrapRuntime;
+assert.deepEqual(runtime,expectedRuntime,'index runtime must remain exactly the approved ten scripts in order, whether static or candidate nonce-bootstrap form');
+if(bootstrapRuntime.length){
+  assert.ok(index.includes('window.__wbAssetUrl=src=>'),'nonce-bootstrap runtime must route local script URLs through the candidate asset helper');
+  assert.ok(index.includes("u.searchParams.set('_wb',nonce)"),'candidate asset helper must add only the refresh nonce query parameter');
+}
 assert.equal(runtime.some(x=>/fix-v/i.test(x)),false,'historical fix-v scripts must never load at runtime');
 assert.equal(index.includes('recognition-v5-shadow'),false,'v5 shadow experiments must not load in the production runtime');
 assert.equal(index.includes('v5-dataset-extractor'),false,'v5 dataset tooling must not load in the production runtime');
