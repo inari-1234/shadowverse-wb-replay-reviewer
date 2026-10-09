@@ -108,7 +108,6 @@
       "winningAxes",
       "losingAxes",
       "tradeOffAxes",
-      "bestAbsenceReason",
       "playedMoveStatus",
       "reasonDirection",
       "confidence"
