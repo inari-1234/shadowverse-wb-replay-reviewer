@@ -1,0 +1,43 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Runtime authority iOS repro</title>
+<pre id="status">starting</pre>
+<iframe id="candidate" src="../../index.html?channel=candidate&_wb=ios-authority-repro" style="width:390px;height:700px;border:1px solid #999"></iframe>
+<script>
+(()=>{
+  const status=document.querySelector('#status');
+  const iframe=document.querySelector('#candidate');
+  const started=Date.now();
+  let sent=false;
+  const post=async payload=>{
+    if(sent)return;sent=true;
+    status.textContent=JSON.stringify(payload,null,2);
+    try{await fetch('/result',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)})}catch(_){}
+  };
+  const poll=setInterval(async()=>{
+    if(sent)return clearInterval(poll);
+    if(Date.now()-started>30000){
+      clearInterval(poll);
+      return post({status:'TIMEOUT',top:{href:location.href,isSecureContext,crypto:!!globalThis.crypto,subtle:!!globalThis.crypto?.subtle,userAgent:navigator.userAgent}});
+    }
+    try{
+      const w=iframe.contentWindow;
+      if(!w?.__wbRuntimeBuildAuthorityPromise)return;
+      clearInterval(poll);
+      let authority=null,promiseError=null;
+      try{authority=await w.__wbRuntimeBuildAuthorityPromise}catch(err){promiseError=err?.message||String(err)}
+      await post({
+        status:'RESULT',
+        top:{href:location.href,isSecureContext,crypto:!!globalThis.crypto,subtle:!!globalThis.crypto?.subtle,userAgent:navigator.userAgent},
+        frame:{href:w.location.href,isSecureContext:w.isSecureContext,crypto:!!w.crypto,subtle:!!w.crypto?.subtle,controller:!!w.navigator?.serviceWorker?.controller},
+        manifest:w.__wbRuntimeAssetManifest||null,
+        authority,
+        promiseError
+      });
+    }catch(err){
+      clearInterval(poll);
+      await post({status:'HARNESS_ERROR',message:err?.message||String(err),stack:err?.stack||null});
+    }
+  },100);
+})();
+</script>
