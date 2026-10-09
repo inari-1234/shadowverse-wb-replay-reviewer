@@ -87,6 +87,14 @@
     "unsupportedUnplayableCardsDoNotHold": true,
     "terminalRemainingPPObservationOnly": true,
     "commonOpponentHandUnknownDoesNotCreateContextDependencyByItself": true,
+    "visibleTradeOff": {
+      "classification": "TRADE_OFF",
+      "quickBetterAxis": "BOARD_TEMPO",
+      "idleBetterAxis": "RESOURCE_ECONOMY",
+      "intraAxisTradeOffAxes": [],
+      "recommendedCandidate": null,
+      "bestAbsenceReason": "VISIBLE_CROSS_AXIS_TRADE_OFF"
+    },
     "playedMoveStatus": "CONFIRMED",
     "playedMoveActionCardId": "quickBlader",
     "playedMoveRequiresStateDelta": true,
@@ -100,6 +108,7 @@
       "winningAxes",
       "losingAxes",
       "tradeOffAxes",
+      "bestAbsenceReason",
       "playedMoveStatus",
       "reasonDirection",
       "confidence"
