@@ -1,0 +1,23 @@
+name: Export Partial Architecture Patch
+on:
+  push:
+    branches:
+      - candidate/p-f1-r2-architecture-corrective-inspect
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Reconstruct partial diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .tmp/pf1r2-arch-patch/chunk_*.b64 > /tmp/payload.b64
+          base64 -d /tmp/payload.b64 > /tmp/payload.bin
+          (gzip -dc /tmp/payload.bin > /tmp/architecture.partial.diff) || true
+          wc -c /tmp/architecture.partial.diff
+      - uses: actions/upload-artifact@v4
+        with:
+          name: architecture-partial-diff
+          path: /tmp/architecture.partial.diff
+          if-no-files-found: error
