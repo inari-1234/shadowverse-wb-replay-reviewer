@@ -45,7 +45,12 @@ jobs:
       - name: Apply one-shot hold diagnostics patch
         id: patch
         run: |
+          if grep -q "pf1-runtime-decision-pipeline-v1.2.2" runtime-decision-pipeline.js; then
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           python tools/pf1r2_hold_diagnostics_patch.py
+          git checkout -- .github/workflows/recognition-quality.yml .github/workflows/pf1r2-hold-diagnostics-patch.yml tools/pf1r2_hold_diagnostics_patch.py
           if ! git diff --quiet --exit-code; then
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
