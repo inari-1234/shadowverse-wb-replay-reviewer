@@ -1,19 +1,25 @@
 import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
 class El{constructor(tag='div'){this.tagName=tag.toUpperCase();this.children=[];this.dataset={};this.className='';this.textContent='';this.parentNode=null;this._removed=false}appendChild(x){x.parentNode=this;this.children.push(x);return x}insertBefore(x,b){x.parentNode=this;const i=this.children.indexOf(b);if(i<0)this.children.push(x);else this.children.splice(i,0,x);return x}remove(){this._removed=true;if(this.parentNode)this.parentNode.children=this.parentNode.children.filter(x=>x!==this)}querySelector(){return null}addEventListener(){}}
 const head=new El('head'),handlers={};const document={head,documentElement:head,createElement:t=>new El(t),querySelector:()=>null,querySelectorAll:()=>[]};
-const WB={optionalModules:[],registerModule(){},on:(n,f)=>{(handlers[n]??=[]).push(f)},onReady:f=>f(),recordError(){},log(){}};
-const sandbox={window:{WB},document,console,queueMicrotask:f=>f(),setTimeout:(f)=>{f();return 1},clearTimeout(){},Date,CSS:{escape:s=>String(s)}};vm.createContext(sandbox);
+let currentRunId='run-1';const storedAuthority=new Map(),storedCoach=new Map();
+const exactPresentation=(windowId,runId)=>String(runId||'')===String(currentRunId)?{version:'pf1r2-single-presentation-v1',authority:'fresh-exact',windowId:String(windowId),runId:String(runId),nonce:'nonce-'+runId,reviewStart:10,reviewEnd:12,turn:2,beforeState:{id:'a',time:10,turn:2,absoluteSide:'bottom',relativeSide:'自分',pp:5,opponentHP:20,resources:{},boardDamage:0,boardDamageKnown:true},afterState:{id:'b',time:12,turn:2,absoluteSide:'bottom',relativeSide:'自分',pp:3,opponentHP:17,resources:{},boardDamage:3,boardDamageKnown:true}}:null;
+const WB={optionalModules:[],registerModule(){},on:(n,f)=>{(handlers[n]??=[]).push(f)},onReady:f=>f(),recordError(){},log(){},
+  ReplaySession:{snapshot:()=>({analysisRun:{runId:currentRunId}}),setAuthorityPresentation(id,p){if(String(p?.runId||'')!==String(currentRunId))return false;storedAuthority.set(String(id),structuredClone(p));return true},setComparisonCoachPresentation(id,p){if(String(p?.runId||'')!==String(currentRunId))return false;storedCoach.set(String(id),structuredClone(p));return true},clearAuthorityPresentations(){storedAuthority.clear();storedCoach.clear();return true},commitAuthorityPresentations(){return true}},
+  RuntimeAuthorityBinding:{presentationForWindow:exactPresentation,snapshot:()=>({currentFreshRun:{runId:currentRunId},windowAuthorityBindings:[{windowId:'w1',runId:currentRunId,complete:true,anchorExact:true,afterExact:true}]})},
+  RuntimeDecisionPipeline:{snapshot:()=>({items:[]})}
+};
+const sandbox={window:{WB},document,console,structuredClone,queueMicrotask:f=>f(),setTimeout:(f)=>{f();return 1},clearTimeout(){},Date,CSS:{escape:s=>String(s)}};vm.createContext(sandbox);
 for(const f of ['../coach-explanation.js','../coach-integration.js'])new vm.Script(fs.readFileSync(new URL(f,import.meta.url),'utf8')).runInContext(sandbox);
 const I=WB.CoachIntegration;
 const pair={aCandidateId:'A',bCandidateId:'B',classification:'TRADE_OFF',decision:'BEST_A',preferredCandidateId:'A',preferredSide:'A',axes:{IMMEDIATE_PRESSURE:1,FUTURE_LETHAL:0,BOARD_TEMPO:-1,OPPONENT_BENEFIT_RISK:1,RESOURCE_ECONOMY:0,SURVIVAL:0,CONTINUATION_QUALITY:0,UNCERTAINTY:0},axisResults:{IMMEDIATE_PRESSURE:'A_BETTER',FUTURE_LETHAL:'EQUIVALENT',BOARD_TEMPO:'B_BETTER',OPPONENT_BENEFIT_RISK:'A_BETTER',RESOURCE_ECONOMY:'EQUIVALENT',SURVIVAL:'EQUIVALENT',CONTINUATION_QUALITY:'EQUIVALENT',UNCERTAINTY:'EQUIVALENT'},criticalDifference:{code:'OPPONENT_DRAIN_RISK',axis:'OPPONENT_BENEFIT_RISK',preferred:'A'},reasonCodes:['IMMEDIATE_DAMAGE_ADVANTAGE','OPPONENT_DRAIN_RISK'],evidence:[{axis:'IMMEDIATE_PRESSURE',label:'immediateDamage',a:15,b:12,winnerCandidateId:'A',loserCandidateId:'B',difference:3,evidence:{basis:'P-C1_OUTCOME'},confidence:'CONFIRMED'},{axis:'OPPONENT_BENEFIT_RISK',label:'maxOpponentDrain',a:0,b:3,winnerCandidateId:'A',loserCandidateId:'B',difference:-3,evidence:{basis:'P-C1_OUTCOME'},confidence:'CONFIRMED'},{axis:'BOARD_TEMPO',label:'boardAttack',a:2,b:5,winnerCandidateId:'B',loserCandidateId:'A',difference:-3,evidence:{basis:'P-C1_OUTCOME'},confidence:'CONFIRMED'}],uncertainty:{a:[],b:[],common:{unknownHand:false,unknownDraw:false,truncated:false},differential:{}}};
 const decision={status:'OK',bestCandidateId:'A',meaningfulAlternativeCandidateId:'B',alternativeComparison:pair,classification:'TRADE_OFF',ranking:{tiers:[],pairwise:[pair]},reasonCodes:pair.reasonCodes};
 let n=0;const t=(name,fn)=>{const r=fn();if(r?.then)return r.then(()=>n++);n++};
-await t('PE2-01 API',()=>assert.equal(I.version,'pe2-coach-integration-v1.1.0'));
+await t('PE2-01 API',()=>assert.equal(I.version,'pe2-coach-integration-v1.2.0'));
 await t('PE2-02 event',()=>assert.equal(I.eventName,'comparison-decision-ready'));
 await t('PE2-03 normalize id',()=>assert.equal(I.normalizeDetail({reviewWindowId:'w1',decision}).windowId,'w1'));
-await t('PE2-04 missing id ignored',async()=>assert.equal(await I.ingestDecision({decision}),null));
-await t('PE2-05 missing decision ignored',async()=>assert.equal(await I.ingestDecision({windowId:'w1'}),null));
-await t('PE2-06 ingest',async()=>assert.equal((await I.ingestDecision({windowId:'w1',decision,runId:'run-1'})).windowId,'w1'));
+await t('PE2-04 missing id ignored',async()=>assert.equal(await I.ingestDecision({decision,runId:'run-1'}),null));
+await t('PE2-05 missing decision ignored',async()=>assert.equal(await I.ingestDecision({windowId:'w1',runId:'run-1'}),null));
+await t('PE2-06 same-run exact ingest',async()=>assert.equal((await I.ingestDecision({windowId:'w1',decision,runId:'run-1'})).windowId,'w1'));
 await t('PE2-07 run identity preserved',()=>assert.equal(I.getForWindow('w1').runId,'run-1'));
 await t('PE2-08 source authority default',()=>assert.equal(I.getForWindow('w1').sourceAuthority,'P-D1'));
 await t('PE2-09 P-E1 mode',()=>assert.equal(I.getForWindow('w1').explanation.mode,'TRADE_OFF'));
@@ -25,14 +31,14 @@ await t('PE2-14 alternative board strength',()=>assert.ok(I.getForWindow('w1').e
 await t('PE2-15 reversal conditions',()=>assert.ok(I.getForWindow('w1').explanation.alternative.reversalConditions.length>0));
 await t('PE2-16 evidence summary',()=>assert.ok(I.getForWindow('w1').explanation.evidenceSummary.length>0));
 await t('PE2-17 snapshot',()=>assert.equal(I.snapshot().count,1));
-await t('PE2-18 overwrite idempotent',async()=>{await I.ingestDecision({windowId:'w1',decision,sourceAuthority:'P-D1-test',runId:'run-2'});assert.equal(I.snapshot().count,1);assert.equal(I.getForWindow('w1').sourceAuthority,'P-D1-test');assert.equal(I.getForWindow('w1').runId,'run-2')});
+await t('PE2-18 stale run rejected then new current run accepted',async()=>{assert.equal(await I.ingestDecision({windowId:'w1',decision,sourceAuthority:'P-D1-stale',runId:'run-2'}),null);assert.equal(I.getForWindow('w1').runId,'run-1');currentRunId='run-2';await I.ingestDecision({windowId:'w1',decision,sourceAuthority:'P-D1-test',runId:'run-2'});assert.equal(I.snapshot().count,1);assert.equal(I.getForWindow('w1').sourceAuthority,'P-D1-test');assert.equal(I.getForWindow('w1').runId,'run-2')});
 await t('PE2-19 clone boundary',()=>{const x=I.getForWindow('w1');x.explanation.headline='mutated';assert.notEqual(I.getForWindow('w1').explanation.headline,'mutated')});
 await t('PE2-20 presentation model',()=>{const m=I.presentationModel(I.getForWindow('w1'));assert.equal(m.bestCandidateId,'A');assert.equal(m.alternativeCandidateId,'B');assert.equal(m.playedMoveComparison.status,'UNAVAILABLE')});
-await t('PE2-21 DOM card',()=>{const c=I.createCard(I.getForWindow('w1'));assert.equal(c.dataset.comparisonCoach,'1');assert.equal(c.dataset.comparisonWindow,'w1');assert.ok(c.children.length>=3)});
+await t('PE2-21 renderer helper retained but authoritative output stored in ReplaySession',()=>{const c=I.createCard(I.getForWindow('w1'));assert.equal(c.dataset.comparisonCoach,'1');I.decorate();assert.equal(storedCoach.get('w1').runId,'run-2');assert.equal(storedCoach.get('w1').classification,'TRADE_OFF');assert.equal(storedAuthority.get('w1').authority,'fresh-exact')});
 await t('PE2-22 optional module',()=>assert.ok(WB.optionalModules.some(x=>x.name==='coach-integration')));
 await t('PE2-23 authority loaded as P-E1R1',()=>assert.equal(WB.CoachExplanation.version,'pe1-coach-explanation-v1.1.0'));
 await t('PE2-24 no recomputed best',()=>{const m=I.presentationModel({windowId:'x',explanation:{mode:'INSUFFICIENT_EVIDENCE',claim:'HOLD',classification:'INSUFFICIENT_EVIDENCE',bestCandidateId:null,headline:'hold',whyBest:[],alternative:{candidateId:null,reasons:[],reversalConditions:[]},playedMoveComparison:{visible:false,status:'UNAVAILABLE',text:null,reasons:[]},cautions:['不足'],evidenceSummary:[]}});assert.equal(m.bestCandidateId,null)});
-await t('PE2-25 clear',()=>{I.clear();assert.equal(I.snapshot().count,0)});
-await t('PE2-26 event ingestion',async()=>{for(const f of handlers['comparison-decision-ready']||[])await f({windowId:'w2',decision,runId:'event-run'});await Promise.resolve();assert.equal(I.getForWindow('w2').windowId,'w2');assert.equal(I.getForWindow('w2').runId,'event-run')});
+await t('PE2-25 clear',()=>{I.clear();assert.equal(I.snapshot().count,0);assert.equal(storedCoach.size,0);assert.equal(storedAuthority.size,0)});
+await t('PE2-26 event ingestion requires current run',async()=>{currentRunId='event-run';for(const f of handlers['comparison-decision-ready']||[])await f({windowId:'w2',decision,runId:'event-run'});await Promise.resolve();assert.equal(I.getForWindow('w2').windowId,'w2');assert.equal(I.getForWindow('w2').runId,'event-run')});
 await t('PE2-27 video reset clears',()=>{for(const f of handlers['video-reset']||[])f({});assert.equal(I.snapshot().count,0)});
 assert.equal(n,27);console.log(`P-E2 COACH INTEGRATION REGRESSION PASS: ${n}/${n}`);
