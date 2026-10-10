@@ -13,7 +13,7 @@ function check(ok,id,detail=''){
 }
 const near=(a,b,t=.01)=>Number.isFinite(Number(a))&&Math.abs(Number(a)-Number(b))<=t;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-async function waitFor(fn,{timeout=1800,step=10}={}){const end=Date.now()+timeout;let last=null;while(Date.now()<end){try{last=fn();if(last)return last}catch{}await sleep(step)}return last}
+async function waitFor(fn,{timeout=1800,step=10}={}){const end=Date.now()+timeout;let last=null;while(Date.now()<end){try{last=await fn();if(last)return last}catch{}await sleep(step)}return last}
 function clone(x){return x==null?x:JSON.parse(JSON.stringify(x))}
 
 function request(req){return new Promise((resolve,reject)=>{req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||new Error('IDB request failed'))})}
@@ -76,7 +76,6 @@ function makeCapture(row,mode='timeline-lite'){
   WB.videoMeta=clone(fixture.videoMeta);WB.videoName='09-23';WB.turnTimeline=[];WB.stateCaptureHistory=[];
   await seedDirtyV2(window.indexedDB);
 
-  // Production metadata path: app-core's loadedmetadata handler emits wb:metadata.
   const restoresBefore=WB.events.filter(x=>x.type==='replay-session-restore').length;
   video.dispatchEvent(new window.Event('loadedmetadata'));
   await waitFor(()=>WB.events.filter(x=>x.type==='replay-session-restore').length>restoresBefore);
@@ -84,7 +83,6 @@ function makeCapture(row,mode='timeline-lite'){
   check(!!snap,'METADATA_RESTORE_EXECUTES');
   check(!(snap?.states||[]).some(x=>near(x.time,74.141)&&Number(x.opponentHP)===15),'V2_DIRTY_6T_STATE_REJECTED',`schema=${snap?.version}; states=${(snap?.states||[]).map(x=>`${x.time}:${x.opponentHP}`).join(',')}`);
 
-  // Only P-F0B captureState is substituted. All other StateRecognition methods remain the real module.
   const recorded=fixture.freshCaptures.map(x=>({...x,capture:makeCapture(x)}));
   const realCaptureState=WB.StateRecognition.captureState;
   WB.StateRecognition.captureState=async options=>{
@@ -108,22 +106,22 @@ function makeCapture(row,mode='timeline-lite'){
   const targetWindow=(snap?.decisionWindows||[]).find(w=>near(w.reviewEnd,fixture.expected.reviewEnd,.02))||(snap?.decisionWindows||[]).find(w=>Number(w.turn)===8)||null;
   const windowId=targetWindow?.id||'';
   const binding=WB.RuntimeAuthorityBinding?.bindingForWindow?.(windowId,fixture.analysis.runId)||null;
+  const authorityPresentation=WB.RuntimeAuthorityBinding?.presentationForWindow?.(windowId,fixture.analysis.runId)||null;
   check(!!windowId,'REAL_8T_WINDOW_CREATED',`windows=${(snap?.decisionWindows||[]).map(w=>`${w.id}:${w.reviewStart}->${w.reviewEnd}`).join('|')}`);
   check(binding?.complete===true&&binding?.anchorExact===true&&binding?.afterExact===true&&near(binding?.anchorTime,fixture.expected.reviewStart)&&near(binding?.afterTime,fixture.expected.reviewEnd),'REAL_BINDING_EXACT_113638_116338',JSON.stringify(binding));
+  check(authorityPresentation?.beforeState?.opponentWard==='unknown'&&authorityPresentation?.afterState?.opponentWard==='unknown','WARD_REMAINS_UNKNOWN_IN_AUTHORITY',JSON.stringify({before:authorityPresentation?.beforeState?.opponentWard,after:authorityPresentation?.afterState?.opponentWard}));
 
   const pipeRow=WB.RuntimeDecisionPipeline?.getForWindow?.(windowId)||null;
   const holdReasons=pipeRow?.detail?.reasonCodes||[];
   check(pipeRow?.status==='HOLD'&&holdReasons.includes(fixture.expected.safeHoldCriticalReason),'WARD_UNKNOWN_SAFE_HOLD',`status=${pipeRow?.status}; reason=${pipeRow?.reason}; generation=${pipeRow?.detail?.generationStatus}; reasons=${holdReasons.join(',')}`);
 
-  // A prior-run decision must not be accepted by CoachIntegration.
   WB.emit('comparison-decision-ready',{windowId,runId:fixture.expected.staleRunId,sourceAuthority:'stale-fixture',decision:{status:'OK',classification:'INSUFFICIENT_EVIDENCE',bestCandidateId:null,reasonCodes:['INSUFFICIENT_AUTHORITY'],ranking:{pairwise:[]}},playedMove:null});
   await sleep(20);
   check(!(WB.CoachIntegration?.snapshot?.()?.items||[]).some(x=>x.runId===fixture.expected.staleRunId),'STALE_RUN_DECISION_REJECTED',JSON.stringify(WB.CoachIntegration?.snapshot?.()));
 
-  // Persist authority state before the final production-like metadata reload.
-  await waitFor(async()=>{const s=await readStoredSession(window.indexedDB);return s?.analysisRun?.runId===fixture.analysis.runId&&Object.keys(s?.authorityPresentations||{}).length>0},{timeout:1800,step:20});
+  const persisted=await waitFor(async()=>{const s=await readStoredSession(window.indexedDB);return s?.analysisRun?.runId===fixture.analysis.runId&&Object.keys(s?.authorityPresentations||{}).length>0?s:null},{timeout:1800,step:20});
+  check(!!persisted,'AUTHORITY_PRESENTATION_PERSISTED_BEFORE_RESTORE');
 
-  // Final production event order requested by the audit.
   WB.setTimeline(clone(fixture.timeline));
   const restoreCount=WB.events.filter(x=>x.type==='replay-session-restore').length;
   video.dispatchEvent(new window.Event('loadedmetadata'));
