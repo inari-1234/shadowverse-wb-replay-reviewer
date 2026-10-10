@@ -19,7 +19,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-      - name: Reconstruct and verify exact finalized patch
+      - name: Reconstruct staged payloads
         shell: bash
         run: |
           set -euo pipefail
@@ -37,7 +37,22 @@ jobs:
           echo 'bcbc3e929d30a0723ef28d1b21a590556a8f95b51dcb065e7d1b15fa86572844  /tmp/final.patch' | sha256sum -c -
           echo '=== FINAL PATCH TARGETS ==='
           git apply --numstat /tmp/final.patch
-      - name: Materialize proposed green tree without committing
+          echo '=== NEWFILES PAYLOAD INSPECTION ==='
+          cat .tmp/pf1r2-newfiles/chunk_*.b64 > /tmp/newfiles.gz.b64
+          sha256sum /tmp/newfiles.gz.b64
+          base64 -d /tmp/newfiles.gz.b64 > /tmp/newfiles.gz
+          sha256sum /tmp/newfiles.gz
+          file /tmp/newfiles.gz
+          gzip -dc /tmp/newfiles.gz > /tmp/newfiles.payload
+          sha256sum /tmp/newfiles.payload
+          file /tmp/newfiles.payload
+          echo '--- payload head ---'
+          head -c 256 /tmp/newfiles.payload | od -An -tx1c
+          echo '--- tar probe ---'
+          tar -tf /tmp/newfiles.payload 2>/dev/null || true
+          echo '--- text head ---'
+          head -80 /tmp/newfiles.payload || true
+      - name: Materialize proposed green tree and inspect acceptance source
         shell: bash
         run: |
           set -euo pipefail
@@ -49,70 +64,11 @@ jobs:
           rm final.patch
           echo '=== PROPOSED CHANGES VS candidate-live ==='
           git diff --name-status origin/candidate-live
-          git status --short
-          echo '=== ACCEPTANCE FILE CANDIDATES ==='
+          echo '=== ACCEPTANCE FILE CANDIDATES BEFORE NEWFILES ==='
           find tests -maxdepth 3 -type f \( -iname '*0923*' -o -iname '*09-23*' -o -iname '*acceptance*' \) -print | sort
-          test -f tests/pf1r2-0923-recorded-acceptance-regression.mjs
-          echo '=== ACCEPTANCE TEST SHA256 ==='
-          sha256sum tests/pf1r2-0923-recorded-acceptance-regression.mjs
-          echo '=== ACCEPTANCE TEST REFERENCES ==='
-          grep -nE 'fixture|json|09-23|0923|115\.888|113\.638|18|15' tests/pf1r2-0923-recorded-acceptance-regression.mjs || true
-      - name: Run exact acceptance against candidate-live and classify RED
-        shell: bash
+          echo '=== SEARCH NEWFILES PAYLOAD FOR ACCEPTANCE NAME ==='
+          grep -a -n -E 'pf1r2-0923-recorded-acceptance|acceptance|113\.638|115\.888' /tmp/newfiles.payload | head -80 || true
+      - name: Stop after payload inspection
         run: |
-          set -euo pipefail
-          green=/tmp/pf1r2-green
-          git worktree add --detach /tmp/pf1r2-red origin/candidate-live
-          red=/tmp/pf1r2-red
-          testfile=tests/pf1r2-0923-recorded-acceptance-regression.mjs
-          mkdir -p "$red/tests"
-          cp "$green/$testfile" "$red/$testfile"
-          python - <<'PY'
-          from pathlib import Path
-          import re, shutil
-          green=Path('/tmp/pf1r2-green')
-          red=Path('/tmp/pf1r2-red')
-          test=green/'tests/pf1r2-0923-recorded-acceptance-regression.mjs'
-          text=test.read_text()
-          refs=set(re.findall(r"['\"]([^'\"]+\.(?:json|txt|csv))['\"]", text))
-          copied=[]
-          for ref in sorted(refs):
-              src=(test.parent/ref).resolve() if ref.startswith('.') else (green/ref)
-              try: src.relative_to(green)
-              except ValueError: continue
-              if src.is_file():
-                  dst=red/src.relative_to(green)
-                  dst.parent.mkdir(parents=True,exist_ok=True)
-                  shutil.copy2(src,dst)
-                  copied.append(str(src.relative_to(green)))
-          print('COPIED_FIXTURES', *copied)
-          if not copied:
-              print('NO_EXTERNAL_FIXTURE_REFERENCES')
-          PY
-          echo '=== FROZEN ACCEPTANCE HASHES GREEN SOURCE ==='
-          sha256sum "$green/$testfile"
-          find "$green/tests" -maxdepth 3 -type f \( -iname '*0923*' -o -iname '*09-23*' \) ! -path "$green/$testfile" -print0 | sort -z | xargs -0 -r sha256sum
-          echo '=== SAME HASHES IN RED WORKTREE ==='
-          sha256sum "$red/$testfile"
-          find "$red/tests" -maxdepth 3 -type f \( -iname '*0923*' -o -iname '*09-23*' \) ! -path "$red/$testfile" -print0 | sort -z | xargs -0 -r sha256sum
-          set +e
-          (cd "$red" && node "$testfile") > /tmp/accept-red.log 2>&1
-          rc=$?
-          set -e
-          cat /tmp/accept-red.log
-          echo "RED_EXIT_CODE=$rc"
-          test "$rc" -ne 0
-          if grep -Eiq 'ReferenceError|SyntaxError|TypeError: .* is not a function|ERR_MODULE_NOT_FOUND|Cannot find module' /tmp/accept-red.log; then
-            echo 'RED_REASON_INVALID_API_OR_LOAD_FAILURE=1'
-            exit 21
-          fi
-          if grep -Eiq '18[^0-9]+15|115\.888|stale|past run|previous run|run.*mix|mixed.*run|過去run|混在' /tmp/accept-red.log; then
-            echo 'RED_REASON_SYMPTOM_ASSERT=1'
-          else
-            echo 'RED_REASON_SYMPTOM_ASSERT=0'
-            exit 22
-          fi
-      - name: Stop after inspection
-        run: |
-          echo 'INSPECTION_ONLY_COMPLETE=1'
+          echo 'PAYLOAD_INSPECTION_COMPLETE=1'
           exit 23
