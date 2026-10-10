@@ -1,6 +1,6 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v113';
+const GATE_VERSION='recognition-quality-gate-v114';
 // ui-opt6R 09-23 offline expected-result oracle + visible cross-axis trade-off authority + P-E1R1/P-E2R1 + P-F1-R2-PM + P-D1R1 + P-F1-R2-G.
 // Architecture corrective gate: run isolation + single fresh pipeline + single presentation authority + decision input trace + recorded 09-23 structural acceptance.
 // Integrated acceptance is now a normal candidate gate item. It exercises real modules, event bus, IndexedDB restore, NG-D same-run HP transient correction, final DOM and playback; only captureState is substituted.
@@ -88,6 +88,7 @@ const tests=[
   'tests/ios-seek-fallback-regression.mjs',
   'tests/video-input-fastpath-regression.mjs',
   'tests/ward-tristate-regression.mjs',
+  'tests/pf1r2-ward-preaction-consensus-regression.mjs',
   'tests/runtime-invariants.mjs',
   'tests/ui-information-hierarchy-regression.mjs',
   'tests/ui-opt4a-regression.mjs',

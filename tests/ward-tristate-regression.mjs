@@ -56,5 +56,26 @@ assert.equal(turn1Rule.state,'none');
 assert.equal(turn1Rule.known,true);
 assert.equal(turn1Rule.reason,'first-player-own-turn1-rule');
 
+const measuredPair=[
+  {state:'unknown',offset:-.45,sampleTime:113.188,stats:{window:{frac:.019,minThird:0},attack:{attackFrac:.0541}}},
+  {state:'unknown',offset:0,sampleTime:113.638,stats:{window:{frac:.007,minThird:0},attack:{attackFrac:.1062}}}
+];
+const pairOnly=S.decideWardDecisionBackSamples(measuredPair);
+assert.equal(pairOnly.state,'unknown','two measured frames are not enough to prove no Ward');
+assert.equal(pairOnly.reason,'backward-none-insufficient-samples');
+const stableOccupiedNoWard=[
+  measuredPair[1],
+  {state:'unknown',offset:-.15,sampleTime:113.488,stats:{window:{frac:.011,minThird:.002},attack:{attackFrac:.082}}},
+  {state:'unknown',offset:-.30,sampleTime:113.338,stats:{window:{frac:.016,minThird:.004},attack:{attackFrac:.067}}},
+  measuredPair[0]
+];
+const noWard=S.decideWardDecisionBackSamples(stableOccupiedNoWard);
+assert.equal(noWard.state,'none');assert.equal(noWard.known,true);assert.equal(noWard.reason,'opponent-ward-absent-stable-followers');
+const historicalWard=stableOccupiedNoWard.map(x=>structuredClone(x));historicalWard[3]={...historicalWard[3],state:'present',stats:{window:{frac:.195,minThird:.135},attack:{attackFrac:.011}}};
+assert.equal(S.decideWardDecisionBackSamples(historicalWard).state,'unknown','past Ward in the backward window must block a no-Ward conclusion');
+const ambiguousShield=stableOccupiedNoWard.map(x=>structuredClone(x));ambiguousShield[2]={...ambiguousShield[2],stats:{window:{frac:.12,minThird:.04},attack:{attackFrac:.067}}};
+assert.equal(S.decideWardDecisionBackSamples(ambiguousShield).state,'unknown','green/shield ambiguity must remain unknown');
+const occupancyChange=stableOccupiedNoWard.map(x=>structuredClone(x));occupancyChange[2]={...occupancyChange[2],state:'none-candidate',stats:{window:{frac:0,minThird:0},attack:{attackFrac:.0002}}};
+assert.equal(S.decideWardDecisionBackSamples(occupancyChange).state,'unknown','board occupancy changes inside the proof window must remain unknown');
 
 console.log('WARD TRISTATE REGRESSION PASS');
