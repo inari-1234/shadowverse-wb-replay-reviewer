@@ -48,7 +48,7 @@ jobs:
           git apply final.patch
           rm final.patch
           echo '=== PROPOSED CHANGES VS candidate-live ==='
-          git diff --name-status candidate-live
+          git diff --name-status origin/candidate-live
           git status --short
           echo '=== ACCEPTANCE FILE CANDIDATES ==='
           find tests -maxdepth 3 -type f \( -iname '*0923*' -o -iname '*09-23*' -o -iname '*acceptance*' \) -print | sort
@@ -62,12 +62,11 @@ jobs:
         run: |
           set -euo pipefail
           green=/tmp/pf1r2-green
-          git worktree add --detach /tmp/pf1r2-red candidate-live
+          git worktree add --detach /tmp/pf1r2-red origin/candidate-live
           red=/tmp/pf1r2-red
           testfile=tests/pf1r2-0923-recorded-acceptance-regression.mjs
           mkdir -p "$red/tests"
           cp "$green/$testfile" "$red/$testfile"
-          # Copy only fixture files referenced by the acceptance when they exist in the proposed tree.
           python - <<'PY'
           from pathlib import Path
           import re, shutil
