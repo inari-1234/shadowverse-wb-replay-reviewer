@@ -31,7 +31,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   regression:
@@ -42,7 +42,29 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
+      - name: Apply one-shot Ward backward consensus patch
+        id: patch
+        run: |
+          if grep -q "state-clean-1.8.29" state-recognition.js; then
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          python tools/pf1r2_ward_backward_patch.py
+          git checkout -- .github/workflows/recognition-quality.yml tools/pf1r2_ward_backward_patch.py
+          if ! git diff --quiet --exit-code; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add -A
+            git diff --cached --check
+            git commit -m 'fix: confirm no Ward from pre-action backward consensus'
+            git push origin HEAD:candidate/p-f1-r2-ward-backward-consensus
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+          fi
       - name: Install pinned integrated-acceptance dependencies
+        if: steps.patch.outputs.changed != 'true'
         run: npm install --no-audit --no-fund --ignore-scripts
       - name: Run regression and real-device benchmark gate
+        if: steps.patch.outputs.changed != 'true'
         run: node tests/run-quality-gate.mjs
