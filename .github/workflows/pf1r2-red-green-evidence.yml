@@ -1,0 +1,113 @@
+name: P-F1-R2 RED GREEN Evidence
+
+on:
+  push:
+    branches:
+      - evidence/pf1r2-red-green-20261010
+
+permissions:
+  contents: read
+
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout evidence branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run immutable RED/GREEN acceptance and asset comparison
+        shell: bash
+        run: |
+          set -euo pipefail
+          RED_SHA=88dc867c9e2ba2e3424723b38935d84bddd87c2c
+          GREEN_SHA=4323fe1de8e4bcd833848330eb643cbd93e6f792
+          ACCEPTANCE=tests/pf1r2-0923-recorded-acceptance-regression.mjs
+          FIXTURE=tests/pf1r2-0923-offline-expected-fixture.json
+
+          git worktree add --detach /tmp/red "$RED_SHA"
+          git worktree add --detach /tmp/green "$GREEN_SHA"
+
+          git show "$GREEN_SHA:$ACCEPTANCE" > /tmp/acceptance.frozen
+          git show "$GREEN_SHA:$FIXTURE" > /tmp/fixture.frozen
+          cp /tmp/acceptance.frozen "/tmp/red/$ACCEPTANCE"
+          cp /tmp/fixture.frozen "/tmp/red/$FIXTURE"
+
+          acceptance_sha=$(sha256sum /tmp/acceptance.frozen | awk '{print $1}')
+          fixture_sha=$(sha256sum /tmp/fixture.frozen | awk '{print $1}')
+          echo "FROZEN_ACCEPTANCE_SHA256=$acceptance_sha"
+          echo "FROZEN_FIXTURE_SHA256=$fixture_sha"
+
+          red_acceptance_sha=$(sha256sum "/tmp/red/$ACCEPTANCE" | awk '{print $1}')
+          red_fixture_sha=$(sha256sum "/tmp/red/$FIXTURE" | awk '{print $1}')
+          test "$red_acceptance_sha" = "$acceptance_sha"
+          test "$red_fixture_sha" = "$fixture_sha"
+          echo "RED_ACCEPTANCE_SHA256=$red_acceptance_sha"
+          echo "RED_FIXTURE_SHA256=$red_fixture_sha"
+
+          set +e
+          (cd /tmp/red && node "$ACCEPTANCE") 2>&1 | tee /tmp/red.log
+          red_rc=${PIPESTATUS[0]}
+          set -e
+          echo "RED_EXIT_CODE=$red_rc"
+          grep 'ACCEPTANCE ASSERT FAIL:' /tmp/red.log | tee /tmp/red-failed-asserts.txt || true
+          if [ "$red_rc" -eq 0 ]; then
+            echo 'ERROR: RED unexpectedly passed.' >&2
+            exit 31
+          fi
+          if ! grep -Eq 'ACCEPTANCE ASSERT FAIL: (RERENDER_RETAINS_113638|RERENDER_RETAINS_PP_2_TO_1|NO_PAST_RUN_STATE_MIXING)' /tmp/red.log; then
+            echo 'ERROR: RED did not fail on an approved structural symptom assert.' >&2
+            exit 32
+          fi
+          echo 'RED_REASON_VALID=YES'
+
+          test -z "$(git -C /tmp/green status --porcelain)"
+          green_acceptance_sha=$(sha256sum "/tmp/green/$ACCEPTANCE" | awk '{print $1}')
+          green_fixture_sha=$(sha256sum "/tmp/green/$FIXTURE" | awk '{print $1}')
+          echo "GREEN_ACCEPTANCE_SHA256=$green_acceptance_sha"
+          echo "GREEN_FIXTURE_SHA256=$green_fixture_sha"
+          test "$green_acceptance_sha" = "$acceptance_sha"
+          test "$green_fixture_sha" = "$fixture_sha"
+          (cd /tmp/green && node "$ACCEPTANCE") 2>&1 | tee /tmp/green.log
+          echo 'GREEN_ACCEPTANCE_PASS=YES'
+          test -z "$(git -C /tmp/green status --porcelain)"
+          echo 'GREEN_TREE_CLEAN_AFTER_RUN=YES'
+
+          assets=(
+            app-core.js
+            turn-recognition.js
+            mulligan-class.js
+            card-db.js
+            hand-recognition.js
+            state-recognition.js
+            replay-session.js
+            review-engine.js
+            counterfactual-review.js
+            diagnostics.js
+            coach-integration.js
+            coach-explanation.js
+            runtime-decision-pipeline.js
+            runtime-authority-binding.js
+            legal-action-sequence.js
+            outcome-backtracking.js
+            comparison-decision.js
+            played-move-authority.js
+            position-state-runtime.js
+            common-rule-engine-runtime.js
+          )
+          printf 'ASSET\tRED_SHA256\tGREEN_SHA256\tSAME\n' | tee /tmp/asset-sha.tsv
+          for f in "${assets[@]}"; do
+            r=$(sha256sum "/tmp/red/$f" | awk '{print $1}')
+            g=$(sha256sum "/tmp/green/$f" | awk '{print $1}')
+            if [ "$r" = "$g" ]; then same=YES; else same=NO; fi
+            printf '%s\t%s\t%s\t%s\n' "$f" "$r" "$g" "$same" | tee -a /tmp/asset-sha.tsv
+          done
+
+          echo '--- RED FAILED ASSERTS ---'
+          cat /tmp/red-failed-asserts.txt
+          echo '--- 20 ASSET SHA256 COMPARISON ---'
+          cat /tmp/asset-sha.tsv
+
+          (cd /tmp/green && node tests/run-quality-gate.mjs) 2>&1 | tee /tmp/green-quality-gate.log
+          echo 'GREEN_QUALITY_GATE_PASS=YES'
