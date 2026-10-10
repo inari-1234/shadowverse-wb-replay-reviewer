@@ -1,0 +1,34 @@
+name: Runtime Manifest Probe
+on:
+  push:
+    branches:
+      - evidence/pf1r2-runtime-manifest-probe-20261011
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Compare runtime asset SHA-256 against index manifest
+        run: |
+          python3 - <<'PY'
+          import re, json, base64, hashlib, pathlib
+          html=pathlib.Path('index.html').read_text()
+          m=re.search(r'const manifest=window\.__wbRuntimeAssetManifest=(\{.*?\});', html)
+          assert m, 'manifest not found'
+          manifest=json.loads(m.group(1))
+          print('BUILD_ID='+manifest['buildId'])
+          print('ASSET_COUNT='+str(len(manifest['assets'])))
+          bad=[]
+          for name in manifest['assets']:
+              data=pathlib.Path(name).read_bytes()
+              actual='sha256-'+base64.b64encode(hashlib.sha256(data).digest()).decode()
+              expected=manifest['integrity'][name]
+              ok=actual==expected
+              print(f'{name}\t{"PASS" if ok else "FAIL"}\texpected={expected}\tactual={actual}')
+              if not ok: bad.append((name,expected,actual))
+          print('MISMATCH_COUNT='+str(len(bad)))
+          for name,expected,actual in bad:
+              print(f'MISMATCH {name} expected={expected} actual={actual}')
+          PY
