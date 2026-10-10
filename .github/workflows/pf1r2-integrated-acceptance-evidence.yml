@@ -1,0 +1,92 @@
+name: P-F1-R2 Integrated Acceptance Evidence
+
+on:
+  push:
+    branches:
+      - evidence/pf1r2-integrated-acceptance-20261010
+
+permissions:
+  contents: read
+
+jobs:
+  integrated:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install harness dependencies outside worktrees
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/pf1r2-deps
+          cd /tmp/pf1r2-deps
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund jsdom@26.1.0 fake-indexeddb@6.0.0 >/dev/null
+      - name: Run frozen integrated acceptance RED then clean
+        shell: bash
+        env:
+          NODE_PATH: /tmp/pf1r2-deps/node_modules
+        run: |
+          set -euo pipefail
+          RED_SHA=88dc867c9e2ba2e3424723b38935d84bddd87c2c
+          CLEAN_SHA=4323fe1de8e4bcd833848330eb643cbd93e6f792
+          TEST=tests/pf1r2-0923-integrated-acceptance-regression.cjs
+          FIXTURE=tests/pf1r2-0923-integrated-acceptance-fixture.json
+
+          git worktree add --detach /tmp/red "$RED_SHA"
+          git worktree add --detach /tmp/clean "$CLEAN_SHA"
+          cp "$TEST" /tmp/frozen-test.cjs
+          cp "$FIXTURE" /tmp/frozen-fixture.json
+          test_sha=$(sha256sum /tmp/frozen-test.cjs | awk '{print $1}')
+          fixture_sha=$(sha256sum /tmp/frozen-fixture.json | awk '{print $1}')
+          echo "FROZEN_INTEGRATED_ACCEPTANCE_SHA256=$test_sha"
+          echo "FROZEN_INTEGRATED_FIXTURE_SHA256=$fixture_sha"
+
+          for dir in /tmp/red /tmp/clean; do
+            cp /tmp/frozen-test.cjs "$dir/$TEST"
+            cp /tmp/frozen-fixture.json "$dir/$FIXTURE"
+            test "$(sha256sum "$dir/$TEST" | awk '{print $1}')" = "$test_sha"
+            test "$(sha256sum "$dir/$FIXTURE" | awk '{print $1}')" = "$fixture_sha"
+          done
+
+          set +e
+          (cd /tmp/red && node "$TEST") 2>&1 | tee /tmp/red-integrated.log
+          red_rc=${PIPESTATUS[0]}
+          (cd /tmp/clean && node "$TEST") 2>&1 | tee /tmp/clean-integrated.log
+          clean_rc=${PIPESTATUS[0]}
+          set -e
+
+          echo "RED_EXIT_CODE=$red_rc"
+          echo "CLEAN_EXIT_CODE=$clean_rc"
+          echo '--- RED FAILED ASSERTS ---'
+          grep 'INTEGRATED ASSERT FAIL:' /tmp/red-integrated.log || true
+          echo '--- CLEAN FAILED ASSERTS ---'
+          grep 'INTEGRATED ASSERT FAIL:' /tmp/clean-integrated.log || true
+
+          if [ "$red_rc" -eq 0 ]; then
+            echo 'ERROR: candidate-live unexpectedly passed integrated Acceptance.' >&2
+            exit 31
+          fi
+          if [ "$red_rc" -eq 2 ]; then
+            echo 'ERROR: RED failed by harness error instead of symptom assertions.' >&2
+            exit 32
+          fi
+          if ! grep -Eq 'INTEGRATED ASSERT FAIL: (V2_DIRTY_6T_STATE_REJECTED|REAL_BINDING_EXACT_113638_116338|FINAL_DOM_8T_START_113638|FINAL_DOM_PP_2_TO_1|FINAL_DOM_NO_6T_FALSE_HP_18_TO_15|FINAL_DOM_NO_LEGACY_REVIEW_COACH|WARD_UNKNOWN_SAFE_HOLD|PLAYBACK_AUTHORITY_START_113638)' /tmp/red-integrated.log; then
+            echo 'ERROR: RED did not demonstrate an approved integration symptom.' >&2
+            exit 33
+          fi
+          echo 'RED_REASON_VALID=YES'
+
+          rm -f "/tmp/red/$TEST" "/tmp/red/$FIXTURE" "/tmp/clean/$TEST" "/tmp/clean/$FIXTURE"
+          test -z "$(git -C /tmp/red status --porcelain)"
+          test -z "$(git -C /tmp/clean status --porcelain)"
+          echo 'SOURCE_WORKTREES_CLEAN_AFTER_RUN=YES'
+
+          if [ "$clean_rc" -ne 0 ]; then
+            echo 'CLEAN_INTEGRATED_ACCEPTANCE_PASS=NO'
+            exit 41
+          fi
+          echo 'CLEAN_INTEGRATED_ACCEPTANCE_PASS=YES'
+          (cd /tmp/clean && node tests/run-quality-gate.mjs)
+          echo 'CLEAN_QUALITY_GATE_PASS=YES'
