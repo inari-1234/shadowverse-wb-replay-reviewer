@@ -1,0 +1,75 @@
+{
+  "version": "pf1r2-0923-integrated-acceptance-fixture-v1",
+  "purpose": "Integration acceptance oracle. Ward remains unknown; never supplement unconfirmed values.",
+  "videoMeta": {
+    "name": "09-23.mp4",
+    "size": 123456,
+    "lastModified": 1727078400000,
+    "type": "video/mp4"
+  },
+  "timeline": [
+    {"time": 70.0, "turn": 6, "side": "bottom", "source": "fixture"},
+    {"time": 90.0, "turn": 7, "side": "top", "source": "fixture"},
+    {"time": 110.0, "turn": 8, "side": "bottom", "source": "fixture"},
+    {"time": 130.0, "turn": 9, "side": "top", "source": "fixture"}
+  ],
+  "dirtyV2": {
+    "version": "replay-session-v2",
+    "sourceKey": "09-23.mp4|123456|1727078400000",
+    "createdAt": "2026-09-23T00:00:00.000Z",
+    "updatedAt": "2026-10-01T00:00:00.000Z",
+    "analysisRun": null,
+    "states": [
+      {"id":"st:6:bottom:72.300","time":72.3,"turn":6,"absoluteSide":"bottom","relativeSide":"自分","pp":6,"opponentHP":18,"resources":{"extraPP":"unknown","ep":"unknown","sep":"unknown"},"opponentWard":"unknown","boardDamage":0,"boardDamageKnown":true,"hand":{"recognized":{}}},
+      {"id":"st:6:bottom:74.141","time":74.141,"turn":6,"absoluteSide":"bottom","relativeSide":"自分","pp":6,"opponentHP":15,"resources":{"extraPP":"unknown","ep":"unknown","sep":"unknown"},"opponentWard":"unknown","boardDamage":0,"boardDamageKnown":true,"hand":{"recognized":{}}}
+    ],
+    "actions": [
+      {"id":"dirty-6t-hp","type":"opponent-hp-change","fromStateId":"st:6:bottom:72.300","toStateId":"st:6:bottom:74.141","time":74.141,"turn":6,"confidence":"observed","data":{"from":18,"to":15,"delta":-3}}
+    ],
+    "observedEpisodes": [],
+    "decisionWindows": [
+      {"id":"dirty-window-6t","turn":6,"reviewStart":72.3,"reviewEnd":74.141,"beforeState":{"id":"st:6:bottom:72.300","time":72.3,"turn":6,"absoluteSide":"bottom","relativeSide":"自分","pp":6,"opponentHP":18,"resources":{"extraPP":"unknown","ep":"unknown","sep":"unknown"},"opponentWard":"unknown","boardDamage":0,"boardDamageKnown":true,"hand":{"recognized":{}}},"afterState":{"id":"st:6:bottom:74.141","time":74.141,"turn":6,"absoluteSide":"bottom","relativeSide":"自分","pp":6,"opponentHP":15,"resources":{"extraPP":"unknown","ep":"unknown","sep":"unknown"},"opponentWard":"unknown","boardDamage":0,"boardDamageKnown":true,"hand":{"recognized":{}}},"reviewPointIds":["rp:dirty-6t-hp"],"observedChanges":[{"id":"dirty-6t-hp","type":"opponent-hp-change","data":{"from":18,"to":15,"delta":-3}}],"importanceReasons":["相手HP 18 → 15"],"confidence":"observed"}
+    ],
+    "observationReviewPoints": [
+      {"id":"rp:dirty-6t-hp","source":"action","sourceId":"dirty-6t-hp","time":74.141,"turn":6,"priority":"high","kind":"large-hp-change","title":"大きなHP変化","detail":"相手HP 18 → 15"}
+    ],
+    "reviewSignals": [],
+    "supplementalReviewPoints": [],
+    "reviewPoints": [],
+    "scenes": [],
+    "tacticalReview": null,
+    "turnTimeline": [],
+    "mulligan": null,
+    "classDetection": null
+  },
+  "freshCaptures": [
+    {"key":"sixA","time":72.3,"turn":6,"pp":6,"opponentHP":18,"boardDamage":0,"boardDamageKnown":true,"extraPP":"unknown","ep":"unknown","sep":"unknown","opponentWard":"unknown","hand":{}},
+    {"key":"sixB","time":74.141,"turn":6,"pp":6,"opponentHP":18,"boardDamage":0,"boardDamageKnown":true,"extraPP":"unknown","ep":"unknown","sep":"unknown","opponentWard":"unknown","hand":{}},
+    {"key":"anchor113638","time":113.638,"turn":8,"pp":2,"opponentHP":16,"boardDamage":0,"boardDamageKnown":true,"extraPP":"no","ep":"yes","sep":"unknown","opponentWard":"unknown","hand":{"quickBlader":{"id":"quickBlader","label":"刹那のクイックブレイダー","count":1,"confidence":0.9221,"positiveFrames":4,"known":true}}},
+    {"key":"original115888","time":115.888,"turn":8,"pp":1,"opponentHP":16,"boardDamage":0,"boardDamageKnown":true,"extraPP":"no","ep":"yes","sep":"unknown","opponentWard":"unknown","hand":{}},
+    {"key":"after116338","time":116.338,"turn":8,"pp":1,"opponentHP":16,"boardDamage":3,"boardDamageKnown":true,"extraPP":"no","ep":"unknown","sep":"unknown","opponentWard":"unknown","hand":{}}
+  ],
+  "analysis": {
+    "version": "match-auto-review-v12",
+    "runId": "integration-run-A",
+    "nonce": "integration-nonce-A",
+    "startedAt": "2026-10-10T00:00:00.000Z",
+    "finishedAt": "2026-10-10T00:01:00.000Z",
+    "cancelled": false,
+    "targetSide": "bottom",
+    "totalTurns": 2,
+    "eligibleTurns": 2,
+    "completedTurns": 2,
+    "skippedTurns": 0,
+    "turns": []
+  },
+  "expected": {
+    "reviewStart": 113.638,
+    "reviewEnd": 116.338,
+    "ppBefore": "2",
+    "ppAfter": "1",
+    "forbiddenHpText": "18 → 15",
+    "safeHoldCriticalReason": "OPPONENT_WARD_UNRESOLVED",
+    "staleRunId": "integration-run-OLD"
+  }
+}
