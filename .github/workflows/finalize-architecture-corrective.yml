@@ -1,0 +1,106 @@
+name: Finalize P-F1-R2 Architecture Corrective
+on:
+  push:
+    branches:
+      - candidate/p-f1-r2-architecture-corrective
+    paths:
+      - '.github/workflows/finalize-architecture-corrective.yml'
+permissions:
+  contents: write
+jobs:
+  finalize:
+    if: ${{ !contains(github.event.head_commit.message, '[architecture-corrective-finalized]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: candidate/p-f1-r2-architecture-corrective
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Verify and apply exact finalized patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .tmp/pf1r2-final-patch/chunk_00.b64 \
+              .tmp/pf1r2-final-patch/chunk_01.b64 \
+              .tmp/pf1r2-final-patch/chunk_02.b64 \
+              .tmp/pf1r2-final-patch/chunk_03.b64 \
+              .tmp/pf1r2-final-patch/chunk_04.b64 \
+              .tmp/pf1r2-final-patch/chunk_05.b64 > /tmp/final.patch.gz.b64
+          test "$(wc -c < /tmp/final.patch.gz.b64)" -eq 39464
+          echo '7e8ed4365fda7a0b515ae7eb9fb3d7ea758fafbd8fdeb2901fc8afdd74a5c62d  /tmp/final.patch.gz.b64' | sha256sum -c -
+          base64 -d /tmp/final.patch.gz.b64 > /tmp/final.patch.gz
+          echo '64effcfadb9768e9f947a30bb85fbd37ee89463178489408687c5a0f23752f20  /tmp/final.patch.gz' | sha256sum -c -
+          gzip -dc /tmp/final.patch.gz > /tmp/final.patch
+          echo 'bcbc3e929d30a0723ef28d1b21a590556a8f95b51dcb065e7d1b15fa86572844  /tmp/final.patch' | sha256sum -c -
+          git apply --check /tmp/final.patch
+          git apply /tmp/final.patch
+      - name: Remove implementation-only temporary assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f \
+            .github/scripts/align_p0_single_presentation_tests.py \
+            .github/scripts/apply_p0_run_isolation.py \
+            .github/scripts/apply_p0_single_presentation.py \
+            .github/scripts/apply_p1_single_fresh_pipeline.py \
+            .github/workflows/apply-p0-run-isolation.yml \
+            .github/workflows/apply-p0-single-presentation.yml \
+            .github/workflows/apply-p1-single-fresh-pipeline.yml \
+            .github/workflows/export-architecture-worktree.yml \
+            .github/workflows/export-current-architecture-worktree.yml \
+            .github/workflows/pf1r2-presentation-migration-red-proof.yml \
+            .github/workflows/pf1r2-run-isolation-red.yml \
+            .github/workflows/pf1r2-single-fresh-pipeline-red.yml \
+            .github/workflows/pf1r2-single-presentation-red.yml \
+            .github/workflows/finalize-architecture-corrective.yml
+          rm -rf .tmp/pf1r2-arch-patch .tmp/pf1r2-final-patch
+          rmdir .tmp 2>/dev/null || true
+          test ! -e .github/workflows/finalize-architecture-corrective.yml
+          test ! -e .tmp/pf1r2-final-patch
+      - name: Static and dedicated architecture verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          node tests/pf1r2-run-isolation-regression.mjs
+          node tests/pf1r2-single-fresh-pipeline-regression.mjs
+          node tests/pf1r2-single-presentation-authority-regression.mjs
+          node tests/pf1r2-live-playback-authority-regression.mjs
+          node tests/pf1r2-decision-input-trace-regression.mjs
+          node tests/pf1r2-0923-recorded-acceptance-regression.mjs
+          node tests/pf1r2-runtime-code-authority-regression.mjs
+          node tests/pf1r2-runtime-client-isolation-regression.mjs
+          node tests/candidate-update-channel-regression.mjs
+      - name: Verify Runtime Code Authority build formula
+        shell: python
+        run: |
+          from pathlib import Path
+          import re,json,hashlib
+          assets=['app-core.js','turn-recognition.js','mulligan-class.js','card-db.js','hand-recognition.js','state-recognition.js','replay-session.js','review-engine.js','counterfactual-review.js','diagnostics.js','coach-integration.js','coach-explanation.js','runtime-decision-pipeline.js','runtime-authority-binding.js','legal-action-sequence.js','outcome-backtracking.js','comparison-decision.js','played-move-authority.js','position-state-runtime.js','common-rule-engine-runtime.js']
+          hex_digests={n:hashlib.sha256(Path(n).read_bytes()).hexdigest() for n in assets}
+          seed='\n'.join(f'{n}:{hex_digests[n]}' for n in sorted(assets)).encode()
+          build='candidate-assets-'+hashlib.sha256(seed).hexdigest()[:12]
+          assert build=='candidate-assets-56acc31366d8', build
+          text=Path('index.html').read_text()
+          assert f'"buildId":"{build}"' in text
+          latest=json.loads(Path('latest.json').read_text())
+          assert latest['runtimeBuildId']==build
+          assert latest['runtimeAssetCount']==20
+          print('FINAL_RUNTIME_BUILD_ID',build)
+      - name: Full Quality Gate v111
+        run: node tests/run-quality-gate.mjs
+      - name: Commit finalized exact tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git status --short
+          git commit -m "[architecture-corrective-finalized] isolate runs and unify fresh presentation authority"
+          git push origin HEAD:candidate/p-f1-r2-architecture-corrective
