@@ -7,6 +7,7 @@ on:
       - '.github/scripts/apply_p1_single_fresh_pipeline.py'
       - '.github/workflows/apply-p1-single-fresh-pipeline.yml'
       - 'tests/pf1r2-single-fresh-pipeline-regression.mjs'
+      - 'tests/pf1r2g-fresh-e2e-gate-regression.mjs'
 permissions:
   contents: write
 jobs:
