@@ -1,4 +1,4 @@
-name: Finalize P-F1-R2 Architecture Corrective
+name: Inspect P-F1-R2 Architecture Acceptance
 on:
   push:
     branches:
@@ -6,10 +6,9 @@ on:
     paths:
       - '.github/workflows/finalize-architecture-corrective.yml'
 permissions:
-  contents: write
+  contents: read
 jobs:
-  finalize:
-    if: ${{ !contains(github.event.head_commit.message, '[architecture-corrective-finalized]') }}
+  inspect:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -20,7 +19,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-      - name: Verify and apply exact finalized patch
+      - name: Reconstruct and verify exact finalized patch
         shell: bash
         run: |
           set -euo pipefail
@@ -36,71 +35,85 @@ jobs:
           echo '64effcfadb9768e9f947a30bb85fbd37ee89463178489408687c5a0f23752f20  /tmp/final.patch.gz' | sha256sum -c -
           gzip -dc /tmp/final.patch.gz > /tmp/final.patch
           echo 'bcbc3e929d30a0723ef28d1b21a590556a8f95b51dcb065e7d1b15fa86572844  /tmp/final.patch' | sha256sum -c -
-          git apply --check /tmp/final.patch
-          git apply /tmp/final.patch
-      - name: Remove implementation-only temporary assets
+          echo '=== FINAL PATCH TARGETS ==='
+          git apply --numstat /tmp/final.patch
+      - name: Materialize proposed green tree without committing
         shell: bash
         run: |
           set -euo pipefail
-          rm -f \
-            .github/scripts/align_p0_single_presentation_tests.py \
-            .github/scripts/apply_p0_run_isolation.py \
-            .github/scripts/apply_p0_single_presentation.py \
-            .github/scripts/apply_p1_single_fresh_pipeline.py \
-            .github/workflows/apply-p0-run-isolation.yml \
-            .github/workflows/apply-p0-single-presentation.yml \
-            .github/workflows/apply-p1-single-fresh-pipeline.yml \
-            .github/workflows/export-architecture-worktree.yml \
-            .github/workflows/export-current-architecture-worktree.yml \
-            .github/workflows/pf1r2-presentation-migration-red-proof.yml \
-            .github/workflows/pf1r2-run-isolation-red.yml \
-            .github/workflows/pf1r2-single-fresh-pipeline-red.yml \
-            .github/workflows/pf1r2-single-presentation-red.yml \
-            .github/workflows/finalize-architecture-corrective.yml
-          rm -rf .tmp/pf1r2-arch-patch .tmp/pf1r2-final-patch
-          rmdir .tmp 2>/dev/null || true
-          test ! -e .github/workflows/finalize-architecture-corrective.yml
-          test ! -e .tmp/pf1r2-final-patch
-      - name: Static and dedicated architecture verification
-        shell: bash
-        run: |
-          set -euo pipefail
-          git diff --check
-          node tests/pf1r2-run-isolation-regression.mjs
-          node tests/pf1r2-single-fresh-pipeline-regression.mjs
-          node tests/pf1r2-single-presentation-authority-regression.mjs
-          node tests/pf1r2-live-playback-authority-regression.mjs
-          node tests/pf1r2-decision-input-trace-regression.mjs
-          node tests/pf1r2-0923-recorded-acceptance-regression.mjs
-          node tests/pf1r2-runtime-code-authority-regression.mjs
-          node tests/pf1r2-runtime-client-isolation-regression.mjs
-          node tests/candidate-update-channel-regression.mjs
-      - name: Verify Runtime Code Authority build formula
-        shell: python
-        run: |
-          from pathlib import Path
-          import re,json,hashlib
-          assets=['app-core.js','turn-recognition.js','mulligan-class.js','card-db.js','hand-recognition.js','state-recognition.js','replay-session.js','review-engine.js','counterfactual-review.js','diagnostics.js','coach-integration.js','coach-explanation.js','runtime-decision-pipeline.js','runtime-authority-binding.js','legal-action-sequence.js','outcome-backtracking.js','comparison-decision.js','played-move-authority.js','position-state-runtime.js','common-rule-engine-runtime.js']
-          hex_digests={n:hashlib.sha256(Path(n).read_bytes()).hexdigest() for n in assets}
-          seed='\n'.join(f'{n}:{hex_digests[n]}' for n in sorted(assets)).encode()
-          build='candidate-assets-'+hashlib.sha256(seed).hexdigest()[:12]
-          assert build=='candidate-assets-56acc31366d8', build
-          text=Path('index.html').read_text()
-          assert f'"buildId":"{build}"' in text
-          latest=json.loads(Path('latest.json').read_text())
-          assert latest['runtimeBuildId']==build
-          assert latest['runtimeAssetCount']==20
-          print('FINAL_RUNTIME_BUILD_ID',build)
-      - name: Full Quality Gate v111
-        run: node tests/run-quality-gate.mjs
-      - name: Commit finalized exact tree
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git diff --cached --check
+          git worktree add --detach /tmp/pf1r2-green HEAD
+          cp /tmp/final.patch /tmp/pf1r2-green/final.patch
+          cd /tmp/pf1r2-green
+          git apply --check final.patch
+          git apply final.patch
+          rm final.patch
+          echo '=== PROPOSED CHANGES VS candidate-live ==='
+          git diff --name-status candidate-live
           git status --short
-          git commit -m "[architecture-corrective-finalized] isolate runs and unify fresh presentation authority"
-          git push origin HEAD:candidate/p-f1-r2-architecture-corrective
+          echo '=== ACCEPTANCE FILE CANDIDATES ==='
+          find tests -maxdepth 3 -type f \( -iname '*0923*' -o -iname '*09-23*' -o -iname '*acceptance*' \) -print | sort
+          test -f tests/pf1r2-0923-recorded-acceptance-regression.mjs
+          echo '=== ACCEPTANCE TEST SHA256 ==='
+          sha256sum tests/pf1r2-0923-recorded-acceptance-regression.mjs
+          echo '=== ACCEPTANCE TEST REFERENCES ==='
+          grep -nE 'fixture|json|09-23|0923|115\.888|113\.638|18|15' tests/pf1r2-0923-recorded-acceptance-regression.mjs || true
+      - name: Run exact acceptance against candidate-live and classify RED
+        shell: bash
+        run: |
+          set -euo pipefail
+          green=/tmp/pf1r2-green
+          git worktree add --detach /tmp/pf1r2-red candidate-live
+          red=/tmp/pf1r2-red
+          testfile=tests/pf1r2-0923-recorded-acceptance-regression.mjs
+          mkdir -p "$red/tests"
+          cp "$green/$testfile" "$red/$testfile"
+          # Copy only fixture files referenced by the acceptance when they exist in the proposed tree.
+          python - <<'PY'
+          from pathlib import Path
+          import re, shutil
+          green=Path('/tmp/pf1r2-green')
+          red=Path('/tmp/pf1r2-red')
+          test=green/'tests/pf1r2-0923-recorded-acceptance-regression.mjs'
+          text=test.read_text()
+          refs=set(re.findall(r"['\"]([^'\"]+\.(?:json|txt|csv))['\"]", text))
+          copied=[]
+          for ref in sorted(refs):
+              src=(test.parent/ref).resolve() if ref.startswith('.') else (green/ref)
+              try: src.relative_to(green)
+              except ValueError: continue
+              if src.is_file():
+                  dst=red/src.relative_to(green)
+                  dst.parent.mkdir(parents=True,exist_ok=True)
+                  shutil.copy2(src,dst)
+                  copied.append(str(src.relative_to(green)))
+          print('COPIED_FIXTURES', *copied)
+          if not copied:
+              print('NO_EXTERNAL_FIXTURE_REFERENCES')
+          PY
+          echo '=== FROZEN ACCEPTANCE HASHES GREEN SOURCE ==='
+          sha256sum "$green/$testfile"
+          find "$green/tests" -maxdepth 3 -type f \( -iname '*0923*' -o -iname '*09-23*' \) ! -path "$green/$testfile" -print0 | sort -z | xargs -0 -r sha256sum
+          echo '=== SAME HASHES IN RED WORKTREE ==='
+          sha256sum "$red/$testfile"
+          find "$red/tests" -maxdepth 3 -type f \( -iname '*0923*' -o -iname '*09-23*' \) ! -path "$red/$testfile" -print0 | sort -z | xargs -0 -r sha256sum
+          set +e
+          (cd "$red" && node "$testfile") > /tmp/accept-red.log 2>&1
+          rc=$?
+          set -e
+          cat /tmp/accept-red.log
+          echo "RED_EXIT_CODE=$rc"
+          test "$rc" -ne 0
+          if grep -Eiq 'ReferenceError|SyntaxError|TypeError: .* is not a function|ERR_MODULE_NOT_FOUND|Cannot find module' /tmp/accept-red.log; then
+            echo 'RED_REASON_INVALID_API_OR_LOAD_FAILURE=1'
+            exit 21
+          fi
+          if grep -Eiq '18[^0-9]+15|115\.888|stale|past run|previous run|run.*mix|mixed.*run|過去run|混在' /tmp/accept-red.log; then
+            echo 'RED_REASON_SYMPTOM_ASSERT=1'
+          else
+            echo 'RED_REASON_SYMPTOM_ASSERT=0'
+            exit 22
+          fi
+      - name: Stop after inspection
+        run: |
+          echo 'INSPECTION_ONLY_COMPLETE=1'
+          exit 23
