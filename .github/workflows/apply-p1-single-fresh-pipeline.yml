@@ -1,0 +1,36 @@
+name: Apply P1 Single Fresh Pipeline
+on:
+  push:
+    branches:
+      - candidate/p-f1-r2-architecture-corrective
+    paths:
+      - '.github/scripts/apply_p1_single_fresh_pipeline.py'
+      - '.github/workflows/apply-p1-single-fresh-pipeline.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: candidate/p-f1-r2-architecture-corrective
+          fetch-depth: 0
+      - run: python .github/scripts/apply_p1_single_fresh_pipeline.py
+      - name: Dedicated regressions
+        run: |
+          git diff --check
+          node tests/pf1r2-run-isolation-regression.mjs
+          node tests/pf1r2-single-fresh-pipeline-regression.mjs
+          node tests/replay-session-regression.mjs
+          node tests/pf1r2-fresh-evidence-regression.mjs
+          node tests/pf1r2g-fresh-e2e-gate-regression.mjs
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add replay-session.js state-recognition.js runtime-decision-pipeline.js runtime-authority-binding.js coach-integration.js
+          git diff --cached --check
+          git commit -m "P1 unify fresh run and isolate PF0B captures"
+          git push origin HEAD:candidate/p-f1-r2-architecture-corrective
