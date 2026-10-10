@@ -5,6 +5,7 @@ on:
       - candidate/p-f1-r2-architecture-corrective
     paths:
       - '.github/scripts/apply_p0_single_presentation.py'
+      - '.github/scripts/align_p0_single_presentation_tests.py'
       - '.github/workflows/apply-p0-single-presentation.yml'
       - 'tests/pf1r2-single-presentation-authority-regression.mjs'
 permissions:
@@ -18,7 +19,9 @@ jobs:
         with:
           ref: candidate/p-f1-r2-architecture-corrective
           fetch-depth: 0
-      - run: python .github/scripts/apply_p0_single_presentation.py
+      - run: |
+          python .github/scripts/apply_p0_single_presentation.py
+          python .github/scripts/align_p0_single_presentation_tests.py
       - name: Dedicated regressions
         run: |
           git diff --check
@@ -34,7 +37,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add replay-session.js runtime-authority-binding.js coach-integration.js tests/pe2-coach-integration-regression.mjs tests/pe1r1-pe2r1-coach-semantic-corrective-regression.mjs tests/pf1r2-live-presentation-regression.mjs
+          git add replay-session.js runtime-authority-binding.js coach-integration.js tests/replay-session-regression.mjs tests/pe2-coach-integration-regression.mjs tests/pe1r1-pe2r1-coach-semantic-corrective-regression.mjs tests/pf1r2-live-presentation-regression.mjs
           git diff --cached --check
           git commit -m "P0-2 make ReplaySession the single presentation authority"
           git push origin HEAD:candidate/p-f1-r2-architecture-corrective
