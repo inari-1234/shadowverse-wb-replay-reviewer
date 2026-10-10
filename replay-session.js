@@ -26,7 +26,7 @@ function migrateLoadedSession(loaded,key){
   const session={...base,createdAt:loaded.createdAt||base.createdAt,updatedAt:nowIso(),analysisRun:null,reviewSignals:userReviewSignals(loaded.reviewSignals),scenes:legacyScenes,tacticalReview:null};
   return{session,migrated:true,reason:'analysis-run-isolation-v3'}
 }
-function makeAnalysisRun(meta={}){const startedAt=meta?.startedAt||nowIso(),runId=String(meta?.runId||`analysis:${Date.parse(startedAt)||Date.now()}:${Math.random().toString(36).slice(2,10)}`);return{runId,startedAt,source:meta?.source||'match-analysis-start',sourceKey:sourceKey()}}
+function makeAnalysisRun(meta={}){const startedAt=meta?.startedAt||nowIso(),nonce=String(meta?.nonce||globalThis.crypto?.randomUUID?.()||`${Date.now().toString(36)}-${Math.random().toString(36).slice(2,10)}`),runId=String(meta?.runId||`analysis:${Date.parse(startedAt)||Date.now()}:${nonce}`);return{runId,nonce,startedAt,source:meta?.source||'match-analysis-start',sourceKey:sourceKey()}}
 function archiveRunSnapshot(session,reason='superseded'){
   if(!session)return Promise.resolve(false);const runId=session?.analysisRun?.runId||null,hasAnalysis=!!runId||(session.states||[]).length>0||(session.actions||[]).length>0||(session.decisionWindows||[]).length>0;
   if(!hasAnalysis)return Promise.resolve(false);const archivedAt=nowIso(),id=`${session.sourceKey}|${runId||session.createdAt||archivedAt}`;
@@ -483,7 +483,7 @@ W.on('review-profile-changed',()=>{const s=ensureCurrent();if(s){refreshMetadata
 W.on('scene-saved',detail=>{ingestScene(detail?.scene).catch(err=>W.recordError('replay-session-scene-save',err))});
 W.on('scenes-cleared',detail=>{clearScenes(detail?.sceneIds||[]).catch(err=>W.recordError('replay-session-scenes-clear',err))});
 W.on('task-finished',()=>flushDeferredRender());
-W.on('match-analysis-start',detail=>{beginAnalysisRun({runId:detail?.runId||null,startedAt:detail?.startedAt||null,source:'match-analysis-start'});activeReviewPlaybackIndex=0;updateReviewPlaybackUi()});
+W.on('match-analysis-start',detail=>{beginAnalysisRun({runId:detail?.runId||null,nonce:detail?.nonce||null,startedAt:detail?.startedAt||null,source:'match-analysis-start'});activeReviewPlaybackIndex=0;updateReviewPlaybackUi()});
 W.on('match-analysis-complete',detail=>{reviewPlaybackReady=!detail?.cancelled;activeReviewPlaybackIndex=0;updateReviewPlaybackUi()});
 W.on('video-reset',()=>{current=null;renderDeferred=false;reviewPlaybackReady=false;activeReviewPlaybackIndex=0;closeReviewFrame();updateReviewPlaybackUi();expose();render()});
 W.onReady(()=>{render();W.log('module-ready',{module:'replay-session',version:VERSION,persistence:persistenceMode(),maxContiguousGap:MAX_CONTIGUOUS_GAP,turnIdentity:'number+side',unknownSafe:true,nullNumericSafe:true,unknownHpBridge:'same-turn-observed-endpoints<=3s',observedEpisodes:'same-state-pair-noncausal-summary',causalAttribution:false,reviewPointDomains:'observation+supplemental-merged',decisionWindows:'same-turn-state-pair<=3s-noncausal',reviewWindowUi:'before-after-observed-importance-unknown-noncausal-navigation+coach-v1',reviewWindowPresentation:'diff-first-comparison+static-frame-preview+unknown-amber+coach-v1',cardUseCandidate:'two-evidence-candidate-only-no-action-v1',reviewPlayback:'selected-video-visible+post-analysis-3s-lead+preview-seek-only-v2',reviewPlaybackAuthority:'fresh-exact-dom-override-v1',taskRenderCoalescing:true,sessionSchema:SESSION_SCHEMA})});
