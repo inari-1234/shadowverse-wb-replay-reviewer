@@ -5,6 +5,7 @@ on:
       - candidate/p-f1-r2-architecture-corrective
     paths:
       - '.github/workflows/inspect-decision-input-trace.yml'
+      - 'tests/pf1r2-decision-input-trace-regression.mjs'
 permissions:
   contents: read
 jobs:
