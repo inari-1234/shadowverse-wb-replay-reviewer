@@ -1,14 +1,15 @@
-name: Inspect P-F1-R2 Architecture Acceptance
+name: P-F1-R2 Frozen Acceptance RED GREEN
 on:
   push:
     branches:
       - candidate/p-f1-r2-architecture-corrective
     paths:
       - '.github/workflows/finalize-architecture-corrective.yml'
+      - 'tests/pf1r2-0923-recorded-acceptance-regression.mjs'
 permissions:
   contents: read
 jobs:
-  inspect:
+  acceptance:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -19,7 +20,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-      - name: Reconstruct staged payloads
+      - name: Reconstruct finalized patch
         shell: bash
         run: |
           set -euo pipefail
@@ -35,24 +36,7 @@ jobs:
           echo '64effcfadb9768e9f947a30bb85fbd37ee89463178489408687c5a0f23752f20  /tmp/final.patch.gz' | sha256sum -c -
           gzip -dc /tmp/final.patch.gz > /tmp/final.patch
           echo 'bcbc3e929d30a0723ef28d1b21a590556a8f95b51dcb065e7d1b15fa86572844  /tmp/final.patch' | sha256sum -c -
-          echo '=== FINAL PATCH TARGETS ==='
-          git apply --numstat /tmp/final.patch
-          echo '=== NEWFILES PAYLOAD INSPECTION ==='
-          cat .tmp/pf1r2-newfiles/chunk_*.b64 > /tmp/newfiles.gz.b64
-          sha256sum /tmp/newfiles.gz.b64
-          base64 -d /tmp/newfiles.gz.b64 > /tmp/newfiles.gz
-          sha256sum /tmp/newfiles.gz
-          file /tmp/newfiles.gz
-          gzip -dc /tmp/newfiles.gz > /tmp/newfiles.payload
-          sha256sum /tmp/newfiles.payload
-          file /tmp/newfiles.payload
-          echo '--- payload head ---'
-          head -c 256 /tmp/newfiles.payload | od -An -tx1c
-          echo '--- tar probe ---'
-          tar -tf /tmp/newfiles.payload 2>/dev/null || true
-          echo '--- text head ---'
-          head -80 /tmp/newfiles.payload || true
-      - name: Materialize proposed green tree and inspect acceptance source
+      - name: Materialize GREEN and freeze Acceptance hashes
         shell: bash
         run: |
           set -euo pipefail
@@ -62,13 +46,51 @@ jobs:
           git apply --check final.patch
           git apply final.patch
           rm final.patch
-          echo '=== PROPOSED CHANGES VS candidate-live ==='
-          git diff --name-status origin/candidate-live
-          echo '=== ACCEPTANCE FILE CANDIDATES BEFORE NEWFILES ==='
-          find tests -maxdepth 3 -type f \( -iname '*0923*' -o -iname '*09-23*' -o -iname '*acceptance*' \) -print | sort
-          echo '=== SEARCH NEWFILES PAYLOAD FOR ACCEPTANCE NAME ==='
-          grep -a -n -E 'pf1r2-0923-recorded-acceptance|acceptance|113\.638|115\.888' /tmp/newfiles.payload | head -80 || true
-      - name: Stop after payload inspection
+          testfile=tests/pf1r2-0923-recorded-acceptance-regression.mjs
+          fixture=tests/pf1r2-0923-offline-expected-fixture.json
+          test -f "$testfile" -a -f "$fixture"
+          echo '=== FROZEN ACCEPTANCE HASHES ==='
+          sha256sum "$testfile" "$fixture" | tee /tmp/frozen-acceptance.sha256
+      - name: Prove candidate-live is RED for structural symptoms
+        shell: bash
         run: |
-          echo 'PAYLOAD_INSPECTION_COMPLETE=1'
-          exit 23
+          set -euo pipefail
+          git worktree add --detach /tmp/pf1r2-red origin/candidate-live
+          red=/tmp/pf1r2-red
+          green=/tmp/pf1r2-green
+          testfile=tests/pf1r2-0923-recorded-acceptance-regression.mjs
+          fixture=tests/pf1r2-0923-offline-expected-fixture.json
+          cp "$green/$testfile" "$red/$testfile"
+          cp "$green/$fixture" "$red/$fixture"
+          echo '=== RED BYTE IDENTITY CHECK ==='
+          (cd "$red" && sha256sum -c /tmp/frozen-acceptance.sha256)
+          set +e
+          (cd "$red" && node "$testfile") > /tmp/accept-red.log 2>&1
+          rc=$?
+          set -e
+          cat /tmp/accept-red.log
+          echo "RED_EXIT_CODE=$rc"
+          test "$rc" -ne 0
+          if grep -Eiq 'ReferenceError|SyntaxError|TypeError: .* is not a function|ERR_MODULE_NOT_FOUND|Cannot find module' /tmp/accept-red.log; then
+            echo 'RED_REASON_INVALID_API_OR_LOAD_FAILURE=1'
+            exit 21
+          fi
+          grep 'ACCEPTANCE ASSERT FAIL:' /tmp/accept-red.log | sort -u | tee /tmp/red-failed-asserts.txt
+          test -s /tmp/red-failed-asserts.txt
+          if ! grep -Eq 'RERENDER_RETAINS_113638|RERENDER_RETAINS_PP_2_TO_1|NO_PAST_RUN_STATE_MIXING' /tmp/red-failed-asserts.txt; then
+            echo 'RED_REASON_STRUCTURAL_SYMPTOM=0'
+            exit 22
+          fi
+          echo 'RED_REASON_STRUCTURAL_SYMPTOM=1'
+      - name: Prove exact frozen Acceptance is GREEN on finalized tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/pf1r2-green
+          echo '=== GREEN BYTE IDENTITY CHECK ==='
+          sha256sum -c /tmp/frozen-acceptance.sha256
+          node tests/pf1r2-0923-recorded-acceptance-regression.mjs | tee /tmp/accept-green.log
+          grep -F 'P-F1-R2 09-23 RECORDED ACCEPTANCE PASS' /tmp/accept-green.log
+          echo '=== RED FAILED ASSERT LIST ==='
+          cat /tmp/red-failed-asserts.txt
+          echo 'FROZEN_ACCEPTANCE_RED_GREEN_PASS=1'
