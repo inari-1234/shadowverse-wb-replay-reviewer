@@ -28,14 +28,15 @@ async function readStoredSession(indexedDB){
 }
 function makeCapture(row,mode='timeline-lite'){
   const hand=clone(row.hand||{}),ward=String(row.opponentWard??'unknown');
+  const boardAccepted=row.boardAccepted===true,boardKnown=row.boardKnown===true;
   return{
-    version:'state-clean-1.8.28',at:'2026-10-10T00:00:10.000Z',captureMode:mode,partial:false,
+    version:'state-clean-1.8.28',at:row.at||'2026-10-10T16:02:00.000Z',captureMode:mode,partial:false,
     context:{time:row.time,turn:row.turn,absoluteSide:'bottom',relativeSide:'自分',targetSide:'bottom',playOrder:'後攻',videoKey:fixture.dirtyV2.sourceKey},
-    confirmed:{version:'confirmed-state-v1',time:row.time,turn:row.turn,absoluteSide:'bottom',relativeSide:'自分',pp:row.pp,opponentHP:row.opponentHP,extraPP:row.extraPP,ep:row.ep,sep:row.sep,opponentWard:ward,boardDamage:row.boardDamage,boardDamageKnown:row.boardDamageKnown===true,hand:{recognized:hand},observation:{boardAccepted:true,handKnown:Object.keys(hand).length>0,captureMode:mode}},
-    resources:{ui:{extra:row.extraPP,ep:row.ep,sep:row.sep}},
-    ward:{state:ward,unknown:ward==='unknown',result:{known:ward!=='unknown',state:ward,reason:ward==='unknown'?'not-confirmed':'fixture-recorded',method:'recorded-capture'}},
+    confirmed:{version:'confirmed-state-v1',time:row.time,turn:row.turn,absoluteSide:'bottom',relativeSide:'自分',pp:row.pp,opponentHP:row.opponentHP,extraPP:row.extraPP,ep:row.ep,sep:row.sep,opponentWard:ward,boardDamage:row.boardDamage,boardDamageKnown:row.boardDamageKnown===true,hand:{recognized:hand},observation:{boardAccepted,handKnown:Object.keys(hand).length>0,captureMode:mode}},
+    resources:{ui:{extra:row.extraPP,ep:row.ep,sep:row.sep,ward}},
+    ward:{state:ward,unknown:ward==='unknown',result:{known:row.wardKnown===true,state:ward,reason:row.wardReason||'not-confirmed',method:row.wardMethod||'recorded-capture'}},
     hand:{result:{known:Object.keys(hand).length>0,recognized:hand,unresolved:{},samples:[],reason:Object.keys(hand).length?'recorded-capture':'not-observed'}},
-    board:{result:{accepted:true,known:true,value:row.boardDamage,attackableTotal:row.boardDamage,faceDamageConfirmed:true,candidateTotal:row.boardDamage,followers:[]},applied:false,manualPreserved:false,conflict:false},
+    board:{result:{accepted:boardAccepted,known:boardKnown,value:row.boardDamage,attackableTotal:row.boardDamage,faceDamageConfirmed:row.faceDamageConfirmed===true,candidateTotal:row.candidateTotal??row.boardDamage,followers:[]},applied:false,manualPreserved:false,conflict:false},
     stageErrors:[]
   };
 }
@@ -58,7 +59,7 @@ function makeCapture(row,mode='timeline-lite'){
 
   const video=document.querySelector('#video');let currentTime=0,paused=true;
   Object.defineProperties(video,{
-    duration:{get:()=>200,configurable:true},videoWidth:{get:()=>1920,configurable:true},videoHeight:{get:()=>1080,configurable:true},readyState:{get:()=>4,configurable:true},seeking:{get:()=>false,configurable:true},paused:{get:()=>paused,configurable:true},
+    duration:{get:()=>fixture.videoMeta.duration||200,configurable:true},videoWidth:{get:()=>2622,configurable:true},videoHeight:{get:()=>1206,configurable:true},readyState:{get:()=>4,configurable:true},seeking:{get:()=>false,configurable:true},paused:{get:()=>paused,configurable:true},
     currentTime:{get:()=>currentTime,set:v=>{currentTime=Number(v)||0;queueMicrotask(()=>video.dispatchEvent(new window.Event('seeked')))},configurable:true}
   });
   video.play=async()=>{paused=false};video.pause=()=>{paused=true};
@@ -72,7 +73,7 @@ function makeCapture(row,mode='timeline-lite'){
   check(!!WB?.APP&&typeof WB.emit==='function'&&typeof WB.on==='function','APP_CORE_EVENT_BUS_REAL');
   check(!!WB.ReplaySession&&!!WB.RuntimeAuthorityBinding&&!!WB.RuntimeDecisionPipeline&&!!WB.CoachIntegration&&!!WB.CoachExplanation&&!!WB.LegalActionSequence&&!!WB.OutcomeBacktracking&&!!WB.ComparisonDecision&&!!WB.PlayedMoveAuthority&&!!WB.StateRecognition,'REAL_MODULE_CHAIN_LOADED');
   check(WB.ReplaySession?.persistenceMode?.()==='indexeddb','INDEXEDDB_PERSISTENCE_ACTIVE',`mode=${WB.ReplaySession?.persistenceMode?.()}`);
-  check(fixture.authorityClass==='APPROXIMATION'&&fixture.provenance?.rawTraceReplacementRequired===true&&fixture.provenance?.anchor113638IsExactCapture===false,'FIXTURE_DECLARED_APPROXIMATION',JSON.stringify(fixture.provenance||{}));
+  check(fixture.authorityClass==='IPHONE_EXACT_RAW_TRACE_SUBSET'&&fixture.provenance?.rawTraceReplacementRequired===false&&fixture.provenance?.anchor113638IsExactCapture===true&&fixture.provenance?.sourceRuntimeCommit==='b01f2834160e0c2c1f9a0226411aaa9dcb3ef5c8','FIXTURE_IS_IPHONE_EXACT_RAW_TRACE',JSON.stringify(fixture.provenance||{}));
 
   WB.videoMeta=clone(fixture.videoMeta);WB.videoName='09-23';WB.turnTimeline=[];WB.stateCaptureHistory=[];
   await seedDirtyV2(window.indexedDB);
@@ -84,18 +85,22 @@ function makeCapture(row,mode='timeline-lite'){
   check(!!snap,'METADATA_RESTORE_EXECUTES');
   check(!(snap?.states||[]).some(x=>near(x.time,74.141)&&Number(x.opponentHP)===15),'V2_DIRTY_6T_STATE_REJECTED',`schema=${snap?.version}; states=${(snap?.states||[]).map(x=>`${x.time}:${x.opponentHP}`).join(',')}`);
 
-  const recorded=fixture.freshCaptures.map(x=>({...x,capture:makeCapture(x)}));
+  const recordedTimeline=fixture.timelineCaptures.map(x=>({...x,capture:makeCapture(x,x.time===72.328||x.time===75.478?'full':'timeline-lite')}));
+  const recordedExact=fixture.decisionAuthorityCaptures.map(x=>({...x,capture:makeCapture(x,'decision-authority')}));
   const realCaptureState=WB.StateRecognition.captureState;
   WB.StateRecognition.captureState=async options=>{
-    const t=Number(WB.video.currentTime),row=recorded.slice().sort((a,b)=>Math.abs(a.time-t)-Math.abs(b.time-t))[0];
-    if(!row||Math.abs(row.time-t)>.05)throw new Error(`recorded capture missing at ${t}`);
-    const c=makeCapture(row,options?.captureMode||'decision-authority');WB.stateCapture=c;return c;
+    const t=Number(WB.video.currentTime),mode=options?.captureMode||'decision-authority';
+    const pool=mode==='decision-authority'?recordedExact:recordedTimeline;
+    let row=pool.slice().sort((a,b)=>Math.abs(a.time-t)-Math.abs(b.time-t))[0];
+    if(!row||Math.abs(row.time-t)>.05){row=recordedTimeline.slice().sort((a,b)=>Math.abs(a.time-t)-Math.abs(b.time-t))[0]}
+    if(!row||Math.abs(row.time-t)>.05)throw new Error(`recorded capture missing at ${t} mode=${mode}`);
+    const c=makeCapture(row,mode);WB.stateCapture=c;return c;
   };
   check(typeof realCaptureState==='function'&&WB.StateRecognition.captureState!==realCaptureState,'ONLY_CAPTURESTATE_SUBSTITUTED');
 
   WB.turnTimeline=clone(fixture.timeline);
-  WB.emit('match-analysis-start',{targetSide:'bottom',totalTurns:2,runId:fixture.analysis.runId,nonce:fixture.analysis.nonce,startedAt:fixture.analysis.startedAt});
-  for(const row of recorded)WB.emit('state-captured',{capture:clone(row.capture)});
+  WB.emit('match-analysis-start',{targetSide:'bottom',totalTurns:fixture.analysis.totalTurns,runId:fixture.analysis.runId,nonce:fixture.analysis.nonce,startedAt:fixture.analysis.startedAt});
+  for(const row of recordedTimeline)WB.emit('state-captured',{capture:clone(row.capture)});
   WB.emit('match-analysis-complete',clone(fixture.analysis));
 
   const rawInput=(window.__wbPF1R2InputTraceV1?.captures||[]).map(x=>x?.capture?.confirmed||{}).filter(x=>Number(x.turn)===6);
@@ -105,7 +110,7 @@ function makeCapture(row,mode='timeline-lite'){
   check(raw18a&&raw15&&raw18b,'CURRENT_RUN_INPUT_TRACE_CONTAINS_18_15_18',JSON.stringify(rawInput.map(x=>({time:x.time,hp:x.opponentHP}))));
   const hpGuard=window.__wbPF1R2HpTransientGuardV1||null;
   const correction=(hpGuard?.corrections||[]).find(x=>near(x.time,fixture.expected.hpTransient.time));
-  check(hpGuard?.status==='CORRECTED'&&hpGuard?.correctionCount>=1&&Number(correction?.rawHp)===fixture.expected.hpTransient.rawHp&&Number(correction?.endpointHp)===fixture.expected.hpTransient.stableHp,'CURRENT_RUN_6T_HP_TRANSIENT_GUARD_CORRECTS_LIVE_SUMMARY',JSON.stringify(hpGuard));
+  check(hpGuard?.status==='CORRECTED'&&hpGuard?.correctionCount>=1&&Number(correction?.rawHp)===fixture.expected.hpTransient.rawHp&&Number(correction?.endpointHp)===fixture.expected.hpTransient.stableHp,'CURRENT_RUN_6T_HP_TRANSIENT_GUARD_CORRECTS_RAW_TRANSIENT',JSON.stringify(hpGuard));
   snap=WB.ReplaySession?.snapshot?.()||window.__wbReplaySessionV1||null;
   const guardedState=(snap?.states||[]).find(x=>near(x.time,fixture.expected.hpTransient.time));
   check(guardedState&&guardedState.opponentHP==null,'CURRENT_RUN_6T_FALSE_15_MARKED_UNKNOWN',JSON.stringify(guardedState||null));
@@ -123,10 +128,14 @@ function makeCapture(row,mode='timeline-lite'){
   check(!!windowId,'REAL_8T_WINDOW_CREATED',`windows=${(snap?.decisionWindows||[]).map(w=>`${w.id}:${w.reviewStart}->${w.reviewEnd}`).join('|')}`);
   check(binding?.complete===true&&binding?.anchorExact===true&&binding?.afterExact===true&&near(binding?.anchorTime,fixture.expected.reviewStart)&&near(binding?.afterTime,fixture.expected.reviewEnd),'REAL_BINDING_EXACT_113638_116338',JSON.stringify(binding));
   check(authorityPresentation?.beforeState?.opponentWard==='unknown'&&authorityPresentation?.afterState?.opponentWard==='unknown','WARD_REMAINS_UNKNOWN_IN_AUTHORITY',JSON.stringify({before:authorityPresentation?.beforeState?.opponentWard,after:authorityPresentation?.afterState?.opponentWard}));
+  check(near(authorityPresentation?.beforeState?.hand?.recognized?.quickBlader?.confidence,fixture.expected.exactAnchorQuick.confidence),'IPHONE_EXACT_QUICK_CONFIDENCE_09188',JSON.stringify(authorityPresentation?.beforeState?.hand?.recognized||{}));
+  const pf0bAnchorTrace=(window.__wbPF1R2InputTraceV1?.captures||[]).find(x=>x?.source==='pf0b-exact'&&x?.role==='anchor'&&near(x?.capture?.confirmed?.time,fixture.expected.reviewStart));
+  check(Number(pf0bAnchorTrace?.capture?.hand?.result?.recognized?.quickBlader?.positiveFrames)===fixture.expected.exactAnchorQuick.positiveFrames,'IPHONE_EXACT_QUICK_POSITIVE_FRAMES_4',JSON.stringify(pf0bAnchorTrace?.capture?.hand?.result?.recognized?.quickBlader||null));
 
   const pipeRow=WB.RuntimeDecisionPipeline?.getForWindow?.(windowId)||null;
   const holdReasons=pipeRow?.detail?.reasonCodes||[];
-  check(pipeRow?.status==='HOLD'&&holdReasons.includes(fixture.expected.safeHoldCriticalReason),'WARD_UNKNOWN_SAFE_HOLD',`status=${pipeRow?.status}; reason=${pipeRow?.reason}; generation=${pipeRow?.detail?.generationStatus}; reasons=${holdReasons.join(',')}`);
+  check(pipeRow?.status==='HOLD'&&pipeRow?.reason===fixture.expected.runtimeHoldReason,'IPHONE_RAW_TRACE_OUTER_HOLD_REASON_MATCHES_DEVICE',`status=${pipeRow?.status}; reason=${pipeRow?.reason}`);
+  check(pipeRow?.detail?.generationStatus===fixture.expected.generationStatus&&holdReasons.includes(fixture.expected.safeHoldCriticalReason),'IPHONE_RAW_TRACE_INNER_HOLD_REASON_WARD_UNRESOLVED',`generation=${pipeRow?.detail?.generationStatus}; reasons=${holdReasons.join(',')}`);
 
   WB.emit('comparison-decision-ready',{windowId,runId:fixture.expected.staleRunId,sourceAuthority:'stale-fixture',decision:{status:'OK',classification:'INSUFFICIENT_EVIDENCE',bestCandidateId:null,reasonCodes:['INSUFFICIENT_AUTHORITY'],ranking:{pairwise:[]}},playedMove:null});
   await sleep(20);
@@ -154,13 +163,15 @@ function makeCapture(row,mode='timeline-lite'){
   const ppBefore=ppRow?.children?.[1]?.textContent||'',ppAfter=ppRow?.children?.[2]?.textContent||'';
   const beforeButton=host?.querySelector('[data-review-frame-phase="before"]');
   const reviewText=document.querySelector('#reviewPoints')?.textContent||'';
+  const comparisonCoachText=host?.querySelector('[data-comparison-coach="1"]')?.textContent||'';
 
   check(!!host,'FINAL_DOM_8T_WINDOW_EXISTS',`id=${finalId}; html=${document.querySelector('#reviewPoints')?.innerHTML?.slice(0,500)||''}`);
   check(timeText.includes('8T')&&timeText.includes('01:53.6')&&timeText.includes('01:56.3'),'FINAL_DOM_8T_START_113638',timeText);
   check(ppBefore===fixture.expected.ppBefore&&ppAfter===fixture.expected.ppAfter,'FINAL_DOM_PP_2_TO_1',`pp=${ppBefore}→${ppAfter}`);
   check(!reviewText.includes(fixture.expected.forbiddenHpText),'FINAL_DOM_NO_6T_FALSE_HP_18_TO_15',reviewText.includes(fixture.expected.forbiddenHpText)?fixture.expected.forbiddenHpText:'not present');
   check(!host?.querySelector('.reviewCoach'),'FINAL_DOM_NO_LEGACY_REVIEW_COACH',host?.querySelector('.reviewCoach')?.textContent||'none');
-  check(!!host?.querySelector('[data-comparison-coach="1"]'),'FINAL_DOM_SAFE_HOLD_COMPARISON_COACH_PRESENT',host?.querySelector('[data-comparison-coach="1"]')?.textContent||'missing');
+  check(!!host?.querySelector('[data-comparison-coach="1"]'),'FINAL_DOM_SAFE_HOLD_COMPARISON_COACH_PRESENT',comparisonCoachText||'missing');
+  check(comparisonCoachText.includes(fixture.expected.coachHeadline),'IPHONE_RAW_TRACE_COACH_DISPLAY_MATCHES_DEVICE',comparisonCoachText);
   check((window.__wbReviewCoachV1?.count||0)===0,'LEGACY_COACH_NOT_FINAL_AUTHORITY',`count=${window.__wbReviewCoachV1?.count}`);
   check(near(Number(beforeButton?.dataset?.reviewFrameTime),fixture.expected.reviewStart),'FINAL_DOM_BEFORE_FRAME_113638',`frame=${beforeButton?.dataset?.reviewFrameTime}`);
   const authorityStart=WB.ReplaySession?.reviewAuthorityPlaybackStart?.(finalId);
