@@ -1,7 +1,7 @@
 import fs from 'node:fs';import assert from 'node:assert/strict';
 const src=fs.readFileSync(new URL('../coach-integration.js',import.meta.url),'utf8'),replay=fs.readFileSync(new URL('../replay-session.js',import.meta.url),'utf8'),cf=fs.readFileSync(new URL('../counterfactual-review.js',import.meta.url),'utf8'),sw=fs.readFileSync(new URL('../sw.js',import.meta.url),'utf8');
-for(const api of ['ingestDecision','getForWindow','presentationModel','createCard','decorate','snapshot','clear'])assert.match(src,new RegExp(api));
-for(const required of ['pe2-coach-integration-v1.2.0','comparison-decision-ready','CoachExplanation','P-D1','P-F1-R2-PM','playedMove','playedMoveComparison','setComparisonCoachPresentation','別候補','実際の手との比較','__wbComparisonCoachV1'])assert.ok(src.includes(required),required);
+for(const api of ['ingestDecision','safeHoldDecision','syncFromRuntime','getForWindow','presentationModel','createCard','decorate','snapshot','clear'])assert.match(src,new RegExp(api));
+for(const required of ['pe2-coach-integration-v1.2.1','comparison-decision-ready','CoachExplanation','P-D1','P-F1-R2-PM','P-F1 SAFE_HOLD','INSUFFICIENT_EVIDENCE','playedMove','playedMoveComparison','setComparisonCoachPresentation','別候補','実際の手との比較','__wbComparisonCoachV1'])assert.ok(src.includes(required),required);
 for(const forbidden of ['generateLegalActions','applyAction(','getPlayerView(','getTerminalStatus(','stateFingerprint(','OutcomeBacktracking.create','ComparisonDecision.evaluateDecision','ComparisonDecision.compareCandidates','rankCandidates('])assert.equal(src.includes(forbidden),false,`P-E2 recomputation forbidden: ${forbidden}`);
 for(const legacyUi of ['Meaningful Alternative','Bestの理由','Alternativeの長所','Alternativeが有力になる条件'])assert.equal(src.includes(legacyUi),false,`legacy/internal UI text forbidden: ${legacyUi}`);
 assert.ok(cf.includes("./coach-integration.js"));assert.ok(cf.includes('loadCoachIntegration'));
