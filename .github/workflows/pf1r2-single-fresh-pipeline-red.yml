@@ -1,0 +1,17 @@
+name: P-F1-R2 Single Fresh Pipeline Red
+on:
+  push:
+    branches:
+      - candidate/p-f1-r2-architecture-corrective
+    paths:
+      - 'tests/pf1r2-single-fresh-pipeline-regression.mjs'
+      - '.github/workflows/pf1r2-single-fresh-pipeline-red.yml'
+permissions:
+  contents: read
+jobs:
+  red:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - run: node tests/pf1r2-single-fresh-pipeline-regression.mjs
