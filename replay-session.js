@@ -1,7 +1,7 @@
 (()=>{'use strict';
 const W=window.WB;if(!W)return;
-const VERSION='replay-session-clean-1.14';
-const DB_NAME='wb-replay-session-v1',DB_VERSION=1,SESSION_STORE='sessions',SCENE_STORE='scene-images',MAX_CONTIGUOUS_GAP=3,SESSION_SCHEMA='replay-session-v2';
+const VERSION='replay-session-clean-1.15';
+const DB_NAME='wb-replay-session-v1',DB_VERSION=2,SESSION_STORE='sessions',SCENE_STORE='scene-images',RUN_STORE='analysis-runs',MAX_CONTIGUOUS_GAP=3,SESSION_SCHEMA='replay-session-v3';
 W.registerModule('replay-session',VERSION);
 
 const clone=x=>{try{return structuredClone(x)}catch{return x==null?x:JSON.parse(JSON.stringify(x))}};
@@ -12,19 +12,32 @@ const REVIEW_PLAYBACK_LEAD=3;
 
 function sourceKey(){return W.videoMeta?W.videoKey():null}
 function emptySession(key=sourceKey()){return{
-  version:SESSION_SCHEMA,sourceKey:key,video:clone(W.videoMeta||null),createdAt:nowIso(),updatedAt:nowIso(),
+  version:SESSION_SCHEMA,sourceKey:key,video:clone(W.videoMeta||null),createdAt:nowIso(),updatedAt:nowIso(),analysisRun:null,
   turnTimeline:clone(W.turnTimeline||[]),mulligan:clone(W.mulligan||null),classDetection:clone(W.classDetection||null),
   reviewProfile:W.ReviewEngine?.activeProfile?.()||'none',states:[],actions:[],observedEpisodes:[],decisionWindows:[],observationReviewPoints:[],reviewSignals:[],supplementalReviewPoints:[],reviewPoints:[],scenes:[],tacticalReview:null
 }}
 function ensureCurrent(){const key=sourceKey();if(!key)return null;if(!current||current.sourceKey!==key)current=emptySession(key);return current}
+function userReviewSignals(rows=[]){return(Array.isArray(rows)?rows:[]).filter(x=>x?.kind==='manual-scene').map(clone)}
 function migrateLoadedSession(loaded,key){
   const base=emptySession(key);
   if(!loaded)return{session:base,migrated:false,reason:null};
   if(loaded.version===SESSION_SCHEMA)return{session:{...base,...clone(loaded),sourceKey:key},migrated:false,reason:null};
-  const keptSignals=Array.isArray(loaded.reviewSignals)?clone(loaded.reviewSignals):[];
   const legacyScenes=Array.isArray(loaded.scenes)?clone(loaded.scenes):[];
-  const session={...base,createdAt:loaded.createdAt||base.createdAt,updatedAt:nowIso(),reviewSignals:keptSignals,scenes:legacyScenes,tacticalReview:clone(loaded.tacticalReview||null)};
-  return{session,migrated:true,reason:'legacy-unsafe-null-number-coercion'}
+  const session={...base,createdAt:loaded.createdAt||base.createdAt,updatedAt:nowIso(),analysisRun:null,reviewSignals:userReviewSignals(loaded.reviewSignals),scenes:legacyScenes,tacticalReview:null};
+  return{session,migrated:true,reason:'analysis-run-isolation-v3'}
+}
+function makeAnalysisRun(meta={}){const startedAt=meta?.startedAt||nowIso(),runId=String(meta?.runId||`analysis:${Date.parse(startedAt)||Date.now()}:${Math.random().toString(36).slice(2,10)}`);return{runId,startedAt,source:meta?.source||'match-analysis-start',sourceKey:sourceKey()}}
+function archiveRunSnapshot(session,reason='superseded'){
+  if(!session)return Promise.resolve(false);const runId=session?.analysisRun?.runId||null,hasAnalysis=!!runId||(session.states||[]).length>0||(session.actions||[]).length>0||(session.decisionWindows||[]).length>0;
+  if(!hasAnalysis)return Promise.resolve(false);const archivedAt=nowIso(),id=`${session.sourceKey}|${runId||session.createdAt||archivedAt}`;
+  return dbPut(RUN_STORE,{id,sourceKey:session.sourceKey,runId,archivedAt,reason,session:sessionForStorage(session)})
+}
+function beginAnalysisRun(meta={}){
+  const s=ensureCurrent();if(!s)return null;const previous=sessionForStorage(s),run=makeAnalysisRun(meta),keepScenes=clone(s.scenes||[]),keepSignals=userReviewSignals(s.reviewSignals);
+  if(previous)persistQueue=persistQueue.then(()=>archiveRunSnapshot(previous,'new-analysis-run')).catch(err=>{W.recordError('replay-session-run-archive',err);return false});
+  s.version=SESSION_SCHEMA;s.analysisRun=run;s.video=clone(W.videoMeta||null);s.turnTimeline=clone(W.turnTimeline||[]);s.mulligan=clone(W.mulligan||null);s.classDetection=clone(W.classDetection||null);s.reviewProfile=W.ReviewEngine?.activeProfile?.()||s.reviewProfile||'none';
+  s.states=[];s.actions=[];s.observedEpisodes=[];s.decisionWindows=[];s.observationReviewPoints=[];s.reviewSignals=keepSignals;s.supplementalReviewPoints=deriveSupplementalReviewPoints(keepSignals);s.reviewPoints=clone(s.supplementalReviewPoints);s.scenes=keepScenes;s.tacticalReview=null;s.updatedAt=nowIso();
+  expose();if(W.task)renderDeferred=true;else render();W.log?.('replay-session-analysis-run-start',{sourceKey:s.sourceKey,runId:run.runId,startedAt:run.startedAt,previousRunId:previous?.analysisRun?.runId||null,preservedScenes:keepScenes.length});return clone(run)
 }
 function refreshMetadata(){const s=ensureCurrent();if(!s)return null;s.video=clone(W.videoMeta||null);s.turnTimeline=clone(W.turnTimeline||s.turnTimeline||[]);s.mulligan=clone(W.mulligan||s.mulligan||null);s.classDetection=clone(W.classDetection||s.classDetection||null);s.reviewProfile=W.ReviewEngine?.activeProfile?.()||s.reviewProfile||'none';s.updatedAt=nowIso();return s}
 
@@ -34,7 +47,7 @@ function openDb(){
   dbPromise=new Promise(resolve=>{
     try{
       const req=indexedDB.open(DB_NAME,DB_VERSION);
-      req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(SESSION_STORE))db.createObjectStore(SESSION_STORE,{keyPath:'sourceKey'});if(!db.objectStoreNames.contains(SCENE_STORE))db.createObjectStore(SCENE_STORE,{keyPath:'key'})};
+      req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(SESSION_STORE))db.createObjectStore(SESSION_STORE,{keyPath:'sourceKey'});if(!db.objectStoreNames.contains(SCENE_STORE))db.createObjectStore(SCENE_STORE,{keyPath:'key'});if(!db.objectStoreNames.contains(RUN_STORE))db.createObjectStore(RUN_STORE,{keyPath:'id'})};
       req.onsuccess=()=>resolve(req.result);
       req.onerror=()=>{W.recordError('replay-session-db-open',req.error||new Error('IndexedDB open failed'));resolve(null)};
     }catch(err){W.recordError('replay-session-db-open',err);resolve(null)}
@@ -70,7 +83,7 @@ function normalizeCapture(capture){
     completeness:+(knownCount/known.length).toFixed(3),partial:!!capture.partial
   }
 }
-function action(id,type,prev,curr,data={},confidence='observed'){return{id,type,fromStateId:prev?.id||null,toStateId:curr?.id||null,time:curr?.time??null,turn:curr?.turn??null,confidence,data}}
+function action(id,type,prev,curr,data={},confidence='observed'){const runId=curr?.runId??prev?.runId??null;return{id,type,runId,fromStateId:prev?.id||null,toStateId:curr?.id||null,time:curr?.time??null,turn:curr?.turn??null,confidence,data}}
 function deriveActions(prev,curr){
   if(!prev||!curr)return[];const out=[],dt=curr.time!=null&&prev.time!=null?curr.time-prev.time:null,
     sameNumber=prev.turn!=null&&curr.turn!=null&&Number(prev.turn)===Number(curr.turn),
@@ -90,10 +103,10 @@ function sortReviewPoints(rows=[]){return(Array.isArray(rows)?rows:[]).slice().s
 function deriveObservationReviewPoints(actions=[]){
   const rows=[];
   for(const a of actions){
-    if(a.type==='opponent-hp-change'&&Math.abs(Number(a.data?.delta)||0)>=2)rows.push({id:'rp:'+a.id,source:'action',sourceId:a.id,time:a.time,turn:a.turn,priority:'high',kind:'large-hp-change',title:'大きなHP変化',detail:`相手HP ${a.data.from} → ${a.data.to}`});
-    if(a.type==='resource-change'&&a.data?.from==='yes'&&a.data?.to==='no')rows.push({id:'rp:'+a.id,source:'action',sourceId:a.id,time:a.time,turn:a.turn,priority:'high',kind:'resource-used',title:'重要資源の変化',detail:`${a.data.resource} が使用可 → 使用不可`});
-    if(a.type==='board-damage-change'&&Math.abs(Number(a.data?.delta)||0)>=2)rows.push({id:'rp:'+a.id,source:'action',sourceId:a.id,time:a.time,turn:a.turn,priority:'medium',kind:'board-swing',title:'盤面打点の大きな変化',detail:`攻撃可能打点 ${a.data.from} → ${a.data.to}`});
-    if(a.type==='ward-change')rows.push({id:'rp:'+a.id,source:'action',sourceId:a.id,time:a.time,turn:a.turn,priority:'medium',kind:'ward-change',title:'守護状態の変化',detail:`${a.data.from} → ${a.data.to}`});
+    if(a.type==='opponent-hp-change'&&Math.abs(Number(a.data?.delta)||0)>=2)rows.push({id:'rp:'+a.id,runId:a.runId||null,source:'action',sourceId:a.id,time:a.time,turn:a.turn,priority:'high',kind:'large-hp-change',title:'大きなHP変化',detail:`相手HP ${a.data.from} → ${a.data.to}`});
+    if(a.type==='resource-change'&&a.data?.from==='yes'&&a.data?.to==='no')rows.push({id:'rp:'+a.id,runId:a.runId||null,source:'action',sourceId:a.id,time:a.time,turn:a.turn,priority:'high',kind:'resource-used',title:'重要資源の変化',detail:`${a.data.resource} が使用可 → 使用不可`});
+    if(a.type==='board-damage-change'&&Math.abs(Number(a.data?.delta)||0)>=2)rows.push({id:'rp:'+a.id,runId:a.runId||null,source:'action',sourceId:a.id,time:a.time,turn:a.turn,priority:'medium',kind:'board-swing',title:'盤面打点の大きな変化',detail:`攻撃可能打点 ${a.data.from} → ${a.data.to}`});
+    if(a.type==='ward-change')rows.push({id:'rp:'+a.id,runId:a.runId||null,source:'action',sourceId:a.id,time:a.time,turn:a.turn,priority:'medium',kind:'ward-change',title:'守護状態の変化',detail:`${a.data.from} → ${a.data.to}`});
   }
   return sortReviewPoints(rows)
 }
@@ -174,7 +187,7 @@ function deriveObservedEpisodes(actions=[]){
     const ordered=items.slice().sort((a,b)=>String(a.type).localeCompare(String(b.type))),parts=ordered.map(observedActionPart).filter(Boolean),first=ordered[0],
       hasEndpointBridge=ordered.some(x=>x.confidence==='observed-endpoints');
     rows.push({
-      id:'oe:'+key,kind:'observed-episode',fromStateId:first.fromStateId,toStateId:first.toStateId,time:first.time??null,turn:first.turn??null,
+      id:'oe:'+key,kind:'observed-episode',runId:first.runId||null,fromStateId:first.fromStateId,toStateId:first.toStateId,time:first.time??null,turn:first.turn??null,
       confidence:hasEndpointBridge?'observed-endpoints':'observed',actionIds:ordered.map(x=>x.id),observedTypes:ordered.map(x=>x.type),
       summary:parts.join(' / '),interpretation:observedEpisodeInterpretation(ordered),causalAttribution:false,
       unresolved:['同一行動か','使用カード','効果源・ダメージ源','行動順']
@@ -211,7 +224,7 @@ function deriveDecisionWindows(reviewPoints=[],actions=[],episodes=[],states=[])
         unknownFields=[...new Set([...decisionUnknownFields(before),...decisionUnknownFields(after)])],
         unresolved=[...new Set(relatedEpisodes.flatMap(x=>Array.isArray(x?.unresolved)?x.unresolved:[]))];
       row={
-        id:'dw:'+key,kind:'decision-window',reviewStart:start,reviewEnd:end,time:finite(point.time)??end,turn:finite(point.turn)??finite(after.turn)??finite(before.turn),
+        id:'dw:'+key,kind:'decision-window',runId:primary.runId||before.runId||after.runId||null,reviewStart:start,reviewEnd:end,time:finite(point.time)??end,turn:finite(point.turn)??finite(after.turn)??finite(before.turn),
         beforeState:clone(before),afterState:clone(after),observedChanges:relatedActions.map(decisionObservedChange),
         importanceReasons:[],confidence:endpointOnly?'observed-endpoints':'observed',unknownFields,
         relatedActionIds:relatedActions.map(x=>x.id),relatedObservedEpisodeIds:relatedEpisodes.map(x=>x.id),reviewPointIds:[],
@@ -251,9 +264,11 @@ function rebuildDerived(){
 }
 
 function ingestState(capture){
-  const s=ensureCurrent(),row=normalizeCapture(capture);if(!s||!row)return null;
-  const ix=s.states.findIndex(x=>x.id===row.id);if(ix>=0)s.states[ix]=row;else s.states.push(row);
-  rebuildDerived();schedulePersist();W.log('replay-session-state',{stateId:row.id,states:s.states.length,actions:s.actions.length,reviewPoints:s.reviewPoints.length});return row
+  const s=ensureCurrent(),row=normalizeCapture(capture);if(!s||!row)return null;const runId=s.analysisRun?.runId||null;
+  row.runId=runId;row.provenance={source:'state-captured',runId,captureMode:capture?.captureMode||null,capturedAt:row.capturedAt||null};
+  const ix=s.states.findIndex(x=>x.id===row.id&&String(x.runId||'')===String(runId||''));if(ix>=0)s.states[ix]=row;else s.states.push(row);
+  if(runId)s.states=s.states.filter(x=>String(x.runId||'')===String(runId));
+  rebuildDerived();schedulePersist();W.log('replay-session-state',{stateId:row.id,runId,states:s.states.length,actions:s.actions.length,reviewPoints:s.reviewPoints.length});return row
 }
 function ingestReviewSignal(detail){
   const s=ensureCurrent();if(!s||!detail||detail.status==='profile-disabled')return null;
@@ -456,7 +471,7 @@ function render(){
   if(at)at.innerHTML=s?.actions?.length?s.actions.slice(-20).map(x=>`<div class="branchItem"><b>${x.turn?x.turn+'T':'-'}</b><div>${W.escape(actionLabel(x))}<br><span class="muted">${x.time==null?'--:--.-':W.fmt(x.time)} / ${W.escape(x.confidence)}</span></div></div>`).join(''):'<p class="help">連続した状態取得がまだありません。3秒以内の同一ターン観測だけを詳細な状態変化として扱います。</p>'
 }
 
-W.ReplaySession={version:VERSION,schema:SESSION_SCHEMA,dbName:DB_NAME,persistenceMode,emptySession,migrateLoadedSession,normalizeCapture,deriveActions,deriveTimelineActions,deriveObservedEpisodes,observedEpisodeInterpretation,deriveObservationReviewPoints,deriveSupplementalReviewPoints,mergeReviewPoints,deriveReviewPoints,deriveDecisionWindows,attachDecisionWindows,reviewChangedKeys,reviewStateRows,reviewComparisonRows,reviewWindowModels,reviewPlaybackModels,reviewPlaybackStart,reviewAuthorityPlaybackStart,renderReviewComparison,renderWindowCoach,renderCardUseCandidates,renderDecisionWindowCard,previewSeekTo,showReviewFrame,closeReviewFrame,seekReviewWindow,setReviewPlaybackReady,updateReviewPlaybackUi,playReviewWindow,moveReviewPlayback,bindReviewNavigation,ingestState,ingestReviewSignal,ingestScene,clearScenes,ingestReviewState,restoreCurrent,snapshot,rebuildDerived,render,flushDeferredRender};
+W.ReplaySession={version:VERSION,schema:SESSION_SCHEMA,dbName:DB_NAME,persistenceMode,emptySession,migrateLoadedSession,beginAnalysisRun,normalizeCapture,deriveActions,deriveTimelineActions,deriveObservedEpisodes,observedEpisodeInterpretation,deriveObservationReviewPoints,deriveSupplementalReviewPoints,mergeReviewPoints,deriveReviewPoints,deriveDecisionWindows,attachDecisionWindows,reviewChangedKeys,reviewStateRows,reviewComparisonRows,reviewWindowModels,reviewPlaybackModels,reviewPlaybackStart,reviewAuthorityPlaybackStart,renderReviewComparison,renderWindowCoach,renderCardUseCandidates,renderDecisionWindowCard,previewSeekTo,showReviewFrame,closeReviewFrame,seekReviewWindow,setReviewPlaybackReady,updateReviewPlaybackUi,playReviewWindow,moveReviewPlayback,bindReviewNavigation,ingestState,ingestReviewSignal,ingestScene,clearScenes,ingestReviewState,restoreCurrent,snapshot,rebuildDerived,render,flushDeferredRender};
 
 W.on('metadata',()=>{reviewPlaybackReady=true;activeReviewPlaybackIndex=0;updateReviewPlaybackUi();restoreCurrent().catch(err=>W.recordError('replay-session-restore',err))});
 W.on('timeline',detail=>{const s=ensureCurrent();if(s){s.turnTimeline=clone(detail?.timeline||W.turnTimeline||[]);schedulePersist()}});
@@ -468,7 +483,7 @@ W.on('review-profile-changed',()=>{const s=ensureCurrent();if(s){refreshMetadata
 W.on('scene-saved',detail=>{ingestScene(detail?.scene).catch(err=>W.recordError('replay-session-scene-save',err))});
 W.on('scenes-cleared',detail=>{clearScenes(detail?.sceneIds||[]).catch(err=>W.recordError('replay-session-scenes-clear',err))});
 W.on('task-finished',()=>flushDeferredRender());
-W.on('match-analysis-start',()=>{activeReviewPlaybackIndex=0;updateReviewPlaybackUi()});
+W.on('match-analysis-start',detail=>{beginAnalysisRun({runId:detail?.runId||null,startedAt:detail?.startedAt||null,source:'match-analysis-start'});activeReviewPlaybackIndex=0;updateReviewPlaybackUi()});
 W.on('match-analysis-complete',detail=>{reviewPlaybackReady=!detail?.cancelled;activeReviewPlaybackIndex=0;updateReviewPlaybackUi()});
 W.on('video-reset',()=>{current=null;renderDeferred=false;reviewPlaybackReady=false;activeReviewPlaybackIndex=0;closeReviewFrame();updateReviewPlaybackUi();expose();render()});
 W.onReady(()=>{render();W.log('module-ready',{module:'replay-session',version:VERSION,persistence:persistenceMode(),maxContiguousGap:MAX_CONTIGUOUS_GAP,turnIdentity:'number+side',unknownSafe:true,nullNumericSafe:true,unknownHpBridge:'same-turn-observed-endpoints<=3s',observedEpisodes:'same-state-pair-noncausal-summary',causalAttribution:false,reviewPointDomains:'observation+supplemental-merged',decisionWindows:'same-turn-state-pair<=3s-noncausal',reviewWindowUi:'before-after-observed-importance-unknown-noncausal-navigation+coach-v1',reviewWindowPresentation:'diff-first-comparison+static-frame-preview+unknown-amber+coach-v1',cardUseCandidate:'two-evidence-candidate-only-no-action-v1',reviewPlayback:'selected-video-visible+post-analysis-3s-lead+preview-seek-only-v2',reviewPlaybackAuthority:'fresh-exact-dom-override-v1',taskRenderCoalescing:true,sessionSchema:SESSION_SCHEMA})});
