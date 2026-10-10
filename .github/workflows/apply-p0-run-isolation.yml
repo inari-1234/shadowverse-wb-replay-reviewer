@@ -1,0 +1,33 @@
+name: Apply P0 Run Isolation
+on:
+  push:
+    branches:
+      - candidate/p-f1-r2-architecture-corrective
+    paths:
+      - '.github/scripts/apply_p0_run_isolation.py'
+      - '.github/workflows/apply-p0-run-isolation.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: candidate/p-f1-r2-architecture-corrective
+          fetch-depth: 0
+      - run: python .github/scripts/apply_p0_run_isolation.py
+      - name: Dedicated regressions
+        run: |
+          git diff --check
+          node tests/pf1r2-run-isolation-regression.mjs
+          node tests/replay-session-regression.mjs
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add replay-session.js tests/replay-session-regression.mjs
+          git diff --cached --check
+          git commit -m "P0-1 isolate ReplaySession analysis runs"
+          git push origin HEAD:candidate/p-f1-r2-architecture-corrective
