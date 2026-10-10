@@ -7,6 +7,8 @@ on:
       - '*.js'
       - 'index.html'
       - 'latest.json'
+      - 'package.json'
+      - 'package-lock.json'
       - 'experiments/**'
       - 'tests/**'
       - '.github/workflows/recognition-quality.yml'
@@ -18,6 +20,8 @@ on:
       - '*.js'
       - 'index.html'
       - 'latest.json'
+      - 'package.json'
+      - 'package-lock.json'
       - 'experiments/**'
       - 'tests/**'
       - '.github/workflows/recognition-quality.yml'
@@ -38,5 +42,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
+      - name: Install pinned integrated-acceptance dependencies
+        run: npm install --no-audit --no-fund --ignore-scripts
       - name: Run regression and real-device benchmark gate
         run: node tests/run-quality-gate.mjs
