@@ -1,0 +1,26 @@
+name: Inspect Architecture Patch
+on:
+  push:
+    branches:
+      - candidate/p-f1-r2-architecture-corrective-inspect
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Reconstruct payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .tmp/pf1r2-arch-patch/chunk_*.b64 > /tmp/payload.b64
+          base64 -d /tmp/payload.b64 > /tmp/payload.bin
+          echo "SIZE=$(wc -c < /tmp/payload.bin)"
+          file /tmp/payload.bin
+          echo 'HEX:'
+          xxd -l 32 /tmp/payload.bin
+          echo 'GZIP TEST:'
+          gzip -t /tmp/payload.bin && echo GZIP_OK || true
+          echo 'TAR LIST:'
+          tar -tzf /tmp/payload.bin 2>/dev/null | head -100 || true
+          echo 'GUNZIP HEAD:'
+          gzip -dc /tmp/payload.bin 2>/dev/null | head -80 || true
