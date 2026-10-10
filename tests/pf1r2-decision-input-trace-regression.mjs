@@ -23,6 +23,7 @@ vm.createContext(sandbox);
 for(const f of ['position-state-runtime.js','common-rule-engine-runtime.js','legal-action-sequence.js','outcome-backtracking.js','comparison-decision.js','runtime-decision-pipeline.js','runtime-authority-binding.js'])new vm.Script(read(f),{filename:f}).runInContext(sandbox);
 
 const B=WB.RuntimeAuthorityBinding;
+await B.bindToPipeline(WB.RuntimeDecisionPipeline);
 const capture={
   at:'2026-10-10T00:00:01.000Z',captureMode:'timeline-lite',partial:false,
   context:{time:113.638,turn:8,absoluteSide:'bottom',relativeSide:'自分'},
