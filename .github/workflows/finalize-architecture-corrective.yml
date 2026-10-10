@@ -1,17 +1,16 @@
-name: P-F1-R2 Frozen Acceptance RED GREEN
+name: P-F1-R2 Clean Architecture Final Validation
 on:
   push:
     branches:
       - candidate/p-f1-r2-architecture-corrective
     paths:
       - '.github/workflows/finalize-architecture-corrective.yml'
-      - 'tests/pf1r2-0923-recorded-acceptance-regression.mjs'
 permissions:
   contents: read
 jobs:
-  acceptance:
+  validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v7
         with:
@@ -20,7 +19,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-      - name: Reconstruct finalized patch
+      - name: Reconstruct finalized GREEN and permanent allowlist
         shell: bash
         run: |
           set -euo pipefail
@@ -36,61 +35,216 @@ jobs:
           echo '64effcfadb9768e9f947a30bb85fbd37ee89463178489408687c5a0f23752f20  /tmp/final.patch.gz' | sha256sum -c -
           gzip -dc /tmp/final.patch.gz > /tmp/final.patch
           echo 'bcbc3e929d30a0723ef28d1b21a590556a8f95b51dcb065e7d1b15fa86572844  /tmp/final.patch' | sha256sum -c -
-      - name: Materialize GREEN and freeze Acceptance hashes
-        shell: bash
-        run: |
-          set -euo pipefail
           git worktree add --detach /tmp/pf1r2-green HEAD
           cp /tmp/final.patch /tmp/pf1r2-green/final.patch
-          cd /tmp/pf1r2-green
-          git apply --check final.patch
-          git apply final.patch
-          rm final.patch
-          testfile=tests/pf1r2-0923-recorded-acceptance-regression.mjs
-          fixture=tests/pf1r2-0923-offline-expected-fixture.json
-          test -f "$testfile" -a -f "$fixture"
-          echo '=== FROZEN ACCEPTANCE HASHES ==='
-          sha256sum "$testfile" "$fixture" | tee /tmp/frozen-acceptance.sha256
-      - name: Prove candidate-live is RED for structural symptoms
+          (cd /tmp/pf1r2-green && git apply --check final.patch && git apply final.patch && rm final.patch)
+          cat > /tmp/allowlist.txt <<'EOF'
+          app-core.js
+          coach-integration.js
+          diagnostics.js
+          docs/P-F1-R2_PRESENTATION_REGRESSION_MIGRATION_MAP.md
+          index.html
+          latest.json
+          replay-session.js
+          runtime-authority-binding.js
+          runtime-decision-pipeline.js
+          state-recognition.js
+          tests/pe1r1-pe2r1-coach-semantic-corrective-regression.mjs
+          tests/pe2-coach-integration-regression.mjs
+          tests/pe2-static-validation.mjs
+          tests/pf0a-runtime-authority-binding-regression.mjs
+          tests/pf0b-decision-window-authority-regression.mjs
+          tests/pf0b-static-validation.mjs
+          tests/pf1-runtime-decision-pipeline-regression.mjs
+          tests/pf1-static-validation.mjs
+          tests/pf1r1-real-video-e2e-regression.mjs
+          tests/pf1r2-0923-offline-expected-regression.mjs
+          tests/pf1r2-0923-recorded-acceptance-regression.mjs
+          tests/pf1r2-authority-only-presentation-regression.mjs
+          tests/pf1r2-authority-playback-regression.mjs
+          tests/pf1r2-live-playback-authority-regression.mjs
+          tests/pf1r2-live-presentation-regression.mjs
+          tests/pf1r2-run-isolation-regression.mjs
+          tests/pf1r2-single-fresh-pipeline-regression.mjs
+          tests/pf1r2-single-presentation-authority-regression.mjs
+          tests/pf1r2g-fresh-e2e-gate-regression.mjs
+          tests/replay-session-regression.mjs
+          tests/review-window-ui-regression.mjs
+          tests/run-quality-gate.mjs
+          tests/runtime-invariants.mjs
+          tests/ui-opt4a-regression.mjs
+          tests/ui-opt5-regression.mjs
+          tests/ui-opt5r1-video-visibility-regression.mjs
+          EOF
+          sed -i 's/^          //' /tmp/allowlist.txt
+          sort -u /tmp/allowlist.txt -o /tmp/allowlist.txt
+          echo '=== ALLOWLIST ==='
+          cat /tmp/allowlist.txt
+      - name: Audit GREEN diff classification
         shell: bash
         run: |
           set -euo pipefail
-          git worktree add --detach /tmp/pf1r2-red origin/candidate-live
-          red=/tmp/pf1r2-red
-          green=/tmp/pf1r2-green
-          testfile=tests/pf1r2-0923-recorded-acceptance-regression.mjs
-          fixture=tests/pf1r2-0923-offline-expected-fixture.json
-          cp "$green/$testfile" "$red/$testfile"
-          cp "$green/$fixture" "$red/$fixture"
-          echo '=== RED BYTE IDENTITY CHECK ==='
-          (cd "$red" && sha256sum -c /tmp/frozen-acceptance.sha256)
-          set +e
-          (cd "$red" && node "$testfile") > /tmp/accept-red.log 2>&1
-          rc=$?
-          set -e
-          cat /tmp/accept-red.log
-          echo "RED_EXIT_CODE=$rc"
-          test "$rc" -ne 0
-          if grep -Eiq 'ReferenceError|SyntaxError|TypeError: .* is not a function|ERR_MODULE_NOT_FOUND|Cannot find module' /tmp/accept-red.log; then
-            echo 'RED_REASON_INVALID_API_OR_LOAD_FAILURE=1'
-            exit 21
-          fi
-          grep 'ACCEPTANCE ASSERT FAIL:' /tmp/accept-red.log | sort -u | tee /tmp/red-failed-asserts.txt
-          test -s /tmp/red-failed-asserts.txt
-          if ! grep -Eq 'RERENDER_RETAINS_113638|RERENDER_RETAINS_PP_2_TO_1|NO_PAST_RUN_STATE_MIXING' /tmp/red-failed-asserts.txt; then
-            echo 'RED_REASON_STRUCTURAL_SYMPTOM=0'
-            exit 22
-          fi
-          echo 'RED_REASON_STRUCTURAL_SYMPTOM=1'
-      - name: Prove exact frozen Acceptance is GREEN on finalized tree
+          cd /tmp/pf1r2-green
+          git diff --name-only origin/candidate-live | sort -u > /tmp/green-diff.txt
+          echo '=== GREEN DIFF ==='; cat /tmp/green-diff.txt
+          : > /tmp/unknown.txt
+          while IFS= read -r p; do
+            if grep -Fxq "$p" /tmp/allowlist.txt; then continue; fi
+            case "$p" in
+              .tmp/*|.github/scripts/align_p0_single_presentation_tests.py|.github/scripts/apply_p0_run_isolation.py|.github/scripts/apply_p0_single_presentation.py|.github/scripts/apply_p1_single_fresh_pipeline.py|.github/workflows/apply-p0-run-isolation.yml|.github/workflows/apply-p0-single-presentation.yml|.github/workflows/apply-p1-single-fresh-pipeline.yml|.github/workflows/export-architecture-worktree.yml|.github/workflows/export-current-architecture-worktree.yml|.github/workflows/finalize-architecture-corrective.yml|.github/workflows/pf1r2-presentation-migration-red-proof.yml|.github/workflows/pf1r2-run-isolation-red.yml|.github/workflows/pf1r2-single-fresh-pipeline-red.yml|.github/workflows/pf1r2-single-presentation-red.yml) ;;
+              *) echo "$p" >> /tmp/unknown.txt ;;
+            esac
+          done < /tmp/green-diff.txt
+          if [ -s /tmp/unknown.txt ]; then echo 'UNKNOWN GREEN PATHS:'; cat /tmp/unknown.txt; exit 31; fi
+          echo 'GREEN_DIFF_CLASSIFICATION_PASS=1'
+      - name: Build clean tree from exact candidate-live plus allowlist only
         shell: bash
         run: |
           set -euo pipefail
-          cd /tmp/pf1r2-green
-          echo '=== GREEN BYTE IDENTITY CHECK ==='
-          sha256sum -c /tmp/frozen-acceptance.sha256
-          node tests/pf1r2-0923-recorded-acceptance-regression.mjs | tee /tmp/accept-green.log
-          grep -F 'P-F1-R2 09-23 RECORDED ACCEPTANCE PASS' /tmp/accept-green.log
-          echo '=== RED FAILED ASSERT LIST ==='
-          cat /tmp/red-failed-asserts.txt
-          echo 'FROZEN_ACCEPTANCE_RED_GREEN_PASS=1'
+          git worktree add --detach /tmp/pf1r2-clean origin/candidate-live
+          while IFS= read -r p; do
+            src="/tmp/pf1r2-green/$p"; dst="/tmp/pf1r2-clean/$p"
+            if [ ! -f "$src" ]; then echo "ALLOWLIST_SOURCE_MISSING=$p"; exit 32; fi
+            mkdir -p "$(dirname "$dst")"
+            cp "$src" "$dst"
+          done < /tmp/allowlist.txt
+          cd /tmp/pf1r2-clean
+          echo '=== CLEAN DIFF ==='
+          git diff --name-status origin/candidate-live | tee /tmp/clean-diff-status.txt
+          git diff --name-only origin/candidate-live | sort -u > /tmp/clean-diff.txt
+          comm -23 /tmp/clean-diff.txt /tmp/allowlist.txt > /tmp/clean-unexpected.txt
+          test ! -s /tmp/clean-unexpected.txt
+          # Every allowlisted path should differ, except a path deliberately copied byte-identically from base.
+          echo '=== ALLOWLIST PATHS BYTE-IDENTICAL TO BASE (informational) ==='
+          comm -23 /tmp/allowlist.txt /tmp/clean-diff.txt || true
+          test ! -d .tmp
+          test ! -e .github/scripts/align_p0_single_presentation_tests.py
+          test ! -e .github/scripts/apply_p0_run_isolation.py
+          test ! -e .github/scripts/apply_p0_single_presentation.py
+          test ! -e .github/scripts/apply_p1_single_fresh_pipeline.py
+          for p in apply-p0-run-isolation.yml apply-p0-single-presentation.yml apply-p1-single-fresh-pipeline.yml export-architecture-worktree.yml export-current-architecture-worktree.yml finalize-architecture-corrective.yml pf1r2-presentation-migration-red-proof.yml pf1r2-run-isolation-red.yml pf1r2-single-fresh-pipeline-red.yml pf1r2-single-presentation-red.yml; do test ! -e ".github/workflows/$p"; done
+          echo 'CLEAN_TREE_TEMP_AUDIT_PASS=1'
+      - name: Recheck frozen Acceptance on clean tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/pf1r2-clean
+          echo '202fb44cd3409a2f7b9c28ba8f5fd4d63052cf75ce997c6ab54bc1446e4945e4  tests/pf1r2-0923-recorded-acceptance-regression.mjs' | sha256sum -c -
+          echo '59ba131ee1cbd4a4c6041a2afe08b96b4d192a4952ffa06af06081a153a1142c  tests/pf1r2-0923-offline-expected-fixture.json' | sha256sum -c -
+          node tests/pf1r2-0923-recorded-acceptance-regression.mjs | tee /tmp/clean-acceptance.log
+          grep -F 'P-F1-R2 09-23 RECORDED ACCEPTANCE PASS' /tmp/clean-acceptance.log
+          echo 'CLEAN_FROZEN_ACCEPTANCE_PASS=1'
+      - name: Extract exact runtime 20 and compare SHA-256 GREEN vs CLEAN
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/runtime-assets.mjs <<'NODE'
+          import fs from 'node:fs';
+          const html=fs.readFileSync(process.argv[2],'utf8');
+          const marker='__wbRuntimeAssetManifest';
+          const mi=html.indexOf(marker); if(mi<0) throw new Error('runtime manifest marker missing');
+          const eq=html.indexOf('=',mi); const start=html.indexOf('{',eq); if(start<0) throw new Error('runtime manifest object missing');
+          let depth=0, quote=null, esc=false, end=-1;
+          for(let i=start;i<html.length;i++){
+            const c=html[i];
+            if(quote){ if(esc) esc=false; else if(c==='\\') esc=true; else if(c===quote) quote=null; continue; }
+            if(c==='"'||c==="'"){quote=c;continue}
+            if(c==='{')depth++; else if(c==='}'&&--depth===0){end=i+1;break}
+          }
+          if(end<0) throw new Error('runtime manifest object unterminated');
+          let manifest; const raw=html.slice(start,end);
+          try{manifest=JSON.parse(raw)}catch{manifest=(0,eval)(`(${raw})`)}
+          let assets=Array.isArray(manifest.assets)?manifest.assets:Object.keys(manifest.integrity||{});
+          assets=assets.map(x=>typeof x==='string'?x:(x?.path||x?.file||x?.src)).filter(Boolean).map(x=>x.replace(/^\.\//,''));
+          assets=[...new Set(assets)];
+          if(assets.length!==20) throw new Error(`runtime assets expected 20, got ${assets.length}: ${assets.join(',')}`);
+          console.log(assets.sort().join('\n'));
+          NODE
+          node /tmp/runtime-assets.mjs /tmp/pf1r2-clean/index.html > /tmp/runtime-assets.txt
+          echo '=== EXACT RUNTIME ASSETS (20) ==='; nl -ba /tmp/runtime-assets.txt
+          test "$(wc -l < /tmp/runtime-assets.txt)" -eq 20
+          printf '| Asset | GREEN SHA-256 | CLEAN SHA-256 | Match |\n|---|---|---|---|\n' > /tmp/runtime-sha-table.md
+          while IFS= read -r p; do
+            test -f "/tmp/pf1r2-green/$p" -a -f "/tmp/pf1r2-clean/$p"
+            a=$(sha256sum "/tmp/pf1r2-green/$p" | awk '{print $1}')
+            b=$(sha256sum "/tmp/pf1r2-clean/$p" | awk '{print $1}')
+            m=NO; [ "$a" = "$b" ] && m=YES
+            printf '| `%s` | `%s` | `%s` | %s |\n' "$p" "$a" "$b" "$m" >> /tmp/runtime-sha-table.md
+            [ "$m" = YES ]
+          done < /tmp/runtime-assets.txt
+          cat /tmp/runtime-sha-table.md
+          echo 'RUNTIME_20_SHA_IDENTITY_PASS=1'
+      - name: Run full Quality Gate on clean tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/pf1r2-clean
+          node tests/run-quality-gate.mjs | tee /tmp/quality-gate.log
+          grep -E '^QUALITY GATE recognition-quality-gate-v111$' /tmp/quality-gate.log
+          grep -E '^QUALITY GATE PASS: [0-9]+/[0-9]+$' /tmp/quality-gate.log
+          echo 'QUALITY_GATE_V111_PASS=1'
+      - name: Install Chromium auxiliary E2E dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/pf1r2-clean
+          npm install --no-save --no-package-lock playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Chromium auxiliary E2E on clean tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/pf1r2-clean
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/pf1r2-http.log 2>&1 &
+          server=$!
+          trap 'kill $server 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:4173/index.html >/dev/null && break; sleep 0.2; done
+          cat > /tmp/pf1r2-chromium-e2e.mjs <<'NODE'
+          import { chromium } from '/tmp/pf1r2-clean/node_modules/playwright/index.mjs';
+          const browser=await chromium.launch({headless:true});
+          const page=await browser.newPage();
+          const pageErrors=[]; const consoleErrors=[];
+          page.on('pageerror',e=>pageErrors.push(String(e)));
+          page.on('console',m=>{if(m.type()==='error')consoleErrors.push(m.text())});
+          const response=await page.goto('http://127.0.0.1:4173/index.html?channel=candidate',{waitUntil:'networkidle',timeout:30000});
+          if(!response?.ok()) throw new Error(`page status ${response?.status()}`);
+          const result=await page.evaluate(async()=>{
+            const manifest=window.__wbRuntimeAssetManifest;
+            if(!manifest) return {error:'manifest missing'};
+            let authority=null;
+            if(typeof window.__wbVerifyRuntimeBuildAuthority==='function') authority=await window.__wbVerifyRuntimeBuildAuthority();
+            return {
+              manifestBuildId:manifest.buildId,
+              assetCount:Array.isArray(manifest.assets)?manifest.assets.length:Object.keys(manifest.integrity||{}).length,
+              hasWB:!!window.WB,
+              hasReplaySession:!!window.WB?.ReplaySession,
+              authority
+            };
+          });
+          console.log('CHROMIUM_RESULT='+JSON.stringify(result));
+          console.log('CHROMIUM_PAGE_ERRORS='+JSON.stringify(pageErrors));
+          console.log('CHROMIUM_CONSOLE_ERRORS='+JSON.stringify(consoleErrors));
+          if(result.error) throw new Error(result.error);
+          if(result.assetCount!==20) throw new Error(`assetCount=${result.assetCount}`);
+          if(!result.hasWB||!result.hasReplaySession) throw new Error('core runtime not loaded');
+          if(pageErrors.length) throw new Error(`page errors: ${pageErrors.join(' | ')}`);
+          const a=result.authority;
+          if(a && a.ok===false) throw new Error(`runtime authority failed: ${JSON.stringify(a)}`);
+          await browser.close();
+          console.log('CHROMIUM_AUX_E2E_PASS=1');
+          NODE
+          node /tmp/pf1r2-chromium-e2e.mjs | tee /tmp/chromium-e2e.log
+          grep -F 'CHROMIUM_AUX_E2E_PASS=1' /tmp/chromium-e2e.log
+      - name: Final clean audit summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/pf1r2-clean
+          echo '=== FINAL CLEAN TREE DIFF ==='; git diff --name-status origin/candidate-live
+          echo '=== LATEST ==='; cat latest.json
+          echo '=== FROZEN HASHES ==='
+          sha256sum tests/pf1r2-0923-recorded-acceptance-regression.mjs tests/pf1r2-0923-offline-expected-fixture.json
+          echo '=== RUNTIME SHA TABLE ==='; cat /tmp/runtime-sha-table.md
+          echo '=== QUALITY GATE TAIL ==='; tail -5 /tmp/quality-gate.log
+          echo '=== CHROMIUM E2E ==='; cat /tmp/chromium-e2e.log
+          echo 'P_F1_R2_ARCHITECTURE_CLEAN_VALIDATION_PASS=1'
