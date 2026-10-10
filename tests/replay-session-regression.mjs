@@ -21,7 +21,7 @@ vm.createContext(sandbox);
 new vm.Script(source,{filename:'replay-session.js'}).runInContext(sandbox);
 const R=WB.ReplaySession;
 
-assert.equal(R.version,'replay-session-clean-1.15');
+assert.equal(R.version,'replay-session-clean-1.16');
 assert.equal(R.schema,'replay-session-v3');
 assert.equal(R.persistenceMode(),'memory','no IndexedDB in regression sandbox must use memory fallback');
 
