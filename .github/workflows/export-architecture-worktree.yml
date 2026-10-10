@@ -1,0 +1,25 @@
+name: Export Architecture Worktree
+on:
+  push:
+    branches:
+      - candidate/p-f1-r2-architecture-corrective
+    paths:
+      - '.github/workflows/export-architecture-worktree.yml'
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: candidate/p-f1-r2-architecture-corrective
+      - name: Archive exact worktree
+        run: |
+          tar --exclude=.git --exclude=.github/workflows/export-architecture-worktree.yml -czf "$RUNNER_TEMP/shadowverse-architecture-worktree.tgz" .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shadowverse-architecture-worktree
+          path: ${{ runner.temp }}/shadowverse-architecture-worktree.tgz
+          if-no-files-found: error
