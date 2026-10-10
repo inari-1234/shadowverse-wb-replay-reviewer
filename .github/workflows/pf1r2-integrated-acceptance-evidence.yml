@@ -30,7 +30,7 @@ jobs:
         run: |
           set -euo pipefail
           RED_SHA=88dc867c9e2ba2e3424723b38935d84bddd87c2c
-          GREEN_SHA=0e9cc999d5a2c36d29a20d1817d7770d4c90f935
+          GREEN_SHA=0ca26ea39a061f0292e373bfc25af3a4590889b4
           TEST=tests/pf1r2-0923-integrated-acceptance-regression.cjs
           FIXTURE=tests/pf1r2-0923-integrated-acceptance-fixture.json
 
