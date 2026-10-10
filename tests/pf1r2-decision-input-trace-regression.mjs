@@ -44,7 +44,7 @@ assert.equal(trace.version,'pf1r2-decision-input-trace-v1.0.0');
 assert.equal(trace.runId,'pf1r2g:1000:trace-a');
 assert.equal(trace.nonce,'nonce-a');
 assert.equal(trace.videoKey,'09-23.mp4|trace-regression');
-assert.deepEqual(trace.captures,[]);
+assert.equal(trace.captures.length,0);
 assert.equal(trace.matchAnalysis,null);
 assert.equal(sandbox.window.__wbPF1R2InputTraceV1.runId,trace.runId,'diagnostic mirror follows the active run');
 
