@@ -136,6 +136,7 @@ function makeCapture(row,mode='timeline-lite'){
   const holdReasons=pipeRow?.detail?.reasonCodes||[];
   check(pipeRow?.status==='HOLD'&&pipeRow?.reason===fixture.expected.runtimeHoldReason,'IPHONE_RAW_TRACE_OUTER_HOLD_REASON_MATCHES_DEVICE',`status=${pipeRow?.status}; reason=${pipeRow?.reason}`);
   check(pipeRow?.detail?.generationStatus===fixture.expected.generationStatus&&holdReasons.includes(fixture.expected.safeHoldCriticalReason),'IPHONE_RAW_TRACE_INNER_HOLD_REASON_WARD_UNRESOLVED',`generation=${pipeRow?.detail?.generationStatus}; reasons=${holdReasons.join(',')}`);
+  check(pipeRow?.holdKind===fixture.expected.holdKind,'IPHONE_RAW_TRACE_HOLD_KIND_SEMANTIC',`holdKind=${pipeRow?.holdKind}`);
 
   WB.emit('comparison-decision-ready',{windowId,runId:fixture.expected.staleRunId,sourceAuthority:'stale-fixture',decision:{status:'OK',classification:'INSUFFICIENT_EVIDENCE',bestCandidateId:null,reasonCodes:['INSUFFICIENT_AUTHORITY'],ranking:{pairwise:[]}},playedMove:null});
   await sleep(20);
@@ -171,7 +172,7 @@ function makeCapture(row,mode='timeline-lite'){
   check(!reviewText.includes(fixture.expected.forbiddenHpText),'FINAL_DOM_NO_6T_FALSE_HP_18_TO_15',reviewText.includes(fixture.expected.forbiddenHpText)?fixture.expected.forbiddenHpText:'not present');
   check(!host?.querySelector('.reviewCoach'),'FINAL_DOM_NO_LEGACY_REVIEW_COACH',host?.querySelector('.reviewCoach')?.textContent||'none');
   check(!!host?.querySelector('[data-comparison-coach="1"]'),'FINAL_DOM_SAFE_HOLD_COMPARISON_COACH_PRESENT',comparisonCoachText||'missing');
-  check(comparisonCoachText.includes(fixture.expected.coachHeadline),'IPHONE_RAW_TRACE_COACH_DISPLAY_MATCHES_DEVICE',comparisonCoachText);
+  check(comparisonCoachText.includes(fixture.expected.coachHeadline),'IPHONE_RAW_TRACE_COACH_EXPLAINS_WARD_UNRESOLVED',comparisonCoachText);
   check((window.__wbReviewCoachV1?.count||0)===0,'LEGACY_COACH_NOT_FINAL_AUTHORITY',`count=${window.__wbReviewCoachV1?.count}`);
   check(near(Number(beforeButton?.dataset?.reviewFrameTime),fixture.expected.reviewStart),'FINAL_DOM_BEFORE_FRAME_113638',`frame=${beforeButton?.dataset?.reviewFrameTime}`);
   const authorityStart=WB.ReplaySession?.reviewAuthorityPlaybackStart?.(finalId);
