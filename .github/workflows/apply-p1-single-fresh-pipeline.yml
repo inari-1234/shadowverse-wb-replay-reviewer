@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/scripts/apply_p1_single_fresh_pipeline.py'
       - '.github/workflows/apply-p1-single-fresh-pipeline.yml'
+      - 'tests/pf1r2-single-fresh-pipeline-regression.mjs'
 permissions:
   contents: write
 jobs:
