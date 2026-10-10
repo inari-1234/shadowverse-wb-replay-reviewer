@@ -7,10 +7,10 @@ const EXPECTED_MODULE_VERSIONS=Object.freeze({
   'card-db':'card-db-clean-1.23',
   'hand-recognition':'hand-clean-1.53',
   'state-recognition':'state-clean-1.8.28',
-  'replay-session':'replay-session-clean-1.14',
+  'replay-session':'replay-session-clean-1.16',
   'review-engine':'review-clean-1.8.0',
   'counterfactual-review':'counterfactual-review-clean-1.0',
-  'diagnostics':'diagnostics-clean-1.57'
+  'diagnostics':'diagnostics-clean-1.58'
 });
 const RUNTIME_CHANNEL=(()=>{try{const href=String(window.location?.href||'');return href.includes('/candidate-live/')||/[?&]channel=candidate(?:&|$)/.test(href)?'candidate':'main'}catch{return'main'}})();
 const WB=window.WB={APP,runtimeChannel:RUNTIME_CHANNEL,uiView:'review',expectedModules:EXPECTED_MODULE_VERSIONS,modules:[],moduleRegistrations:[],moduleBuildRegistrations:[],moduleRegistrationDuplicates:[],runtimeBuildAuthority:null,events:[],errors:[],readyQueue:[],ready:false,video:null,videoMeta:null,videoName:'replay',objectUrl:null,turnTimeline:[],turnValidation:null,mulligan:null,classDetection:null,stateCapture:null,matchAnalysisLast:null,scenes:[],seekCount:0,seekReasons:{},task:null,cancelRequested:false,swInfo:null};

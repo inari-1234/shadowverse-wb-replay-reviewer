@@ -58,13 +58,17 @@ await t('PF1R1-14 known-board capture still preserves unknown Ward',async()=>{co
 await t('PF1R1-15 present Ward without opponent structure is unresolved',async()=>{const s=PS.createState(PS.observationFromCapture(fixture.stateCaptureHistory[3]));assert.ok(s.authority.criticalIssues.includes(PS.REASON.OPPONENT_WARD_STRUCTURE_UNRESOLVED))});
 await t('PF1R1-16 missing PP remains unresolved',async()=>{const s=PS.createState(PS.observationFromCapture(fixture.stateCaptureHistory[4]));assert.ok(s.authority.criticalIssues.includes(PS.REASON.PP_UNRESOLVED))});
 
-sandbox.window.__wbReplaySessionV1={version:'replay-session-v2',sourceKey:fixture.source.videoKey,decisionWindows:structuredClone(fixture.decisionWindows)};
-WB.emit('match-analysis-complete',{cancelled:false,source:'pf1r1-real-video-diagnostic-replay'});
-await waitFor(()=>P.snapshot().count===6,'all real Decision Windows evaluated');
+const safetyRun={runId:'pf1r1-safety-run',nonce:'pf1r1-safety-nonce',startedAt:'2026-10-10T00:00:00.000Z'};
+sandbox.window.__wbReplaySessionV1={version:'replay-session-v3',sourceKey:fixture.source.videoKey,analysisRun:safetyRun,decisionWindows:structuredClone(fixture.decisionWindows)};
+const beforeEarly=P.snapshot().count;
+WB.emit('match-analysis-complete',{cancelled:false,runId:safetyRun.runId,nonce:safetyRun.nonce,source:'pf1r1-real-video-diagnostic-replay'});
+await new Promise(r=>setTimeout(r,20));
+await t('PF1R1-17 match-analysis-complete alone does not run P-F1 before PF0B',async()=>assert.equal(P.snapshot().count,beforeEarly));
+const explicit=await P.evaluateSession({cancelled:false,source:'pf1r1-real-video-diagnostic-replay',pf0b:{runId:safetyRun.runId,nonce:safetyRun.nonce}});
+assert.equal(explicit.processed,6);
 const rows=P.snapshot().items;
-await t('PF1R1-17 match-analysis event automatically evaluates six windows',async()=>assert.equal(rows.length,6));
-await t('PF1R1-18 every real window safely HOLDs',async()=>assert.ok(rows.every(x=>x.status==='HOLD')));
-await t('PF1R1-19 exact Decision Authority capture is now mandatory',async()=>assert.ok(rows.every(x=>x.reason==='DECISION_AUTHORITY_CAPTURE_MISSING')));
+await t('PF1R1-18 every explicitly evaluated real window safely HOLDs',async()=>assert.equal(rows.length,6));
+await t('PF1R1-19 exact Decision Authority capture is now mandatory',async()=>assert.ok(rows.every(x=>x.status==='HOLD'&&x.reason==='DECISION_AUTHORITY_CAPTURE_MISSING')));
 await t('PF1R1-20 old State Capture history cannot substitute for fresh window authority',async()=>assert.ok(rows.every(x=>x.detail?.binding==null)));
 await t('PF1R1-21 no replay-state fallback can create a PositionState',async()=>assert.ok(rows.every(x=>x.detail?.code==='DECISION_AUTHORITY_CAPTURE_MISSING'||x.reason==='DECISION_AUTHORITY_CAPTURE_MISSING')));
 await t('PF1R1-22 no comparison decision is invented from insufficient evidence',async()=>assert.equal(events.filter(x=>x.name==='comparison-decision-ready').length,0));

@@ -21,8 +21,8 @@ vm.createContext(sandbox);
 new vm.Script(source,{filename:'replay-session.js'}).runInContext(sandbox);
 const R=WB.ReplaySession;
 
-assert.equal(R.version,'replay-session-clean-1.14');
-assert.equal(R.schema,'replay-session-v2');
+assert.equal(R.version,'replay-session-clean-1.16');
+assert.equal(R.schema,'replay-session-v3');
 assert.equal(R.persistenceMode(),'memory','no IndexedDB in regression sandbox must use memory fallback');
 
 const capture=(time,over={})=>({
@@ -222,8 +222,8 @@ const migrated=R.migrateLoadedSession({
   scenes:[{id:'scene-legacy',time:12,turn:2,imageKey:'k'}],tacticalReview:{safe:true}
 },'match.mp4|1000|123');
 assert.equal(migrated.migrated,true);
-assert.equal(migrated.reason,'legacy-unsafe-null-number-coercion');
-assert.equal(migrated.session.version,'replay-session-v2');
+assert.equal(migrated.reason,'analysis-run-isolation-v3');
+assert.equal(migrated.session.version,'replay-session-v3');
 assert.equal(migrated.session.states.length,0,'legacy v1 observation states must be discarded because null could have been coerced to zero');
 assert.equal(migrated.session.actions.length,0,'legacy v1 derived actions must be discarded');
 assert.equal(migrated.session.reviewPoints.length,0,'legacy v1 derived review points must be rebuilt from safe signals only after load');

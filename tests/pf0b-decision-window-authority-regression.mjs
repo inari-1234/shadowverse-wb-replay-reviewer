@@ -11,10 +11,11 @@ const elements={
   '#leStatus':el(''),'#stateSummary':el('')
 };
 const video={currentTime:20,paused:true};
+const RUN1='pf0b-run-1',NONCE1='pf0b-nonce-1',RUN2='pf0b-run-2',NONCE2='pf0b-nonce-2';
 let captureCalls=0,registeredProvider=null;
 const state=(t,pp,hp=8)=>({id:`st:5:bottom:${t.toFixed(3)}`,time:t,turn:5,absoluteSide:'bottom',relativeSide:'自分',pp,opponentHP:hp,resources:{extraPP:'unknown',ep:'yes',sep:'no'},opponentWard:'none',boardDamage:2,boardDamageKnown:true,hand:{recognized:{}}});
 const s10=state(10,2),s105=state(10.5,1,7),s12=state(12,1,7),s125=state(12.5,0,6);
-const session={states:[s10,s105,s12,s125],actions:[],decisionWindows:[
+const session={analysisRun:{runId:RUN1,nonce:NONCE1,startedAt:'2026-10-09T00:00:00.000Z'},states:[s10,s105,s12,s125],actions:[],decisionWindows:[
   {id:'w1',beforeState:structuredClone(s10),afterState:structuredClone(s105),relatedActionIds:[]},
   {id:'w2',beforeState:structuredClone(s12),afterState:structuredClone(s125),relatedActionIds:[]},
   {id:'w-opp',beforeState:{...state(11,1),id:'st:5:top:11.000',absoluteSide:'top',relativeSide:'相手'},afterState:{...state(11.2,1),id:'st:5:top:11.200',absoluteSide:'top',relativeSide:'相手'},relatedActionIds:[]}
@@ -31,11 +32,12 @@ const WB={
   seekTo:async(t,reason)=>{seekLog.push({t,reason});video.currentTime=Number(t);return Number(t)},
   videoKey:()=> 'pf0b-test-video',
   CardDB:{get(id){if(id==='quickBlader')return{id:'quickBlader',type:'フォロワー',cost:1,atk:1,life:1,tags:['疾走']};return null}},
-  StateRecognition:{captureState:async options=>{captureCalls++;assert.equal(options.handHistory,false);assert.equal(options.captureMode,'decision-authority');assert.equal(options.sharedFrameReuse,true);const t=Number(video.currentTime);elements['#leTurn'].value='5';elements['#lePp'].value=String(t===10?2:t===10.5?1:t===12?1:0);elements['#leOppHp'].value=String(t===10?8:t===10.5?7:t===12?7:6);elements['#leBoard'].value='2';elements['#leExtra'].value='unknown';elements['#leEp'].value='yes';elements['#leSep'].value='no';elements['#leWard'].value='none';const c=makeCapture(t);WB.stateCapture=c;WB.stateCaptureHistory=[...(WB.stateCaptureHistory||[]),c].slice(-5);WB.emit('state-captured',{capture:c});return c}},
+  StateRecognition:{captureState:async options=>{captureCalls++;assert.equal(options.handHistory,false);assert.equal(options.captureMode,'decision-authority');assert.equal(options.sharedFrameReuse,true);assert.equal(options.publishStateCaptured,false);assert.equal(options.recordStateHistory,false);const t=Number(video.currentTime);elements['#leTurn'].value='5';elements['#lePp'].value=String(t===10?2:t===10.5?1:t===12?1:0);elements['#leOppHp'].value=String(t===10?8:t===10.5?7:t===12?7:6);elements['#leBoard'].value='2';elements['#leExtra'].value='unknown';elements['#leEp'].value='yes';elements['#leSep'].value='no';elements['#leWard'].value='none';return makeCapture(t)}},
   RuntimeDecisionPipeline:{registerAuthority(p){registeredProvider=p;return{ready:true,missing:[],providerId:p.id}},authorityStatus(){return{ready:!!registeredProvider,missing:[],providerId:registeredProvider?.id||null}},clear(){},evaluateSession(detail){reevaluations.push(detail);return Promise.resolve({status:'OK',processed:0,results:[]})}},
   CoachIntegration:{clear(){},snapshot(){return{count:0,items:[]}}},
   ReplaySession:{snapshot(){return structuredClone(session)},ingestState(){}}
 };
+WB.on('match-analysis-start',detail=>{session.analysisRun={runId:String(detail?.runId||''),nonce:String(detail?.nonce||''),startedAt:detail?.startedAt||new Date().toISOString()}});
 const sandbox={window:{WB,__wbReplaySessionV1:session},console,structuredClone,Date,Promise,setTimeout,clearTimeout,queueMicrotask,crypto:{randomUUID:()=>`uuid-${captureCalls}-${Date.now()}`}};vm.createContext(sandbox);
 for(const f of ['position-state-runtime.js','common-rule-engine-runtime.js','runtime-authority-binding.js'])new vm.Script(read(f),{filename:f}).runInContext(sandbox);
 const B=WB.RuntimeAuthorityBinding,R=WB.CommonRuleEngineRuntime;
@@ -50,7 +52,7 @@ await t('PF0B-05 each target has anchor and after',()=>assert.ok(B.decisionWindo
 await t('PF0B-06 no eager heavy capture',()=>assert.equal(captureCalls,0));
 const oldHistory=WB.stateCaptureHistory,oldCapture=WB.stateCapture;
 let first;
-await t('PF0B-07 enrich exact decision windows',async()=>{first=await B.enrichDecisionWindows({finishedAt:'2026-10-09T00:00:00.000Z'});assert.equal(first.status,'OK')});
+await t('PF0B-07 enrich exact decision windows',async()=>{first=await B.enrichDecisionWindows({runId:RUN1,nonce:NONCE1,finishedAt:'2026-10-09T00:00:00.000Z'});assert.equal(first.status,'OK')});
 await t('PF0B-08 two target windows',()=>assert.equal(first.targets,2));
 await t('PF0B-09 four exact capture targets',()=>assert.equal(first.captureTargets,4));
 await t('PF0B-10 four exact captures',()=>assert.equal(first.captured,4));
@@ -73,9 +75,9 @@ await t('PF0B-26 binding is same-run complete',()=>{const b=B.bindingForWindow('
 await t('PF0B-27 PositionState requires exact same-run binding',async()=>{const s=await B.getPositionState({windowId:'w1',context:{window:session.decisionWindows[0],analysis:{pf0b:first}},session});assert.equal(s.observed.sourceStateId,s10.id);assert.equal(B.bindingForWindow('w1',first.runId).complete,true);assert.equal(R.getAuthorityStatus(s).status,'RESOLVED')});
 await t('PF0B-28 wrong run fails closed',async()=>{await assert.rejects(()=>B.getPositionState({windowId:'w1',context:{window:session.decisionWindows[0],analysis:{pf0b:{runId:'old-run'}}},session}),e=>e.code==='DECISION_AUTHORITY_CAPTURE_MISSING')});
 let second;
-await t('PF0B-29 repeat starts a new fresh run',async()=>{second=await B.enrichDecisionWindows({finishedAt:'2026-10-09T00:01:00.000Z'});assert.equal(second.captured,4);assert.equal(second.reused,0);assert.notEqual(second.runId,first.runId);assert.equal(captureCalls,8)});
-await t('PF0B-30 old run binding no longer valid',()=>assert.equal(B.bindingForWindow('w1',first.runId),null));
-await t('PF0B-31 task-finished orchestration waits for completed task',async()=>{WB.emit('video-reset',{});const before=captureCalls;WB.emit('match-analysis-complete',{cancelled:false,finishedAt:'done'});await Promise.resolve();assert.equal(captureCalls,before);WB.emit('task-finished',{name:'別処理',cancelRequested:false});await new Promise(r=>setTimeout(r,5));assert.equal(captureCalls,before);WB.emit('match-analysis-complete',{cancelled:false,finishedAt:'done2'});WB.emit('task-finished',{name:'試合全体を解析',cancelRequested:false});await new Promise(r=>setTimeout(r,30));assert.equal(captureCalls,before+4);assert.ok(reevaluations.length>=1);assert.ok(reevaluations.at(-1).pf0b?.runId)});
+await t('PF0B-29 same-run repeat does not invent a new run',async()=>{second=await B.enrichDecisionWindows({runId:RUN1,nonce:NONCE1,finishedAt:'2026-10-09T00:01:00.000Z'});assert.equal(second.captured,4);assert.equal(second.reused,0);assert.equal(second.runId,first.runId);assert.equal(second.nonce,NONCE1);assert.equal(captureCalls,8)});
+await t('PF0B-30 same-run binding remains valid',()=>assert.equal(B.bindingForWindow('w1',first.runId)?.complete,true));
+await t('PF0B-31 task-finished orchestration uses explicitly established fresh run',async()=>{WB.emit('video-reset',{});const before=captureCalls;WB.emit('match-analysis-start',{runId:RUN2,nonce:NONCE2,startedAt:'2026-10-09T00:02:00.000Z'});assert.equal(session.analysisRun.runId,RUN2);WB.emit('match-analysis-complete',{cancelled:false,runId:RUN2,nonce:NONCE2,finishedAt:'done'});await Promise.resolve();assert.equal(captureCalls,before);WB.emit('task-finished',{name:'別処理',cancelRequested:false});await new Promise(r=>setTimeout(r,5));assert.equal(captureCalls,before);WB.emit('match-analysis-complete',{cancelled:false,runId:RUN2,nonce:NONCE2,finishedAt:'done2'});WB.emit('task-finished',{name:'試合全体を解析',cancelRequested:false});await new Promise(r=>setTimeout(r,30));assert.equal(captureCalls,before+4);assert.ok(reevaluations.length>=1);assert.equal(reevaluations.at(-1).pf0b?.runId,RUN2);assert.equal(B.snapshot().currentFreshRun?.runId,RUN2)});
 await t('PF0B-32 optional module registered',()=>assert.ok(optionalModules.some(x=>x.name==='decision-window-authority-capture'&&x.version==='pf0b-decision-window-authority-v1.0.0')));
 
 assert.equal(n,32);

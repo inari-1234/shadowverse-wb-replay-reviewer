@@ -249,11 +249,12 @@ assert.ok(stateRecognition.includes('function matchAnalysisPlan('),'whole-match 
 assert.ok(stateRecognition.includes("matchAnalysisScope:'target-side-turns'"),'whole-match analysis must remain bounded to the selected analysis side');
 assert.ok(diagnostics.includes('matchAnalysis:clone(WB.matchAnalysisLast||null)'),'diagnostics must export whole-match analysis evidence');
 assert.ok(replaySession.includes("turnIdentity:'number+side'"),'ReplaySession must keep numeric turn and active side together when deriving changes');
-assert.ok(replaySession.includes("SESSION_SCHEMA='replay-session-v2'"),'ReplaySession must migrate away from the unsafe v1 numeric-null schema');
+assert.ok(replaySession.includes("SESSION_SCHEMA='replay-session-v3'"),'ReplaySession must migrate away from the unsafe v1 numeric-null schema');
 assert.ok(replaySession.includes("decisionWindows:[]"),'ReplaySession must expose derived Decision Windows without changing recognition state');
 assert.ok(replaySession.includes("v===null||v===undefined"),'ReplaySession numeric normalization must preserve null/undefined');
-assert.ok(replaySession.includes("legacy-unsafe-null-number-coercion"),'ReplaySession must explicitly invalidate unsafe v1 derived observations');
-assert.ok(replaySession.includes("const VERSION='replay-session-clean-1.14'"),'ReplaySession module must have an explicit version');
+assert.ok(replaySession.includes("analysis-run-isolation-v3"),'ReplaySession migration must explicitly discard legacy analysis-derived observations');
+assert.ok(replaySession.includes('s.states=[];s.actions=[];s.observedEpisodes=[];s.decisionWindows=[];s.observationReviewPoints=[]'),'new analysis run must clear all prior derived state/window data');
+assert.ok(replaySession.includes("const VERSION='replay-session-clean-1.16'"),'ReplaySession module must have an explicit version');
 assert.ok(replaySession.includes("unknownHpBridge:'same-turn-observed-endpoints<=3s'"),'ReplaySession must expose the bounded unknown-HP bridge contract');
 assert.ok(replaySession.includes('bridgedUnknownObservations'),'bridged HP actions must retain evidence that unknown observations were skipped');
 assert.ok(index.includes('id="observedEpisodes"'),'automatic review UI must expose observed-episode Action Timeline output');

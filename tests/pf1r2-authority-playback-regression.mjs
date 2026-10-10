@@ -13,7 +13,9 @@ const model={reviewStart:115.888,reviewEnd:116.338};
 assert.equal(R.reviewPlaybackStart(model,113.638),113.638,'exact fresh authority start must override the legacy replay window start');
 assert.equal(R.reviewPlaybackStart(model,null),115.888,'without authority override the legacy review start remains the fallback');
 assert.equal(R.reviewPlaybackStart(model,'stale'),115.888,'invalid override must not alter playback');
-assert.match(replay,/playReviewWindow\(videoButton\.dataset\.reviewVideoWindow\s*,\s*videoButton\.dataset\.reviewAuthorityStart\)/,'delegated video action must forward the fresh authority start');
-assert.match(replay,/async function playReviewWindow\(windowId\s*,\s*authorityStart/,'playback API must accept the authority start explicitly');
+assert.match(replay,/playReviewWindow\(videoButton\.dataset\.reviewVideoWindow\)/,'delegated video action must identify only the window; authority comes from ReplaySession model');
+assert.match(replay,/async function playReviewWindow\(windowId\)/,'playback API must not accept a DOM authority override');
+assert.match(replay,/reviewAuthorityPlaybackStart\(windowId\)/,'playback must resolve authority from stored presentation');
+assert.doesNotMatch(replay,/dataset\.reviewAuthorityStart/,'DOM dataset must not be the playback Source of Truth');
 
 console.log('P-F1-R2 AUTHORITY PLAYBACK REGRESSION PASS');

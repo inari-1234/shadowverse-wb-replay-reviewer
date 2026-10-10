@@ -1,8 +1,9 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v110';
+const GATE_VERSION='recognition-quality-gate-v111';
 // ui-opt6R 09-23 offline expected-result oracle + visible cross-axis trade-off authority + P-E1R1/P-E2R1 + P-F1-R2-PM + P-D1R1 + P-F1-R2-G.
-// Fresh live gate: exact authority must present independently of comparison success, and exact capture resource/hand semantics must produce the same legal Quick/evolve opportunity used by the offline oracle.
+// Architecture corrective gate: run isolation + single fresh pipeline + single presentation authority + decision input trace + recorded 09-23 structural acceptance.
+// Fresh semantic authority still requires the final real-device capture; the recorded acceptance fixture is explicitly structural/approximate where corrective-era PF0B exact captures are unavailable.
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
 const tests=[
@@ -65,6 +66,12 @@ const tests=[
   'tests/pf1r2-learning-candidate-oracle-regression.mjs',
   'tests/pf1r2-live-presentation-regression.mjs',
   'tests/pf1r2-authority-only-presentation-regression.mjs',
+  'tests/pf1r2-run-isolation-regression.mjs',
+  'tests/pf1r2-single-fresh-pipeline-regression.mjs',
+  'tests/pf1r2-single-presentation-authority-regression.mjs',
+  'tests/pf1r2-live-playback-authority-regression.mjs',
+  'tests/pf1r2-decision-input-trace-regression.mjs',
+  'tests/pf1r2-0923-recorded-acceptance-regression.mjs',
   'tests/pf1r2-live-position-state-parity-regression.mjs',
   'tests/pf1r2-live-capture-pipeline-regression.mjs',
   'tests/pf1r2-authority-playback-regression.mjs',

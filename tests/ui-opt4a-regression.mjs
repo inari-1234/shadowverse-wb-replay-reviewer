@@ -48,6 +48,6 @@ const rendered=decision.slice(decision.indexOf('return`<article'));
 assert.ok(rendered.indexOf('reviewObservationSummary')<rendered.indexOf('${renderReviewComparison(model)}'),'observed changes must render before the comparison table');
 assert.ok(rendered.indexOf('${renderReviewComparison(model)}')<rendered.indexOf('${frames}'),'comparison must render before frame evidence');
 assert.ok(rendered.indexOf('${frames}')<rendered.indexOf('${reasonHtml}'),'frame evidence must render before the reason block');
-assert.ok(rendered.indexOf('${reasonHtml}')<rendered.indexOf('${renderWindowCoach(model.coach)}'),'reason must render before tactical coach');
+assert.ok(rendered.indexOf('${reasonHtml}')<rendered.indexOf('${model.comparisonCoach?renderComparisonCoach(model.comparisonCoach):renderWindowCoach(model.coach)}'),'reason must render before the authoritative coach block');
 
 console.log('UI OPT4A REGRESSION PASS');

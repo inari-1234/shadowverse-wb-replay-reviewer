@@ -24,7 +24,7 @@ assert.ok(replay.includes("await previewSeekTo(target,'review-playback-window')"
 assert.equal(replay.includes("W.seekTo(target,'review-playback-window')"),false);
 assert.ok(replay.includes("reviewPlayback:'selected-video-visible+post-analysis-3s-lead+preview-seek-only-v2'"));
 assert.ok(replay.includes("W.on('metadata',()=>{reviewPlaybackReady=true;activeReviewPlaybackIndex=0;updateReviewPlaybackUi()"));
-assert.ok(replay.includes("W.on('match-analysis-start',()=>{activeReviewPlaybackIndex=0;updateReviewPlaybackUi()"));
+assert.ok(replay.includes("W.on('match-analysis-start',detail=>{beginAnalysisRun({runId:detail?.runId||null,nonce:detail?.nonce||null,startedAt:detail?.startedAt||null,source:'match-analysis-start'});activeReviewPlaybackIndex=0;updateReviewPlaybackUi()"));
 assert.ok(replay.includes("W.on('match-analysis-complete',detail=>{reviewPlaybackReady=!detail?.cancelled"));
 assert.ok(replay.includes("W.on('video-reset',()=>{current=null;renderDeferred=false;reviewPlaybackReady=false"));
 assert.ok(replay.includes("reviewFrameButton('直前フレーム'")&&replay.includes("reviewFrameButton('変化後フレーム'"));
