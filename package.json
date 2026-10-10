@@ -1,0 +1,11 @@
+{
+  "name": "shadowverse-wb-replay-reviewer",
+  "private": true,
+  "scripts": {
+    "test:quality": "node tests/run-quality-gate.mjs"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "6.0.0",
+    "jsdom": "26.1.0"
+  }
+}
