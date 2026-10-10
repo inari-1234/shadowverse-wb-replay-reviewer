@@ -92,8 +92,8 @@ s=s.replace(old_event,new_event)
 
 p.write_text(s)
 
-# Align legacy replay regression with intentional schema/version bump.
+# Align legacy replay regression with intentional schema/version/migration contract.
 t=Path('tests/replay-session-regression.mjs')
-r=t.read_text().replace("assert.equal(R.version,'replay-session-clean-1.14');","assert.equal(R.version,'replay-session-clean-1.15');").replace("assert.equal(R.schema,'replay-session-v2');","assert.equal(R.schema,'replay-session-v3');")
+r=t.read_text().replace("assert.equal(R.version,'replay-session-clean-1.14');","assert.equal(R.version,'replay-session-clean-1.15');").replace("assert.equal(R.schema,'replay-session-v2');","assert.equal(R.schema,'replay-session-v3');").replace("assert.equal(migrated.reason,'legacy-unsafe-null-number-coercion');","assert.equal(migrated.reason,'analysis-run-isolation-v3');").replace("assert.equal(migrated.session.version,'replay-session-v2');","assert.equal(migrated.session.version,'replay-session-v3');")
 t.write_text(r)
 print('P0-1 run isolation patch applied')
