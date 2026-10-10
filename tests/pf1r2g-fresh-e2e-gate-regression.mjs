@@ -11,7 +11,8 @@ const after={id:'st:8:bottom:116.338',time:116.338,turn:8,absoluteSide:'bottom',
 const pp={id:'pp',type:'pp-change',fromStateId:anchor.id,toStateId:before.id,time:before.time,turn:8,data:{from:2,to:1,delta:-1}};
 const board={id:'board',type:'board-damage-change',fromStateId:before.id,toStateId:after.id,time:after.time,turn:8,data:{from:0,to:3,delta:3}};
 const win={id:'w8',beforeState:structuredClone(before),afterState:structuredClone(after),relatedActionIds:[board.id]};
-let session={states:[structuredClone(anchor),structuredClone(before),structuredClone(after)],actions:[structuredClone(pp),structuredClone(board)],decisionWindows:[structuredClone(win)]};
+const firstRun={runId:'analysis-run-1',nonce:'analysis-nonce-1',startedAt:'2026-10-09T00:00:00.000Z'};
+let session={analysisRun:structuredClone(firstRun),states:[structuredClone(anchor),structuredClone(before),structuredClone(after)],actions:[structuredClone(pp),structuredClone(board)],decisionWindows:[structuredClone(win)]};
 let failAfter=false;
 const makeCapture=t=>{
   const src=Math.abs(t-after.time)<.001&&failAfter?{...after,time:116.999,id:'st:8:bottom:116.999'}:Math.abs(t-anchor.time)<.001?anchor:Math.abs(t-after.time)<.001?after:before;
@@ -23,7 +24,7 @@ const WB={
   registerModule(){},recordError(){},log(){},videoKey:()=> '09-23-video',
   emit(name,detail){for(const f of handlers.get(name)||[])f(detail)},on(name,fn){if(!handlers.has(name))handlers.set(name,[]);handlers.get(name).push(fn)},onReady(){},$(){return null},
   seekTo:async t=>{video.currentTime=Number(t);return Number(t)},
-  StateRecognition:{captureState:async()=>{const c=makeCapture(Number(video.currentTime));WB.stateCapture=c;WB.emit('state-captured',{capture:c});return c}},
+  StateRecognition:{captureState:async()=>{const c=makeCapture(Number(video.currentTime));WB.stateCapture=c;return c}},
   ReplaySession:{snapshot:()=>structuredClone(session),ingestState(){}},
   PositionStateRuntime:{version:'test-position',adapter:{},normalizeCardType(){return 'UNKNOWN'},observationFromCapture(c){const x=c.confirmed||c.context||{};return{sourceStateId:`st:${x.turn}:${x.absoluteSide}:${Number(x.time).toFixed(3)}`,time:Number(x.time),turn:Number(x.turn),pp:Number(x.pp),handRecognized:structuredClone(x.hand?.recognized||{})}},createState(obs,meta){return{schema:'test-position',observed:structuredClone(obs),meta:structuredClone(meta)}}},
   CommonRuleEngineRuntime:{version:'test-rules'},CardDB:{get(){return null}},
@@ -35,13 +36,14 @@ vm.createContext(sandbox);
 new vm.Script(bindingSource,{filename:'runtime-authority-binding.js'}).runInContext(sandbox);
 const B=WB.RuntimeAuthorityBinding;
 await B.ready();
+const beginSyntheticRun=(runId,nonce,startedAt)=>{session={...session,analysisRun:{runId,nonce,startedAt}};sandbox.window.__wbReplaySessionV1=session;WB.emit('match-analysis-start',{runId,nonce,startedAt})};
 let n=0;const t=async(name,fn)=>{try{await fn();n++}catch(e){e.message=`${name}: ${e.message}`;throw e}};
 
 await t('PF1R2G-01 gate version',()=>assert.equal(B.freshGateVersion,'pf1r2-g-fresh-e2e-gate-v1.0.0'));
 await t('PF1R2G-02 evidence version bumped',()=>assert.equal(B.evidenceVersion,'pf1r2-fresh-real-video-evidence-v1.1.0'));
 let summary1;
-await t('PF1R2G-03 capture anchor and after',async()=>{summary1=await B.enrichDecisionWindows({finishedAt:'2026-10-09T00:00:00.000Z'});assert.equal(summary1.status,'OK');assert.equal(summary1.targets,1);assert.equal(summary1.captureTargets,2);assert.equal(summary1.capturedWindows,1)});
-await t('PF1R2G-04 run identity present',()=>{assert.ok(summary1.runId);assert.ok(summary1.nonce)});
+await t('PF1R2G-03 capture anchor and after',async()=>{summary1=await B.enrichDecisionWindows({...firstRun,finishedAt:'2026-10-09T00:00:00.000Z'});assert.equal(summary1.status,'OK');assert.equal(summary1.targets,1);assert.equal(summary1.captureTargets,2);assert.equal(summary1.capturedWindows,1)});
+await t('PF1R2G-04 run identity present',()=>{assert.equal(summary1.runId,firstRun.runId);assert.equal(summary1.nonce,firstRun.nonce)});
 await t('PF1R2G-05 binding same run and window',()=>{const b=summary1.windowBindings[0];assert.equal(b.runId,summary1.runId);assert.equal(b.windowId,'w8');assert.equal(b.anchorExact,true);assert.equal(b.afterExact,true);assert.equal(b.complete,true)});
 await t('PF1R2G-06 anchor exact id',()=>assert.equal(summary1.windowBindings[0].anchorStateId,anchor.id));
 await t('PF1R2G-07 after exact id',()=>assert.equal(summary1.windowBindings[0].afterStateId,after.id));
@@ -56,9 +58,9 @@ await t('PF1R2G-12 stale coach cannot pass',()=>{coachItems=[{windowId:'w8',runI
 await t('PF1R2G-13 stale pipeline cannot pass',()=>{coachItems=[{windowId:'w8',runId:summary1.runId}];const e=B.buildFreshEvidence(summary1,{status:'OK',processed:1,results:[{status:'OK',windowId:'w8',meta:{runId:'old-run'}}]},{});assert.notEqual(e.status,'CHAIN_OK');assert.equal(e.chainSuccessWindowIds.length,0)});
 await t('PF1R2G-14 different window cannot pass',()=>{coachItems=[{windowId:'other',runId:summary1.runId}];const e=B.buildFreshEvidence(summary1,okEval,{});assert.notEqual(e.status,'CHAIN_OK');assert.equal(e.chainSuccessWindowIds.length,0)});
 let summary2;
-await t('PF1R2G-15 each fresh analysis gets new run identity',async()=>{summary2=await B.enrichDecisionWindows({finishedAt:'next'});assert.notEqual(summary2.runId,summary1.runId);assert.notEqual(summary2.nonce,summary1.nonce)});
+await t('PF1R2G-15 new analysis owns a new run identity',async()=>{beginSyntheticRun('analysis-run-2','analysis-nonce-2','2026-10-09T00:05:00.000Z');summary2=await B.enrichDecisionWindows({...session.analysisRun,finishedAt:'next'});assert.equal(summary2.runId,'analysis-run-2');assert.equal(summary2.nonce,'analysis-nonce-2');assert.notEqual(summary2.runId,summary1.runId);assert.notEqual(summary2.nonce,summary1.nonce)});
 failAfter=true;let failed;
-await t('PF1R2G-16 missing after exact capture blocks window',async()=>{failed=await B.enrichDecisionWindows({finishedAt:'fail-after'});assert.equal(failed.capturedWindows,0);assert.ok(failed.failed>=1);assert.equal(failed.windowBindings[0].afterExact,false)});
+await t('PF1R2G-16 missing after exact capture blocks window',async()=>{failed=await B.enrichDecisionWindows({...session.analysisRun,finishedAt:'fail-after'});assert.equal(failed.capturedWindows,0);assert.ok(failed.failed>=1);assert.equal(failed.windowBindings[0].afterExact,false)});
 await t('PF1R2G-17 missing after capture rejects PositionState',async()=>{await assert.rejects(()=>B.getPositionState({windowId:'w8',context:{window:win,analysis:{pf0b:failed}},session}),e=>e?.code==='DECISION_AUTHORITY_CAPTURE_MISSING')});
 await t('PF1R2G-18 capture failure is not chain success',()=>{coachItems=[{windowId:'w8',runId:failed.runId}];const e=B.buildFreshEvidence(failed,{status:'HOLD',processed:1,results:[{status:'HOLD',windowId:'w8',reason:'DECISION_AUTHORITY_CAPTURE_MISSING',meta:{runId:failed.runId}}]},{});assert.equal(e.status,'CAPTURE_FAILED');assert.equal(e.chainSuccessWindowIds.length,0)});
 failAfter=false;
