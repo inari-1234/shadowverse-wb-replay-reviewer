@@ -1,0 +1,39 @@
+name: P-F1-R2 Presentation Migration Red Proof
+on:
+  push:
+    branches:
+      - candidate/p-f1-r2-architecture-corrective
+    paths:
+      - 'tests/pf1r2-authority-only-presentation-regression.mjs'
+      - 'docs/P-F1-R2_PRESENTATION_REGRESSION_MIGRATION_MAP.md'
+      - '.github/workflows/pf1r2-presentation-migration-red-proof.yml'
+permissions:
+  contents: read
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Preserve migrated regression
+        run: cp tests/pf1r2-authority-only-presentation-regression.mjs /tmp/pf1r2-authority-only-presentation-regression.mjs
+      - name: Prove P0-2 parent is RED
+        run: |
+          git checkout 06267e2b0d77c965d2e0b502b3bb4d3ba8c2b802 -- replay-session.js coach-integration.js
+          cp /tmp/pf1r2-authority-only-presentation-regression.mjs tests/pf1r2-authority-only-presentation-regression.mjs
+          set +e
+          node tests/pf1r2-authority-only-presentation-regression.mjs > /tmp/red-proof.log 2>&1
+          rc=$?
+          set -e
+          cat /tmp/red-proof.log
+          if [ "$rc" -eq 0 ]; then
+            echo 'ERROR: migrated regression unexpectedly passed on the P0-2 parent HEAD'
+            exit 1
+          fi
+          echo "EXPECTED RED confirmed (exit=$rc)"
+      - name: Prove current P0-2 candidate is GREEN
+        run: |
+          git checkout "$GITHUB_SHA" -- replay-session.js coach-integration.js tests/pf1r2-authority-only-presentation-regression.mjs
+          node tests/pf1r2-authority-only-presentation-regression.mjs
