@@ -8,6 +8,10 @@ on:
       - '.github/scripts/align_p0_single_presentation_tests.py'
       - '.github/workflows/apply-p0-single-presentation.yml'
       - 'tests/pf1r2-single-presentation-authority-regression.mjs'
+      - 'tests/pe2-coach-integration-regression.mjs'
+      - 'tests/pe1r1-pe2r1-coach-semantic-corrective-regression.mjs'
+      - 'tests/pf1r2-live-presentation-regression.mjs'
+      - 'tests/pf1r2-live-playback-authority-regression.mjs'
 permissions:
   contents: write
 jobs:
