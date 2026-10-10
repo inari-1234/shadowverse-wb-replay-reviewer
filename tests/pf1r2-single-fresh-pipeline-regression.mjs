@@ -7,9 +7,13 @@ const pipeline=read('runtime-decision-pipeline.js');
 const binding=read('runtime-authority-binding.js');
 const coach=read('coach-integration.js');
 
-assert.match(state,/runId[^\n]*nonce|nonce[^\n]*runId/,'match analysis must create a runId+nonce identity before emitting start');
-assert.match(state,/match-analysis-start[^\n]*runId[^\n]*nonce/,'match-analysis-start must carry the run identity');
-assert.match(replay,/analysisRun[^\n]*nonce|nonce[^\n]*analysisRun/,'ReplaySession analysisRun must retain the nonce as well as runId');
+const matchAnalyze=(state.match(/async function analyzeMatchTargetTurns\(\)[\s\S]*?\nWB\.StateRecognition=/)||[])[0]||'';
+assert.match(matchAnalyze,/\bnonce\b/,'match analysis must create a nonce');
+assert.match(matchAnalyze,/\brunId\b/,'match analysis must create a runId');
+assert.match(matchAnalyze,/WB\.emit\('match-analysis-start',\{[^}]*runId[^}]*nonce[^}]*\}\)/s,'match-analysis-start must carry the run identity');
+const makeRun=(replay.match(/function makeAnalysisRun\(meta=\{\}\)\{[^\n]*\}/)||[])[0]||'';
+assert.match(makeRun,/nonce=/,'ReplaySession run constructor must retain a nonce');
+assert.match(makeRun,/return\{runId,nonce,/,'ReplaySession analysisRun must store runId and nonce together');
 
 assert.match(state,/publishStateCaptured/,'captureState must expose a non-publishing exact-capture mode');
 assert.match(state,/recordStateHistory/,'captureState must expose a non-history exact-capture mode');
@@ -29,7 +33,7 @@ assert.doesNotMatch(enrich,/makeFreshRunIdentity\(\)/,'PF0B must not invent a se
 
 const ingest=(coach.match(/async function ingestDecision\([\s\S]*?\nasync function syncFromRuntime/)||[])[0]||'';
 assert.match(ingest,/runId/);
-assert.match(ingest,/analysisRun|currentRun/,'direct coach ingestion must compare against the current analysis run');
+assert.match(ingest,/analysisRun|currentAnalysisRunId|currentRun/,'direct coach ingestion must compare against the current analysis run');
 assert.match(ingest,/authorityPresentationForWindow/,'direct coach ingestion must require same-run exact authority before accepting a decision');
 assert.match(coach,/match-analysis-start[^\n]*clear/,'new analysis run must clear stale coach items immediately');
 
