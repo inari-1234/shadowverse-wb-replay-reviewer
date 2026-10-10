@@ -1,0 +1,17 @@
+name: P-F1-R2 Run Isolation Red
+on:
+  push:
+    branches:
+      - candidate/p-f1-r2-architecture-corrective
+    paths:
+      - 'tests/pf1r2-run-isolation-regression.mjs'
+      - '.github/workflows/pf1r2-run-isolation-red.yml'
+permissions:
+  contents: read
+jobs:
+  red:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - run: node tests/pf1r2-run-isolation-regression.mjs
