@@ -1,9 +1,10 @@
 import {spawnSync} from 'node:child_process';
 
-const GATE_VERSION='recognition-quality-gate-v111';
+const GATE_VERSION='recognition-quality-gate-v112';
 // ui-opt6R 09-23 offline expected-result oracle + visible cross-axis trade-off authority + P-E1R1/P-E2R1 + P-F1-R2-PM + P-D1R1 + P-F1-R2-G.
 // Architecture corrective gate: run isolation + single fresh pipeline + single presentation authority + decision input trace + recorded 09-23 structural acceptance.
-// Fresh semantic authority still requires the final real-device capture; the recorded acceptance fixture is explicitly structural/approximate where corrective-era PF0B exact captures are unavailable.
+// Integrated acceptance is now a normal candidate gate item. It exercises real modules, event bus, IndexedDB restore, NG-D same-run HP transient correction, final DOM and playback; only captureState is substituted.
+// Its 09-23 capture fixture remains explicitly APPROXIMATION until the first iPhone raw exact trace replaces the approximated 113.638 evidence.
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
 const tests=[
@@ -72,6 +73,7 @@ const tests=[
   'tests/pf1r2-live-playback-authority-regression.mjs',
   'tests/pf1r2-decision-input-trace-regression.mjs',
   'tests/pf1r2-0923-recorded-acceptance-regression.mjs',
+  'tests/pf1r2-0923-integrated-acceptance-regression.cjs',
   'tests/pf1r2-live-position-state-parity-regression.mjs',
   'tests/pf1r2-live-capture-pipeline-regression.mjs',
   'tests/pf1r2-authority-playback-regression.mjs',
