@@ -48,6 +48,17 @@ jobs:
           if grep -q "pf1r2-preaction-resource-authority-v1.0.0" runtime-authority-binding.js; then
             echo 'already applied'
           else
+            python - <<'PY'
+          from pathlib import Path
+          p=Path('tools/pf1r2_preaction_resource_patch.py')
+          s=p.read_text(encoding='utf-8')
+          line1='replace_once(Path(\'runtime-authority-binding.js\'),"preActionAnchorVersion:PREACTION_ANCHOR_VERSION,freshGateVersion:FRESH_GATE_VERSION,providerId:PROVIDER_ID","preActionAnchorVersion:PREACTION_ANCHOR_VERSION,resourceCarryVersion:RESOURCE_CARRY_VERSION,freshGateVersion:FRESH_GATE_VERSION,providerId:PROVIDER_ID")'
+          line2='replace_once(Path(\'runtime-authority-binding.js\'),"preActionAnchorVersion:PREACTION_ANCHOR_VERSION,freshGateVersion:FRESH_GATE_VERSION,providerId:PROVIDER_ID,ready,indexCapture","preActionAnchorVersion:PREACTION_ANCHOR_VERSION,resourceCarryVersion:RESOURCE_CARRY_VERSION,freshGateVersion:FRESH_GATE_VERSION,providerId:PROVIDER_ID,ready,indexCapture")'
+          replacement="""p=Path('runtime-authority-binding.js');s=p.read_text(encoding='utf-8');old=\"preActionAnchorVersion:PREACTION_ANCHOR_VERSION,freshGateVersion:FRESH_GATE_VERSION,providerId:PROVIDER_ID\";new=\"preActionAnchorVersion:PREACTION_ANCHOR_VERSION,resourceCarryVersion:RESOURCE_CARRY_VERSION,freshGateVersion:FRESH_GATE_VERSION,providerId:PROVIDER_ID\";n=s.count(old);\nif n!=2: raise SystemExit(f'runtime-authority-binding.js: expected 2 version export matches, got {n}')\np.write_text(s.replace(old,new),encoding='utf-8')"""
+          if s.count(line1)!=1 or s.count(line2)!=1:
+              raise SystemExit('patcher cardinality repair markers changed')
+          p.write_text(s.replace(line1,replacement,1).replace(line2,'',1),encoding='utf-8')
+          PY
             python tools/pf1r2_preaction_resource_patch.py
             git checkout -- .github/workflows/recognition-quality.yml tools/pf1r2_preaction_resource_patch.py
             git diff --check
