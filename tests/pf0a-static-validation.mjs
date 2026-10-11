@@ -19,6 +19,12 @@ assert.match(binding,/state-captured/);
 assert.match(binding,/P-F0A_RUNTIME_AUTHORITY_V1/);
 assert.match(binding,/id==='quickBlader'/);
 assert.match(binding,/P-F0A_UNMODELED_CARD_RULE/);
+assert.match(binding,/pf1r2-preaction-resource-authority-v1\.0\.0/);
+assert.match(binding,/RESOURCE_CARRY_MAX_GAP=\.55/);
+assert.match(binding,/positiveAvailabilityOnly:true/);
+assert.match(binding,/afterStateUsed:false/);
+assert.match(binding,/wardKnownValuesNonContradictory:true/);
+
 assert.match(pf1,/loadAuthorityBinding/);
 assert.match(pf1,/runtime-authority-binding\.js/);
 assert.doesNotMatch(ps,/Date\.now\s*\(/);

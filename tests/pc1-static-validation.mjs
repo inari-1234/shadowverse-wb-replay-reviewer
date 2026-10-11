@@ -9,7 +9,7 @@ vm.createContext(sandbox);
 new vm.Script(source,{filename:'outcome-backtracking.js'}).runInContext(sandbox);
 const P=WB.OutcomeBacktracking;
 assert.ok(P,'OutcomeBacktracking module must register');
-assert.equal(P.version,'pc1-outcome-backtracking-v1.0.0');
+assert.equal(P.version,'pc1-outcome-backtracking-v1.0.1');
 for(const group of ['LETHAL_STATUS','SURVIVAL_STATUS','RESPONSE_TYPE','DRAW_STATUS','REASON']){
  const vals=Object.values(P[group]);
  assert.equal(new Set(vals).size,vals.length,`${group} values must be unique`);

@@ -1,14 +1,14 @@
 (()=>{'use strict';
 const W=window.WB;if(!W)return;
-const VERSION='pf1r2-played-move-authority-v1.1.1';
+const VERSION='pf1r2-played-move-authority-v1.2.0';
 const STATUS=Object.freeze({CONFIRMED:'CONFIRMED',UNKNOWN:'UNKNOWN',AMBIGUOUS:'AMBIGUOUS'});
 const REASON=Object.freeze({FRESH_BINDING_MISSING:'FRESH_BINDING_MISSING',EXACT_CAPTURE_MISSING:'EXACT_CAPTURE_MISSING',INSUFFICIENT_OBSERVED_DELTA:'INSUFFICIENT_OBSERVED_DELTA',INSUFFICIENT_COMPARABLE_EVIDENCE:'INSUFFICIENT_COMPARABLE_EVIDENCE',NO_CANDIDATE_MATCH:'NO_CANDIDATE_MATCH',MULTIPLE_CANDIDATE_MATCH:'MULTIPLE_CANDIDATE_MATCH',UNIQUE_OBSERVED_STATE_MATCH:'UNIQUE_OBSERVED_STATE_MATCH'});
 const FIELD_BASIS=Object.freeze({
  pp:Object.freeze({semantic:'REMAINING_PLAY_POINTS',observedAuthority:'STATE_RECOGNITION_PP',candidateAuthority:'P-C1_RESOURCE_REMAINING_PP'}),
  opponentHP:Object.freeze({semantic:'OPPONENT_LEADER_HP',observedAuthority:'STATE_RECOGNITION_OPPONENT_HP',candidateAuthority:'P-C1_OPPONENT_LEADER_HP'}),
  attackableBoardDamage:Object.freeze({semantic:'ATTACKABLE_LEADER_DAMAGE_POTENTIAL',observedAuthority:'STATE_RECOGNITION_ATTACKABLE_BOARD_DAMAGE',candidateAuthority:'P-C1_BOARD_NEXT_TURN_ATTACK_POTENTIAL'}),
- ep:Object.freeze({semantic:'EVOLUTION_POINT_AVAILABILITY',observedAuthority:'STATE_RECOGNITION_EP',candidateAuthority:'P-C1_RESOURCE_REMAINING_EP'}),
- sep:Object.freeze({semantic:'SUPER_EVOLUTION_POINT_AVAILABILITY',observedAuthority:'STATE_RECOGNITION_SEP',candidateAuthority:'P-C1_RESOURCE_REMAINING_SEP'})
+ ep:Object.freeze({semantic:'EVOLUTION_POINT_AVAILABILITY',observedAuthority:'STATE_RECOGNITION_EP_AVAILABILITY',candidateAuthority:'P-C1_RESOURCE_REMAINING_EP',comparable:false}),
+ sep:Object.freeze({semantic:'SUPER_EVOLUTION_POINT_AVAILABILITY',observedAuthority:'STATE_RECOGNITION_SEP_AVAILABILITY',candidateAuthority:'P-C1_RESOURCE_REMAINING_SEP',comparable:false})
 });
 const FIELDS=Object.freeze(Object.keys(FIELD_BASIS));
 const captures=new Map();
@@ -22,7 +22,7 @@ function indexCapture(capture){const obs=observationFromCapture(capture);if(!obs
 function seed(){for(const c of W.stateCaptureHistory||[])indexCapture(c);}
 function runStartMs(runId){const m=/^(?:pf1r2g|match):(\d+):/.exec(String(runId||''));if(!m)return null;const n=Number(m[1]);return Number.isFinite(n)?n:null;}
 function exactObservation(stateId,runId){const row=captures.get(String(stateId||''));if(!row)return null;const start=runStartMs(runId);if(start==null||row.capturedAtMs<start)return null;return clone(row.observation);}
-function observedProjection(obs){return{pp:finite(obs?.pp),opponentHP:finite(obs?.opponentHP),attackableBoardDamage:obs?.boardDamageKnown===true?finite(obs?.boardDamage):null,ep:tri(String(obs?.resources?.ep??'unknown')),sep:tri(String(obs?.resources?.sep??'unknown'))};}
+function observedProjection(obs){return{pp:finite(obs?.pp),opponentHP:finite(obs?.opponentHP),attackableBoardDamage:obs?.boardDamageKnown===true?finite(obs?.boardDamage):null,ep:null,sep:null};}
 function candidateProjection(outcome){const imm=outcome?.immediateOutcome||{},res=outcome?.resourceRemaining||imm.resourceRemaining||outcome?.handResources||imm.handResources||{},board=outcome?.boardState||imm.boardState||{};return{pp:finite(res.pp??outcome?.PP??imm.PP),opponentHP:finite(outcome?.opponentLeaderHP??imm.opponentLeaderHP),attackableBoardDamage:finite(board.nextTurnAttackPotential),ep:finite(res.ep??outcome?.EP??imm.EP),sep:finite(res.sep??outcome?.SEP??imm.SEP)};}
 function changedFields(before,after){return FIELDS.filter(k=>before[k]!==null&&after[k]!==null&&!same(before[k],after[k]));}
 function actionSummary(sequence,outcome){const ids=Array.isArray(outcome?.actionIds)?outcome.actionIds:[],actions=Array.isArray(sequence?.actions)?sequence.actions:[];return actions.filter(a=>!ids.length||ids.includes(a?.actionId)).map(a=>({actionId:a?.actionId||null,actionType:a?.actionType||null,source:{zone:a?.source?.zone||null,cardId:a?.source?.cardId||null,instanceId:a?.source?.instanceId||null},target:{zone:a?.target?.zone||null,cardId:a?.target?.cardId||null,instanceId:a?.target?.instanceId||null,player:a?.target?.player||null}}));}

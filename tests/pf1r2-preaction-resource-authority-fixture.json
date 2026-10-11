@@ -1,0 +1,48 @@
+{
+  "version": "pf1r2-preaction-resource-authority-fixture-v1",
+  "source": "iPhone-2026-10-11-1530-diagnostic-trace-subset",
+  "runId": "match:1791732572913:923573ff-27eb-47f1-b622-a5c1f981a887",
+  "nonce": "923573ff-27eb-47f1-b622-a5c1f981a887",
+  "pre": {
+    "time": 113.188,
+    "pp": 2,
+    "hp": 16,
+    "ep": "yes",
+    "sep": "unknown",
+    "ward": "unknown",
+    "board": 0,
+    "quick": true,
+    "at": "2026-10-11T15:30:01.775Z"
+  },
+  "anchor": {
+    "time": 113.638,
+    "pp": 2,
+    "hp": 16,
+    "ep": "unknown",
+    "sep": "unknown",
+    "ward": "none",
+    "board": 0,
+    "quick": true,
+    "at": "2026-10-11T15:30:08.327Z"
+  },
+  "after": {
+    "time": 116.338,
+    "pp": 1,
+    "hp": 16,
+    "ep": "yes",
+    "sep": "yes",
+    "ward": "unknown",
+    "board": 3,
+    "quick": false,
+    "at": "2026-10-11T15:30:09.717Z"
+  },
+  "expected": {
+    "carried": {
+      "ep": "yes"
+    },
+    "sepRemainsUnknown": true,
+    "playedMoveStatus": "CONFIRMED",
+    "classification": "TRADE_OFF",
+    "recommendation": null
+  }
+}

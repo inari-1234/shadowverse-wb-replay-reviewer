@@ -96,5 +96,9 @@ s=base();s.players.P1.pp=2;s.players.P1.hand=[hand('choiceSpell'),hand('cheap')]
 // Limits and conservative fallback fingerprint.
 s=base();seq=engine.generateSequences(s,{maxDepth:1,maxNodes:1,maxSequences:10});assert.ok([STATUS.OK,STATUS.LIMIT].includes(seq.status));assert.ok(seq.nodes<=1);
 const fallbackAdapter={...adapter};delete fallbackAdapter.fingerprint;const fallback=P.create({stateAdapter:fallbackAdapter,ruleEngine,cardAuthority}),fa=base(),fb=deep(fa);fb.history={onceUsed:true};assert.notEqual(fallback.stateFingerprint(fa),fallback.stateFingerprint(fb));
-assert.equal(P.version,'pa1-legal-action-sequence-v1.0.0');
+// UNKNOWN EP/SEP must remain UNKNOWN; known zero remains ILLEGAL.
+s=base();s.players.P1.ep=null;s.players.P1.evolveWindowOpen=null;s.players.P1.field=[follower('evo-unknown')];g=gen(s);assert.equal(ofType(g,ACTION_TYPES.EVOLVE).length,0);assert.ok(g.unknown.some(x=>x.actionType===ACTION_TYPES.EVOLVE&&x.reasonCodes.includes(REASON.UNKNOWN_EVOLVE_RULE)));assert.equal(g.rejected.some(x=>x.actionType===ACTION_TYPES.EVOLVE&&x.reasonCodes.includes(REASON.ILLEGAL_NOT_ENOUGH_EP)),false);
+s=base();s.players.P1.sep=null;s.players.P1.superEvolveWindowOpen=null;s.players.P1.field=[follower('sep-unknown')];g=gen(s);assert.equal(ofType(g,ACTION_TYPES.SUPER_EVOLVE).length,0);assert.ok(g.unknown.some(x=>x.actionType===ACTION_TYPES.SUPER_EVOLVE&&x.reasonCodes.includes(REASON.UNKNOWN_SUPER_EVOLVE_RULE)));assert.equal(g.rejected.some(x=>x.actionType===ACTION_TYPES.SUPER_EVOLVE&&x.reasonCodes.includes(REASON.ILLEGAL_NOT_ENOUGH_SEP)),false);
+s=base();s.players.P1.ep=0;s.players.P1.evolveWindowOpen=true;s.players.P1.field=[follower('evo-zero')];g=gen(s);assert.ok(g.rejected.some(x=>x.actionType===ACTION_TYPES.EVOLVE&&x.reasonCodes.includes(REASON.ILLEGAL_NOT_ENOUGH_EP)));
+assert.equal(P.version,'pa1-legal-action-sequence-v1.0.1');
 console.log('P-A1 LEGAL ACTION / SEQUENCE REGRESSION PASS');

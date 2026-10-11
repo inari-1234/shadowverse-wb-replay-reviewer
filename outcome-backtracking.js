@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-const root=typeof window==='undefined'?globalThis:window,WB=root.WB=root.WB||{},VERSION='pc1-outcome-backtracking-v1.0.0';
+const root=typeof window==='undefined'?globalThis:window,WB=root.WB=root.WB||{},VERSION='pc1-outcome-backtracking-v1.0.1';
 const STATUS=Object.freeze({OK:'OK',TERMINAL:'TERMINAL',UNRESOLVED:'UNRESOLVED',LIMIT:'LIMIT',INVALID:'INVALID',ERROR:'ERROR'});
 const LETHAL_STATUS=Object.freeze({IMMEDIATE_LETHAL:'IMMEDIATE_LETHAL',NEXT_TURN_LETHAL_FORCED:'NEXT_TURN_LETHAL_FORCED',NEXT_TURN_LETHAL_POSSIBLE:'NEXT_TURN_LETHAL_POSSIBLE',MULTI_TURN_LETHAL_POSSIBLE:'MULTI_TURN_LETHAL_POSSIBLE',NO_CONFIRMED_LETHAL:'NO_CONFIRMED_LETHAL',LETHAL_UNKNOWN:'LETHAL_UNKNOWN'});
 const SURVIVAL_STATUS=Object.freeze({CONFIRMED_SURVIVAL:'CONFIRMED_SURVIVAL',POSSIBLE_SURVIVAL:'POSSIBLE_SURVIVAL',CONFIRMED_DEATH:'CONFIRMED_DEATH',SURVIVAL_UNKNOWN:'SURVIVAL_UNKNOWN'});
@@ -19,7 +19,7 @@ const REASON=Object.freeze({
 });
 const clone=v=>v==null?v:JSON.parse(JSON.stringify(v));
 const uniq=a=>[...new Set((a||[]).filter(Boolean))];
-const num=v=>Number.isFinite(Number(v))?Number(v):null;
+const num=v=>v!==null&&v!==undefined&&!(typeof v==='string'&&v.trim()==='')&&Number.isFinite(Number(v))?Number(v):null;
 function stable(v,seen=new Set()){if(v==null||['string','number','boolean'].includes(typeof v))return v;if(typeof v==='function')return '[Function]';if(seen.has(v))return '[Circular]';seen.add(v);const out=Array.isArray(v)?v.map(x=>stable(x,seen)):Object.fromEntries(Object.keys(v).sort().map(k=>[k,stable(v[k],seen)]));seen.delete(v);return out;}
 const stableStringify=v=>JSON.stringify(stable(v));
 function hash(s){let h=2166136261>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}return h.toString(16).padStart(8,'0');}
