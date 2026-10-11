@@ -11,7 +11,7 @@ const quickSeq={actions:[action('play-quick','PLAY_CARD','quickBlader'),action('
 const quick={status:'OK',sequenceId:'seq-quick',actionIds:['play-quick','end'],immediateOutcome:{opponentLeaderHP:16,boardState:{nextTurnAttackPotential:3,totalAttack:99},resourceRemaining:{pp:1,ep:1,sep:0}}};
 const idle={status:'OK',sequenceId:'seq-idle',actionIds:['idle-end'],immediateOutcome:{opponentLeaderHP:16,boardState:{nextTurnAttackPotential:0,totalAttack:0},resourceRemaining:{pp:2,ep:1,sep:0}}};
 let n=0;const t=(name,fn)=>{try{fn();n++}catch(e){e.message=`${name}: ${e.message}`;throw e}};
-t('PM-01 version',()=>assert.equal(P.version,'pf1r2-played-move-authority-v1.1.0'));
+t('PM-01 version',()=>assert.equal(P.version,'pf1r2-played-move-authority-v1.1.1'));
 t('PM-02 status contract',()=>assert.deepEqual(Object.values(P.STATUS),['CONFIRMED','UNKNOWN','AMBIGUOUS']));
 t('PM-03 exact anchor retained',()=>assert.equal(P.exactObservation(binding.anchorStateId,runId).pp,2));
 t('PM-04 exact after retained',()=>assert.equal(P.exactObservation(binding.afterStateId,runId).boardDamage,3));
@@ -32,5 +32,8 @@ t('PM-18 totalAttack cannot substitute for attackable board damage',()=>{P.clear
 t('PM-19 unchanged observed dimensions are part of state match',()=>{const bad={...quick,sequenceId:'bad-hp',immediateOutcome:{...quick.immediateOutcome,opponentLeaderHP:15}};const r=P.identify({windowId,runId,binding,sequences:[quickSeq],outcomes:[bad]});assert.equal(r.status,'UNKNOWN');assert.equal(r.reason,'NO_CANDIDATE_MATCH')});
 t('PM-20 wrong window binding fails closed',()=>{const r=P.identify({windowId:'other',runId,binding,sequences:[quickSeq],outcomes:[quick]});assert.equal(r.status,'UNKNOWN');assert.equal(r.reason,'FRESH_BINDING_MISSING')});
 t('PM-21 explicit projection basis is exposed',()=>{assert.equal(P.FIELD_BASIS.attackableBoardDamage.semantic,'ATTACKABLE_LEADER_DAMAGE_POTENTIAL');assert.equal(P.FIELD_BASIS.attackableBoardDamage.observedAuthority,'STATE_RECOGNITION_ATTACKABLE_BOARD_DAMAGE');assert.equal(P.FIELD_BASIS.attackableBoardDamage.candidateAuthority,'P-C1_BOARD_NEXT_TURN_ATTACK_POTENTIAL')});
-t('PM-22 video reset clears capture authority',()=>{P.indexCapture(anchorCap);for(const f of handlers.get('video-reset')||[])f({});assert.equal(P.snapshot().capturedStateCount,0)});
-assert.equal(n,22);console.log(`P-F1-R2-PM PLAYED MOVE AUTHORITY REGRESSION PASS: ${n}/${n}`);
+t('PM-22 production match run id resolves same-run exact anchor',()=>{const matchRunId=`match:${start}:device-run`;assert.equal(P.exactObservation(binding.anchorStateId,matchRunId).pp,2);assert.equal(P.exactObservation(binding.afterStateId,matchRunId).boardDamage,3)});
+t('PM-23 production match run id identifies played move',()=>{const matchRunId=`match:${start}:device-run`;const r=P.identify({windowId,runId:matchRunId,binding:{...binding,runId:matchRunId},sequences:[quickSeq,idleSeq],outcomes:[quick,idle]});assert.equal(r.status,'CONFIRMED');assert.equal(r.reason,'UNIQUE_EXACT_STATE_MATCH');assert.equal(r.playedCandidateId,'seq-quick')});
+t('PM-24 unsupported run id format fails closed',()=>{const badRunId=`other:${start}:device-run`;const r=P.identify({windowId,runId:badRunId,binding:{...binding,runId:badRunId},sequences:[quickSeq,idleSeq],outcomes:[quick,idle]});assert.equal(r.status,'UNKNOWN');assert.equal(r.reason,'EXACT_CAPTURE_MISSING')});
+t('PM-25 video reset clears capture authority',()=>{P.indexCapture(anchorCap);for(const f of handlers.get('video-reset')||[])f({});assert.equal(P.snapshot().capturedStateCount,0)});
+assert.equal(n,25);console.log(`P-F1-R2-PM PLAYED MOVE AUTHORITY REGRESSION PASS: ${n}/${n}`);
