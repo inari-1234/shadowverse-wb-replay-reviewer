@@ -11,6 +11,7 @@ const B=WB.RuntimeAuthorityBinding,P=WB.RuntimeDecisionPipeline,PM=WB.PlayedMove
 let passed=0;const t=async(name,fn)=>{try{await fn();passed++;console.log('PASS '+name)}catch(e){e.message=name+': '+e.message;throw e}};
 const id=x=>`st:8:bottom:${Number(x).toFixed(3)}`,before={id:id(fixture.anchor.time),time:fixture.anchor.time,turn:8,absoluteSide:'bottom',relativeSide:'自分',pp:2,opponentHP:16,resources:{ep:'unknown',sep:'unknown',extraPP:'unknown'},opponentWard:'none',boardDamage:0,boardDamageKnown:true,hand:{recognized:recognized(true)}},after={id:id(fixture.after.time),time:fixture.after.time,turn:8,absoluteSide:'bottom',relativeSide:'自分',pp:1,opponentHP:16,resources:{ep:'yes',sep:'yes',extraPP:'unknown'},opponentWard:'unknown',boardDamage:3,boardDamageKnown:true,hand:{recognized:{}}},win={id:`dw:${before.id}->${after.id}`,beforeState:before,afterState:after,relatedActionIds:[]};
 const run={runId:fixture.runId,nonce:fixture.nonce,startedAt:'2026-10-11T15:29:32.913Z'};liveSession={analysisRun:run,states:[before,after],actions:[],decisionWindows:[win]};sandbox.window.__wbReplaySessionV1=liveSession;
+await B.ready();
 WB.emit('match-analysis-start',run);for(const row of [fixture.pre,fixture.anchor,fixture.after])WB.emit('state-captured',{capture:cap(row)});
 let summary,state,row;
 await t('RA-01 exact runtime build inputs use production match run id',()=>assert.match(run.runId,/^match:\d+:/));
