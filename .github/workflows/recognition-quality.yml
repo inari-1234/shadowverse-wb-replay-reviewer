@@ -11,6 +11,7 @@ on:
       - 'package-lock.json'
       - 'experiments/**'
       - 'tests/**'
+      - 'tools/one-shot-human-review-corrective.mjs'
       - '.github/workflows/recognition-quality.yml'
   push:
     branches:
@@ -24,6 +25,7 @@ on:
       - 'package-lock.json'
       - 'experiments/**'
       - 'tests/**'
+      - 'tools/one-shot-human-review-corrective.mjs'
       - '.github/workflows/recognition-quality.yml'
 
 concurrency:
@@ -31,7 +33,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   regression:
@@ -42,7 +44,18 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
+      - name: Apply one-shot Human Review corrective
+        run: node tools/one-shot-human-review-corrective.mjs
       - name: Install pinned integrated-acceptance dependencies
         run: npm install --no-audit --no-fund --ignore-scripts
-      - name: Run regression and real-device benchmark gate
+      - name: Run corrective quality gate
         run: node tests/run-quality-gate.mjs
+      - name: Commit generated corrective tree
+        run: |
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app-core.js coach-explanation.js coach-integration.js runtime-authority-binding.js diagnostics.js index.html latest.json tests
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: expose confirmed tradeoff played move"
+          git push origin HEAD:${GITHUB_REF_NAME}
