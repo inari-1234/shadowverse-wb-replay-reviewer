@@ -5,6 +5,7 @@ const GATE_VERSION='recognition-quality-gate-v116';
 // Architecture corrective gate: run isolation + single fresh pipeline + single presentation authority + decision input trace + recorded 09-23 structural acceptance.
 // Integrated acceptance is now a normal candidate gate item. It exercises real modules, event bus, IndexedDB restore, NG-D same-run HP transient correction, final DOM and playback; only captureState is substituted.
 // The 10-10 iPhone fixture remains the SAFE_HOLD regression. The 10-21 iPhone fixture covers Ward=none -> six candidates -> TRADE_OFF -> PM CONFIRMED -> human-facing non-ranked played-move explanation. HOLD diagnostics preserve outer reason, hold kind, generation status and inner reason codes; pre-action resource provenance is exported separately.
+// Final candidate validation runs only after temporary corrective patchers are removed from the tree.
 console.log(`QUALITY GATE ${GATE_VERSION}`);
 
 const tests=[
