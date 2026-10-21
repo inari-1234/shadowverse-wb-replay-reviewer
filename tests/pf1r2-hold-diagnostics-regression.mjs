@@ -22,7 +22,7 @@ const WB2={optionalModules:[],on(){},onReady(){},log(){},emit(){},recordError(sc
 const window2={WB:WB2};window2.window=window2;
 vm.runInNewContext(coachSrc,{window:window2,console,setTimeout,clearTimeout,queueMicrotask,Promise,Date,Error,JSON,Object,Array,Map,Set,String,Number,Math});
 const C=WB2.CoachIntegration;
-assert.equal(C.version,'pe2-coach-integration-v1.2.2');
+assert.equal(C.version,'pe2-coach-integration-v1.2.3');
 const semanticRow={status:'HOLD',holdKind:'SEMANTIC_HOLD',reason:'NO_SEQUENCE_CANDIDATES',detail:{stage:'P-A1',generationStatus:'UNRESOLVED',reasonCodes:['OPPONENT_WARD_UNRESOLVED']},meta:{runId}};
 const safe=C.safeHoldDecision(semanticRow);
 assert.equal(safe.meta.holdKind,'SEMANTIC_HOLD');

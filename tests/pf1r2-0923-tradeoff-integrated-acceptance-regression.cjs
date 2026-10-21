@@ -25,7 +25,7 @@ function makeCapture(row,mode){
 (async()=>{
   const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
   const dom=new JSDOM(html,{url:'https://example.test/main/',runScripts:'outside-only',pretendToBeVisual:true});
-  const {window}=dom,document=window;
+  const {window}=dom,document=window.document;
   Object.defineProperty(window,'indexedDB',{value:FDB.indexedDB,configurable:true});
   Object.defineProperty(window,'IDBKeyRange',{value:FDB.IDBKeyRange,configurable:true});
   Object.defineProperty(window,'crypto',{value:webcrypto,configurable:true});

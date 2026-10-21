@@ -1,34 +1,12 @@
 import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
-
-const WB={optionalModules:[],registerModule(){},CardDB:{get(){return null}}};
-const sandbox={window:{WB},console};
-vm.createContext(sandbox);
-new vm.Script(fs.readFileSync(new URL('../coach-explanation.js',import.meta.url),'utf8'),{filename:'coach-explanation.js'}).runInContext(sandbox);
-const E=WB.CoachExplanation;
-
-const pair={
-  aCandidateId:'quick-evolve',bCandidateId:'idle',classification:'TRADE_OFF',decision:'UNRESOLVED',preferredCandidateId:null,preferredSide:null,
-  axisResults:{IMMEDIATE_PRESSURE:'EQUIVALENT',FUTURE_LETHAL:'EQUIVALENT',BOARD_TEMPO:'A_BETTER',OPPONENT_BENEFIT_RISK:'EQUIVALENT',RESOURCE_ECONOMY:'B_BETTER',SURVIVAL:'EQUIVALENT',CONTINUATION_QUALITY:'EQUIVALENT',UNCERTAINTY:'EQUIVALENT'},
-  axes:{IMMEDIATE_PRESSURE:0,FUTURE_LETHAL:0,BOARD_TEMPO:1,OPPONENT_BENEFIT_RISK:0,RESOURCE_ECONOMY:-1,SURVIVAL:0,CONTINUATION_QUALITY:0,UNCERTAINTY:0},
-  criticalDifference:{code:'NO_MATERIAL_DIFFERENCE',axis:null,preferred:null},
-  reasonCodes:['BOARD_ADVANTAGE','EP_CONSERVATION','HAND_CONSERVATION'],
-  evidence:[
-    {axis:'BOARD_TEMPO',label:'boardAttack',a:3,b:0,winnerCandidateId:'quick-evolve',loserCandidateId:'idle',difference:3,evidence:{basis:'P-C1_OUTCOME'},confidence:'CONFIRMED'},
-    {axis:'RESOURCE_ECONOMY',label:'EP',a:0,b:1,winnerCandidateId:'idle',loserCandidateId:'quick-evolve',difference:-1,evidence:{basis:'P-C1_OUTCOME'},confidence:'CONFIRMED'},
-    {axis:'RESOURCE_ECONOMY',label:'handCount',a:2,b:3,winnerCandidateId:'idle',loserCandidateId:'quick-evolve',difference:-1,evidence:{basis:'P-C1_OUTCOME'},confidence:'CONFIRMED'}
-  ],
-  uncertainty:{a:[],b:[],common:{unknownHand:true,unknownDraw:false,truncated:false},differential:{unknownHand:false,unknownDraw:false,truncated:false}}
-};
+const WB={optionalModules:[],registerModule(){},CardDB:{get(id){return id==='quickBlader'?{label:'刹那のクイックブレイダー'}:null}}};
+const sandbox={window:{WB},console};vm.createContext(sandbox);new vm.Script(fs.readFileSync(new URL('../coach-explanation.js',import.meta.url),'utf8'),{filename:'coach-explanation.js'}).runInContext(sandbox);const E=WB.CoachExplanation;
+const pair={aCandidateId:'quick-evolve',bCandidateId:'idle',classification:'TRADE_OFF',decision:'UNRESOLVED',preferredCandidateId:null,preferredSide:null,axisResults:{IMMEDIATE_PRESSURE:'EQUIVALENT',FUTURE_LETHAL:'EQUIVALENT',BOARD_TEMPO:'A_BETTER',OPPONENT_BENEFIT_RISK:'EQUIVALENT',RESOURCE_ECONOMY:'B_BETTER',SURVIVAL:'EQUIVALENT',CONTINUATION_QUALITY:'EQUIVALENT',UNCERTAINTY:'EQUIVALENT'},axes:{IMMEDIATE_PRESSURE:0,FUTURE_LETHAL:0,BOARD_TEMPO:1,OPPONENT_BENEFIT_RISK:0,RESOURCE_ECONOMY:-1,SURVIVAL:0,CONTINUATION_QUALITY:0,UNCERTAINTY:0},criticalDifference:{code:'NO_MATERIAL_DIFFERENCE',axis:null,preferred:null},reasonCodes:['BOARD_ADVANTAGE','EP_CONSERVATION','HAND_CONSERVATION'],evidence:[{axis:'BOARD_TEMPO',label:'boardAttack',a:3,b:0,winnerCandidateId:'quick-evolve',loserCandidateId:'idle',difference:3,evidence:{basis:'P-C1_OUTCOME',observationOnly:false},confidence:'CONFIRMED'},{axis:'RESOURCE_ECONOMY',label:'EP',a:0,b:1,winnerCandidateId:'idle',loserCandidateId:'quick-evolve',difference:-1,evidence:{basis:'P-C1_OUTCOME',observationOnly:false},confidence:'CONFIRMED'},{axis:'RESOURCE_ECONOMY',label:'handCount',a:2,b:3,winnerCandidateId:'idle',loserCandidateId:'quick-evolve',difference:-1,evidence:{basis:'P-C1_OUTCOME',observationOnly:false},confidence:'CONFIRMED'}],uncertainty:{a:[],b:[],common:{unknownHand:true,unknownDraw:false,truncated:false},differential:{unknownHand:false,unknownDraw:false,truncated:false}}};
 const decision={status:'OK',classification:'TRADE_OFF',bestCandidateId:null,meaningfulAlternativeCandidateId:null,alternativeComparison:null,ranking:{tiers:[],pairwise:[pair]},reasonCodes:['BOARD_ADVANTAGE','EP_CONSERVATION','HAND_CONSERVATION']};
-const playedMove={status:'CONFIRMED',playedCandidateId:'quick-evolve',matchedCandidateId:'quick-evolve',candidates:[]};
+const playedMove={status:'CONFIRMED',playedCandidateId:'quick-evolve',matchedCandidateId:'quick-evolve',matchedActions:[{actionType:'PLAY_CARD',source:{cardId:'quickBlader'}},{actionType:'EVOLVE',source:{cardId:'quickBlader'}}],candidates:[{candidateId:'quick-evolve',actions:[{actionType:'PLAY_CARD',source:{cardId:'quickBlader'}},{actionType:'EVOLVE',source:{cardId:'quickBlader'}}]}]};
 const x=E.explainDecision(decision,{playedMove});
-assert.equal(x.mode,'TRADE_OFF');
-assert.equal(x.bestCandidateId,null);
-assert.equal(x.playedMoveComparison.visible,false);
-assert.doesNotMatch(x.headline,/情報が足りない|必要な情報が足り/);
-assert.match(x.headline,/長所|一長一短|絞れない|優劣/);
-assert.ok(x.cautions.some(s=>s.includes('見えている情報')));
-assert.doesNotMatch(x.text,/DOMINATES|TRADE_OFF|Candidate|Alternative|seq:/);
+assert.equal(E.version,'pe1-coach-explanation-v1.1.1');assert.equal(x.mode,'TRADE_OFF');assert.equal(x.bestCandidateId,null);assert.equal(x.playedMoveComparison.visible,true);assert.equal(x.playedMoveComparison.status,'CONFIRMED_TRADE_OFF');assert.match(x.playedMoveComparison.text,/刹那のクイックブレイダー/);assert.match(x.playedMoveComparison.text,/進化/);assert.match(x.playedMoveComparison.text,/確認/);assert.match(x.playedMoveComparison.text,/単独の推奨はしません/);assert.ok(x.playedMoveComparison.actualAdvantages.some(s=>s.includes('盤面')));assert.ok(x.playedMoveComparison.actualAdvantages.every(s=>!s.includes('EP')&&!s.includes('手札')));assert.ok(x.playedMoveComparison.otherAdvantages.some(s=>s.includes('EP')));assert.ok(x.playedMoveComparison.otherAdvantages.some(s=>s.includes('手札')));assert.ok(x.playedMoveComparison.otherAdvantages.every(s=>!s.includes('盤面')));assert.ok(x.playedMoveComparison.reasons.some(s=>s.startsWith('実際の手が上回る点：')));assert.ok(x.playedMoveComparison.reasons.some(s=>s.startsWith('他候補が上回る点：')));assert.doesNotMatch(x.playedMoveComparison.text,/良い手|最善|有力/);assert.doesNotMatch(x.headline,/情報が足りない|必要な情報が足り/);assert.match(x.headline,/長所|一長一短|絞れない|優劣/);assert.ok(x.cautions.some(s=>s.includes('見えている情報')));assert.doesNotMatch(x.text,/DOMINATES|TRADE_OFF|Candidate|Alternative|seq:/);
+const hidden=E.explainDecision(decision,{playedMove:{status:'UNRESOLVED'}});assert.equal(hidden.playedMoveComparison.visible,false);assert.equal(hidden.playedMoveComparison.status,'UNAVAILABLE');
 console.log('P-E1R1 TRADE-OFF NO-BEST REGRESSION PASS');
