@@ -1,0 +1,10 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const diagnostics=fs.readFileSync(new URL('../diagnostics.js',import.meta.url),'utf8'),binding=fs.readFileSync(new URL('../runtime-authority-binding.js',import.meta.url),'utf8');
+assert.match(diagnostics,/preActionResourceAuthorityV1/,'diagnostic JSON must expose pre-action resource authority');
+assert.match(diagnostics,/preActionResourceAuthorities/,'diagnostic export must source the binding authority list');
+assert.match(binding,/preActionResourceAuthorities=new Map\(\)/,'binding must persist resource carry provenance per window');
+assert.match(binding,/sourceStateId/);assert.match(binding,/sourceTime/);assert.match(binding,/gapSeconds/);assert.match(binding,/maxGapRationale/);assert.match(binding,/afterStateUsed:false/);
+assert.match(diagnostics,/generationStatus/,'HOLD diagnostics must preserve generation status');
+assert.match(diagnostics,/reasonCodes/,'HOLD diagnostics must preserve inner reason codes');
+assert.match(diagnostics,/diagnostics-clean-1\.60/);assert.match(binding,/pf0a-runtime-authority-binding-v1\.1\.7/);
+console.log('P-F1-R2 PREACTION RESOURCE DIAGNOSTICS REGRESSION PASS');
