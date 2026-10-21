@@ -12,6 +12,7 @@ on:
       - 'experiments/**'
       - 'tests/**'
       - 'tools/one-shot-human-review-corrective.mjs'
+      - 'tools/one-shot-human-review-corrective-postfix.mjs'
       - '.github/workflows/recognition-quality.yml'
   push:
     branches:
@@ -26,6 +27,7 @@ on:
       - 'experiments/**'
       - 'tests/**'
       - 'tools/one-shot-human-review-corrective.mjs'
+      - 'tools/one-shot-human-review-corrective-postfix.mjs'
       - '.github/workflows/recognition-quality.yml'
 
 concurrency:
@@ -45,7 +47,9 @@ jobs:
         with:
           node-version: '22'
       - name: Apply one-shot Human Review corrective
-        run: node tools/one-shot-human-review-corrective.mjs
+        run: |
+          node tools/one-shot-human-review-corrective.mjs
+          node tools/one-shot-human-review-corrective-postfix.mjs
       - name: Install pinned integrated-acceptance dependencies
         run: npm install --no-audit --no-fund --ignore-scripts
       - name: Run corrective quality gate
