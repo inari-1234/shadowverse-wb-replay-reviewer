@@ -1,0 +1,77 @@
+{
+  "version": "pf1r2-0923-tradeoff-integrated-acceptance-fixture-v1",
+  "authorityClass": "IPHONE_EXACT_TRADEOFF_RAW_TRACE_SUBSET",
+  "purpose": "Production-path integration acceptance replayed from the 2026-10-21 iPhone raw trace after Ward and pre-action resource authority corrections.",
+  "provenance": {
+    "sourceDiagnostic": "shadowverse-wb-diagnostic-v4.13.94-2026-10-21T0806.json",
+    "sourceRuntimeCommit": "9a44a163447af07e43a3bd4f67eb5a394ce7e992",
+    "runtimeBuildId": "candidate-assets-0b0737bea9d9",
+    "rawTraceRunId": "match:1792569920660:2b6a3ea4-c0ca-438e-8cc9-98d6a8209e7c",
+    "rawTraceNonce": "2b6a3ea4-c0ca-438e-8cc9-98d6a8209e7c",
+    "rawTraceReplacementRequired": false,
+    "wardSupplemented": false,
+    "resourceCarrySupplemented": false,
+    "scope": "measured subset: 8T timeline + PF0B exact authority + runtime decision + played move + coach presentation"
+  },
+  "videoMeta": {
+    "name": "ScreenRecording_09-23-2026 23-53-13_1.MP4",
+    "size": 272828141,
+    "type": "video/mp4",
+    "lastModified": 1790175193000,
+    "duration": 146.275
+  },
+  "timeline": [
+    {"side":"top","turn":8,"time":100.648,"source":"stable13-tail-shifted","confidence":88},
+    {"side":"bottom","turn":8,"time":110.938,"source":"stable13-tail-shifted","confidence":88},
+    {"side":"top","turn":9,"time":122.313,"source":"stable13-tail-shifted","confidence":88}
+  ],
+  "timelineCaptures": [
+    {"source":"timeline","at":"2026-10-21T08:05:50.349Z","time":113.188,"turn":8,"pp":2,"opponentHP":16,"boardDamage":0,"boardDamageKnown":true,"boardAccepted":true,"boardKnown":true,"faceDamageConfirmed":true,"candidateTotal":0,"extraPP":"unknown","ep":"yes","sep":"unknown","opponentWard":"unknown","wardKnown":false,"wardReason":"direct-no-safe-none-proof","wardMethod":"direct-safe","hand":{"quickBlader":{"cardId":"quickBlader","id":"quickBlader","label":"刹那のクイックブレイダー","known":true,"count":1,"confidence":0.9221,"positiveFrames":4}}},
+    {"source":"timeline","at":"2026-10-21T08:05:50.883Z","time":113.638,"turn":8,"pp":2,"opponentHP":16,"boardDamage":0,"boardDamageKnown":true,"boardAccepted":true,"boardKnown":true,"faceDamageConfirmed":true,"candidateTotal":0,"extraPP":"unknown","ep":"unknown","sep":"unknown","opponentWard":"unknown","wardKnown":false,"wardReason":"direct-no-safe-none-proof","wardMethod":"direct-safe","hand":{}},
+    {"source":"timeline","at":"2026-10-21T08:05:51.316Z","time":115.888,"turn":8,"pp":1,"opponentHP":16,"boardDamage":0,"boardDamageKnown":true,"boardAccepted":true,"boardKnown":true,"faceDamageConfirmed":true,"candidateTotal":0,"extraPP":"unknown","ep":"unknown","sep":"unknown","opponentWard":"unknown","wardKnown":false,"wardReason":"direct-no-safe-none-proof","wardMethod":"direct-safe","hand":{}},
+    {"source":"timeline","at":"2026-10-21T08:05:51.617Z","time":116.338,"turn":8,"pp":1,"opponentHP":16,"boardDamage":3,"boardDamageKnown":true,"boardAccepted":true,"boardKnown":true,"faceDamageConfirmed":true,"candidateTotal":3,"extraPP":"unknown","ep":"yes","sep":"yes","opponentWard":"unknown","wardKnown":false,"wardReason":"backward-board-occupancy-unstable","wardMethod":"decision-preaction-backward-safe","hand":{}}
+  ],
+  "decisionAuthorityCaptures": [
+    {"source":"pf0b-exact","role":"anchor","at":"2026-10-21T08:05:56.960Z","time":113.638,"turn":8,"pp":2,"opponentHP":16,"boardDamage":0,"boardDamageKnown":true,"boardAccepted":true,"boardKnown":true,"faceDamageConfirmed":true,"candidateTotal":0,"extraPP":"unknown","ep":"unknown","sep":"unknown","opponentWard":"none","wardKnown":true,"wardReason":"opponent-ward-absent-stable-followers","wardMethod":"decision-preaction-backward-consensus","hand":{"quickBlader":{"cardId":"quickBlader","id":"quickBlader","label":"刹那のクイックブレイダー","known":true,"count":1,"confidence":0.9188,"positiveFrames":4,"stableFramesRequired":3,"decision":"temporal-slot-consensus","method":"hand-title-anchor-cost-gate-v12","expectedCost":1,"costGate":true}}},
+    {"source":"pf0b-exact","role":"after","at":"2026-10-21T08:05:58.452Z","time":116.338,"turn":8,"pp":1,"opponentHP":16,"boardDamage":3,"boardDamageKnown":true,"boardAccepted":true,"boardKnown":true,"faceDamageConfirmed":true,"candidateTotal":3,"extraPP":"unknown","ep":"yes","sep":"yes","opponentWard":"unknown","wardKnown":false,"wardReason":"backward-board-occupancy-unstable","wardMethod":"decision-preaction-backward-safe","hand":{"barbaros":{"cardId":"barbaros","id":"barbaros","label":"バルバロス","known":true,"count":1,"confidence":0.8981,"positiveFrames":4,"stableFramesRequired":3,"decision":"temporal-slot-consensus","method":"hand-title-anchor-cost-gate-v12","expectedCost":7,"costGate":true}},"followers":[{"attackValue":3,"attackable":true,"position":{"attackBadgeCx":600,"attackBadgeCy":300}}]}
+  ],
+  "analysis": {
+    "version": "match-auto-review-v12",
+    "runId": "match:1792569920660:2b6a3ea4-c0ca-438e-8cc9-98d6a8209e7c",
+    "nonce": "2b6a3ea4-c0ca-438e-8cc9-98d6a8209e7c",
+    "startedAt": "2026-10-21T08:05:20.659Z",
+    "finishedAt": "2026-10-21T08:05:55.440Z",
+    "cancelled": false,
+    "targetSide": "bottom",
+    "totalTurns": 1,
+    "eligibleTurns": 1,
+    "completedTurns": 1,
+    "skippedTurns": 0,
+    "turns": [
+      {"turn":8,"absoluteSide":"bottom","relativeSide":"自分","fromTime":113.188,"toTime":116.338,"hpFrom":16,"hpTo":16,"hpDelta":null,"hpSummarySource":"captured-endpoints"}
+    ]
+  },
+  "expected": {
+    "reviewStart": 113.638,
+    "reviewEnd": 116.338,
+    "ppBefore": "2",
+    "ppAfter": "1",
+    "wardBefore": "none",
+    "quickConfidence": 0.9188,
+    "quickPositiveFrames": 4,
+    "pipelineStatus": "OK",
+    "outcomeCount": 6,
+    "classification": "TRADE_OFF",
+    "recommendation": null,
+    "playedMoveStatus": "CONFIRMED",
+    "playedCardId": "quickBlader",
+    "preActionResourceAuthority": {
+      "sourceStateId": "st:8:bottom:113.188",
+      "anchorStateId": "st:8:bottom:113.638",
+      "gapSeconds": 0.45,
+      "carried": {"ep":"yes"}
+    },
+    "actualStrengthKeyword": "盤面",
+    "otherStrengthKeywords": ["EP","手札"]
+  }
+}
