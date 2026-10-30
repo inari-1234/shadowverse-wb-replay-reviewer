@@ -1,0 +1,29 @@
+{
+  "version": "0.1",
+  "project": "shadowverse-wb-replay-reviewer",
+  "purpose": "Prove cross-video safety without requiring modeled-card coverage or CHAIN_OK on every holdout.",
+  "registration_rule": {
+    "before_analysis": true,
+    "required_fields": ["filename", "status", "registered_at", "baseline_sha"],
+    "preferred_identity_fields": ["sha256", "size_bytes"],
+    "initial_status": "UNUSED_HOLDOUT",
+    "rule": "Register the holdout identity before gameplay analysis or tuning. Computing file metadata or SHA-256 is allowed before registration; inspecting gameplay content is not."
+  },
+  "acceptance_policy": {
+    "chain_ok_required": false,
+    "structural_no_ng": [
+      "run isolation is preserved",
+      "no false HP transient becomes a final review point",
+      "presentation does not roll back to a stale or duplicate authority path",
+      "review playback seeks to the intended authority window"
+    ],
+    "no_wrong_coach": [
+      "no unsupported recommendation",
+      "no reversed directional reason",
+      "no speculative completion of unknown or unresolved evidence"
+    ],
+    "hold_policy": "If the pipeline HOLDs, the HOLD class and reason must be supported by the observed authority and surfaced correctly.",
+    "chain_ok_policy": "If one or more CHAIN_OK windows occur, perform Human Review on those windows in addition to the structural and HOLD checks."
+  },
+  "holdouts": []
+}
