@@ -25,5 +25,18 @@
     "hold_policy": "If the pipeline HOLDs, the HOLD class and reason must be supported by the observed authority and surfaced correctly.",
     "chain_ok_policy": "If one or more CHAIN_OK windows occur, perform Human Review on those windows in addition to the structural and HOLD checks."
   },
-  "holdouts": []
+  "holdouts": [
+    {
+      "holdout_id": "SV-HOLDOUT-20261030-001",
+      "filename": "ScreenRecording_09-23-2026 23-53-13_1(1).mp4",
+      "status": "UNUSED_HOLDOUT",
+      "registered_at": "2026-10-30T22:51:00+09:00",
+      "baseline_sha": "2e97c9b8ec8abbf93f3bd78ba00ff61c8b6db473",
+      "sha256": "ee8843a7f84899132e93670c52b812fd51a8e745b697dda3e453211a23783ba1",
+      "size_bytes": 104252176,
+      "duration_seconds": 146.3,
+      "container_creation_time": "2026-10-30T13:48:40.000000Z",
+      "registration_scope": "Identity and container metadata only; gameplay content was not inspected before registration."
+    }
+  ]
 }
