@@ -20,39 +20,8 @@
       "evidence_sha": "2c108dda12083f9190caf2b883f93a1c216ff727",
       "evidence_method": "IPHONE_DEVICE_RUNTIME_BUILD_AUTHORITY",
       "verified_by": ["DEVICE_OBSERVATION", "INDEPENDENT_REVIEW"],
-      "invalidation_paths": [
-        "index.html",
-        "latest.json",
-        "app-core.js",
-        "turn-recognition.js",
-        "mulligan-class.js",
-        "card-db.js",
-        "hand-recognition.js",
-        "state-recognition.js",
-        "replay-session.js",
-        "review-engine.js",
-        "counterfactual-review.js",
-        "diagnostics.js",
-        "coach-integration.js",
-        "coach-explanation.js",
-        "runtime-decision-pipeline.js",
-        "runtime-authority-binding.js",
-        "legal-action-sequence.js",
-        "outcome-backtracking.js",
-        "comparison-decision.js",
-        "played-move-authority.js",
-        "position-state-runtime.js",
-        "common-rule-engine-runtime.js"
-      ],
-      "evidence": {
-        "diagnostic": "shadowverse-wb-diagnostic-v4.13.94-2026-10-30T0911.json",
-        "createdAt": "2026-10-30T09:11:53.247Z",
-        "buildId": "candidate-assets-30043285ebe1",
-        "verifiedAssets": 20,
-        "totalAssets": 20,
-        "runtimeAuthorityOk": true,
-        "serviceWorkerControlled": false
-      },
+      "invalidation_paths": ["index.html", "latest.json", "app-core.js", "turn-recognition.js", "mulligan-class.js", "card-db.js", "hand-recognition.js", "state-recognition.js", "replay-session.js", "review-engine.js", "counterfactual-review.js", "diagnostics.js", "coach-integration.js", "coach-explanation.js", "runtime-decision-pipeline.js", "runtime-authority-binding.js", "legal-action-sequence.js", "outcome-backtracking.js", "comparison-decision.js", "played-move-authority.js", "position-state-runtime.js", "common-rule-engine-runtime.js"],
+      "evidence": {"diagnostic":"shadowverse-wb-diagnostic-v4.13.94-2026-10-30T0911.json","createdAt":"2026-10-30T09:11:53.247Z","buildId":"candidate-assets-30043285ebe1","verifiedAssets":20,"totalAssets":20,"runtimeAuthorityOk":true,"serviceWorkerControlled":false},
       "scope": "09-23 source video on the recorded iPhone Safari target environment; exact runtime asset identity only."
     },
     {
@@ -62,25 +31,8 @@
       "evidence_sha": "2c108dda12083f9190caf2b883f93a1c216ff727",
       "evidence_method": "IPHONE_DEVICE_DIAGNOSTIC_PROVENANCE",
       "verified_by": ["DEVICE_OBSERVATION", "INDEPENDENT_REVIEW"],
-      "invalidation_paths": [
-        "app-core.js",
-        "state-recognition.js",
-        "runtime-authority-binding.js",
-        "position-state-runtime.js",
-        "legal-action-sequence.js",
-        "diagnostics.js"
-      ],
-      "evidence": {
-        "diagnostic": "shadowverse-wb-diagnostic-v4.13.94-2026-10-30T0911.json",
-        "runId": "match:1793351466806:48afe943-e834-4f18-a371-d0013d0d21f3",
-        "sourceStateId": "st:8:bottom:113.188",
-        "sourceTime": 113.188,
-        "anchorStateId": "st:8:bottom:113.638",
-        "anchorTime": 113.638,
-        "gapSeconds": 0.45,
-        "carried": {"ep": "yes"},
-        "afterStateUsed": false
-      },
+      "invalidation_paths": ["app-core.js", "state-recognition.js", "runtime-authority-binding.js", "position-state-runtime.js", "legal-action-sequence.js", "diagnostics.js"],
+      "evidence": {"diagnostic":"shadowverse-wb-diagnostic-v4.13.94-2026-10-30T0911.json","runId":"match:1793351466806:48afe943-e834-4f18-a371-d0013d0d21f3","sourceStateId":"st:8:bottom:113.188","sourceTime":113.188,"anchorStateId":"st:8:bottom:113.638","anchorTime":113.638,"gapSeconds":0.45,"carried":{"ep":"yes"},"afterStateUsed":false},
       "scope": "Direct provenance of the turn-8 EP carry used in the 09-23 iPhone Human Review run."
     },
     {
@@ -90,30 +42,42 @@
       "evidence_sha": "2c108dda12083f9190caf2b883f93a1c216ff727",
       "evidence_method": "IPHONE_DEVICE_FINAL_COACH_DIAGNOSTIC",
       "verified_by": ["DEVICE_OBSERVATION", "INDEPENDENT_REVIEW"],
-      "invalidation_paths": [
-        "app-core.js",
-        "replay-session.js",
-        "runtime-decision-pipeline.js",
-        "comparison-decision.js",
-        "played-move-authority.js",
-        "coach-explanation.js",
-        "coach-integration.js",
-        "diagnostics.js"
-      ],
-      "evidence": {
-        "diagnostic": "shadowverse-wb-diagnostic-v4.13.94-2026-10-30T0911.json",
-        "runId": "match:1793351466806:48afe943-e834-4f18-a371-d0013d0d21f3",
-        "decisionStatus": "OK",
-        "classification": "TRADE_OFF",
-        "bestCandidateId": null,
-        "playedMoveStatus": "CONFIRMED",
-        "playedMoveActions": ["PLAY_CARD:quickBlader", "EVOLVE:quickBlader"],
-        "playedMovePresentationStatus": "CONFIRMED_TRADE_OFF",
-        "singleRecommendation": false,
-        "actualAdvantageAxes": ["board_attack", "board_followers", "board_defense"],
-        "otherCandidateAdvantageAxes": ["ep_preservation", "hand_preservation", "immediate_damage", "opponent_hp"]
-      },
+      "invalidation_paths": ["app-core.js", "replay-session.js", "runtime-decision-pipeline.js", "comparison-decision.js", "played-move-authority.js", "coach-explanation.js", "coach-integration.js", "diagnostics.js"],
+      "evidence": {"diagnostic":"shadowverse-wb-diagnostic-v4.13.94-2026-10-30T0911.json","runId":"match:1793351466806:48afe943-e834-4f18-a371-d0013d0d21f3","decisionStatus":"OK","classification":"TRADE_OFF","bestCandidateId":null,"playedMoveStatus":"CONFIRMED","playedMoveActions":["PLAY_CARD:quickBlader","EVOLVE:quickBlader"],"playedMovePresentationStatus":"CONFIRMED_TRADE_OFF","singleRecommendation":false,"actualAdvantageAxes":["board_attack","board_followers","board_defense"],"otherCandidateAdvantageAxes":["ep_preservation","hand_preservation","immediate_damage","opponent_hp"]},
       "scope": "Human-facing turn-8 coach presentation for the 09-23 iPhone Human Review run; does not assert a globally best action."
+    },
+    {
+      "claim_id": "SV-KNOWN-COACH-ALT-LABEL-001",
+      "claim": "In the 2c108dda iPhone TRADE_OFF coach, advantages from different alternative candidates are flattened without candidate attribution, so entries such as immediate damage +1 and +3 can appear contradictory to a reader.",
+      "status": "CONFIRMED",
+      "evidence_sha": "2c108dda12083f9190caf2b883f93a1c216ff727",
+      "evidence_method": "IPHONE_DEVICE_FINAL_COACH_DIAGNOSTIC",
+      "verified_by": ["DEVICE_OBSERVATION", "INDEPENDENT_REVIEW"],
+      "invalidation_paths": ["coach-explanation.js", "replay-session.js"],
+      "evidence": {"diagnostic":"shadowverse-wb-diagnostic-v4.13.94-2026-10-30T0911.json","observedFlatReasons":["他候補が上回る点：即時打点で1点上回ります。","他候補が上回る点：即時打点で3点上回ります。"]},
+      "scope": "Known human-readability issue in the 09-23 TRADE_OFF coach output; decision semantics are not disputed."
+    },
+    {
+      "claim_id": "SV-KNOWN-COACH-ACTION-PHRASE-001",
+      "claim": "In the 2c108dda iPhone coach, the confirmed Quick Blader plus Evolution played move repeats the same card name and separates actions with a comma instead of rendering a natural chained action phrase.",
+      "status": "CONFIRMED",
+      "evidence_sha": "2c108dda12083f9190caf2b883f93a1c216ff727",
+      "evidence_method": "IPHONE_DEVICE_FINAL_COACH_DIAGNOSTIC",
+      "verified_by": ["DEVICE_OBSERVATION", "INDEPENDENT_REVIEW"],
+      "invalidation_paths": ["coach-explanation.js"],
+      "evidence": {"diagnostic":"shadowverse-wb-diagnostic-v4.13.94-2026-10-30T0911.json","observedText":"実際の手は刹那のクイックブレイダーを出す、刹那のクイックブレイダーを進化する手と確認できました。"},
+      "scope": "Known wording issue in confirmed played-move presentation only."
+    },
+    {
+      "claim_id": "SV-KNOWN-EP-PRESENTATION-001",
+      "claim": "In the 2c108dda iPhone review, the Review Card presents the exact before-state EP as unknown while the decision pipeline legitimately uses same-run pre-action carried EP=yes; the carry provenance is not surfaced in the card presentation.",
+      "status": "CONFIRMED",
+      "evidence_sha": "2c108dda12083f9190caf2b883f93a1c216ff727",
+      "evidence_method": "IPHONE_DEVICE_AUTHORITY_AND_PRESENTATION_DIAGNOSTIC",
+      "verified_by": ["DEVICE_OBSERVATION", "INDEPENDENT_REVIEW"],
+      "invalidation_paths": ["runtime-authority-binding.js", "replay-session.js"],
+      "evidence": {"diagnostic":"shadowverse-wb-diagnostic-v4.13.94-2026-10-30T0911.json","beforeStateEp":"unknown","carriedEp":"yes","sourceStateId":"st:8:bottom:113.188","anchorStateId":"st:8:bottom:113.638"},
+      "scope": "Known presentation consistency issue; raw exact beforeState EP must remain unknown and must not be overwritten by the carry."
     }
   ]
 }
