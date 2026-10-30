@@ -1,0 +1,12 @@
+{
+  "holdout_id": "SV-HOLDOUT-20261030-002",
+  "filename": "ScreenRecording_09-23-2026 23-53-13_1(2).mp4",
+  "status": "UNUSED_HOLDOUT",
+  "registered_at": "2026-10-30T23:01:26+09:00",
+  "baseline_sha": "2e97c9b8ec8abbf93f3bd78ba00ff61c8b6db473",
+  "sha256": "a4a1443d54c9fa9a4ea7ec0ba98741fd362207e04dd4af77224edc09b7cf3fba",
+  "size_bytes": 102210492,
+  "duration_seconds": 142.2,
+  "container_creation_time": "2026-10-30T13:58:35.000000Z",
+  "registration_scope": "Identity and container metadata only; gameplay content was not inspected before registration."
+}
