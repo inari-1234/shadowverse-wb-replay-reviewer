@@ -22,6 +22,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
@@ -29,3 +31,5 @@ jobs:
         run: node tests/authority-ledger-regression.mjs
       - name: Version-literal-only exception regression
         run: node tests/version-literal-only-diff-regression.mjs
+      - name: Validate current authority ledger against HEAD
+        run: node tools/check-authority-ledger.mjs authority/AUTHORITY_LEDGER.json HEAD
