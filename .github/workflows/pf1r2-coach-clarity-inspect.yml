@@ -1,0 +1,25 @@
+name: P-F1-R2 Coach Clarity Inspect
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'candidate/p-f1-r2-coach-clarity'
+    paths:
+      - '.github/workflows/pf1r2-coach-clarity-inspect.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Show runtime manifest and build-id authority code
+        shell: bash
+        run: |
+          grep -n -E '__wbRuntimeAssetManifest|candidate-assets-|runtimeAsset|sha256-' index.html | tail -80
+          echo '--- latest.json ---'
+          cat latest.json
