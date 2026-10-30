@@ -31,6 +31,7 @@ jobs:
         run: node tests/pf1r2-coach-clarity-corrective-regression.mjs
       - name: Runtime code authority self-check
         run: node tests/pf1r2-runtime-code-authority-regression.mjs
+      # The migrated integrated assertion now requires candidate-attributed alternatives instead of the old anonymous flat list.
       - name: Full Quality Gate
         run: node tests/run-quality-gate.mjs
       - name: Commit corrective product and regression changes
