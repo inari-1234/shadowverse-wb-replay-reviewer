@@ -1,0 +1,16 @@
+{
+  "ledger_version": "0.1",
+  "project": "shadowverse-wb-replay-reviewer",
+  "baseline_sha": null,
+  "status_definitions": {
+    "CONFIRMED": "Directly observed in the target environment.",
+    "REPRODUCED": "Reproduced by replaying the same input or equivalent recorded evidence through the declared implementation.",
+    "INFERRED": "Inferred from code or surrounding evidence; not directly observed in the target environment."
+  },
+  "verified_by_definitions": {
+    "IMPLEMENTER": "Checked by the implementation actor.",
+    "INDEPENDENT_REVIEW": "Checked independently from the implementation report.",
+    "DEVICE_OBSERVATION": "Observed on the target device/runtime."
+  },
+  "claims": []
+}
