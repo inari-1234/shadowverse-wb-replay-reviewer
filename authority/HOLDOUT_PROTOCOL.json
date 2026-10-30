@@ -29,14 +29,26 @@
     {
       "holdout_id": "SV-HOLDOUT-20261030-001",
       "filename": "ScreenRecording_09-23-2026 23-53-13_1(1).mp4",
-      "status": "UNUSED_HOLDOUT",
+      "status": "INVALIDATED_KNOWN_SOURCE",
       "registered_at": "2026-10-30T22:51:00+09:00",
       "baseline_sha": "2e97c9b8ec8abbf93f3bd78ba00ff61c8b6db473",
       "sha256": "ee8843a7f84899132e93670c52b812fd51a8e745b697dda3e453211a23783ba1",
       "size_bytes": 104252176,
       "duration_seconds": 146.3,
       "container_creation_time": "2026-10-30T13:48:40.000000Z",
-      "registration_scope": "Identity and container metadata only; gameplay content was not inspected before registration."
+      "registration_scope": "Identity and container metadata only; gameplay content was not inspected before registration.",
+      "invalidated_at": "2026-10-30T22:55:40+09:00",
+      "invalidation_reason": "Post-registration gameplay inspection matched the previously used 09-23 development/acceptance source. Exact authority points at 113.638s and 116.338s reproduce the known PP 2->1, opponent HP 16, boardDamage 0->3 Quick Blader plus Evolution sequence.",
+      "known_source_reference": {
+        "fixture": "tests/pf1r2-0923-tradeoff-integrated-acceptance-fixture.json",
+        "known_video_name": "ScreenRecording_09-23-2026 23-53-13_1.MP4",
+        "known_duration_seconds": 146.275,
+        "matched_points": [
+          {"time": 113.638, "pp": 2, "opponent_hp": 16, "board_damage": 0},
+          {"time": 116.338, "pp": 1, "opponent_hp": 16, "board_damage": 3}
+        ]
+      },
+      "acceptance_use": "PROHIBITED_AS_HOLDOUT"
     }
   ]
 }
