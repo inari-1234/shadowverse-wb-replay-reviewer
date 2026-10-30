@@ -6,5 +6,5 @@ assert.match(binding,/preActionResourceAuthorities=new Map\(\)/,'binding must pe
 assert.match(binding,/sourceStateId/);assert.match(binding,/sourceTime/);assert.match(binding,/gapSeconds/);assert.match(binding,/maxGapRationale/);assert.match(binding,/afterStateUsed:false/);
 assert.match(diagnostics,/generationStatus/,'HOLD diagnostics must preserve generation status');
 assert.match(diagnostics,/reasonCodes/,'HOLD diagnostics must preserve inner reason codes');
-assert.match(diagnostics,/diagnostics-clean-1\.60/);assert.match(binding,/pf0a-runtime-authority-binding-v1\.1\.7/);
+assert.match(diagnostics,/diagnostics-clean-1\.60/);assert.match(binding,/pf0a-runtime-authority-binding-v1\.1\.8/);
 console.log('P-F1-R2 PREACTION RESOURCE DIAGNOSTICS REGRESSION PASS');
