@@ -1,7 +1,7 @@
 {
   "holdout_id": "SV-HOLDOUT-20261030-003",
   "filename": "ScreenRecording_09-24-2026 05-00-39_1(2).mp4",
-  "status": "UNUSED_HOLDOUT",
+  "status": "INVALIDATED_KNOWN_SOURCE",
   "registered_at": "2026-10-30T23:14:40+09:00",
   "baseline_sha": "2e97c9b8ec8abbf93f3bd78ba00ff61c8b6db473",
   "runtime_build_id": "candidate-assets-5d7731fe2659",
@@ -9,5 +9,18 @@
   "size_bytes": 88942256,
   "duration_seconds": 123.366667,
   "container_creation_time": "2026-10-30T14:12:06.000000Z",
-  "registration_scope": "Identity and container metadata only; gameplay content was not inspected before registration."
+  "registration_scope": "Identity and container metadata only; gameplay content was not inspected before registration.",
+  "invalidated_at": "2026-10-30T23:17:07+09:00",
+  "invalidation_reason": "Repository evidence proves this source video was already used for recognition validation before holdout registration. The registered filename is a duplicate/copy naming variant of the existing source video.",
+  "known_source_reference": {
+    "file": "tests/v5-tracking-roi-validation-cases.json",
+    "source_video": "ScreenRecording_09-24-2026 05-00-39_1.mp4",
+    "prior_uses": [
+      "Zeta hard-positive recognition validation",
+      "temporal tracking continuity validation",
+      "disappearance veto validation",
+      "ROI identity validation"
+    ]
+  },
+  "acceptance_use": "PROHIBITED_AS_HOLDOUT"
 }
