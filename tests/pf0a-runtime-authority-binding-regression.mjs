@@ -13,7 +13,7 @@ const PS=WB.PositionStateRuntime,R=WB.CommonRuleEngineRuntime,B=WB.RuntimeAuthor
 let passed=0;const t=(name,fn)=>{try{const r=fn();if(r&&typeof r.then==='function')return r.then(()=>{passed++},e=>{e.message=`${name}: ${e.message}`;throw e});passed++}catch(e){e.message=`${name}: ${e.message}`;throw e}};
 const capture=captureAt(10),obs=PS.observationFromCapture(capture),state=PS.createState(obs,{windowId:'w1'});
 
-t('PF0A-01 module versions',()=>{assert.match(PS.version,/pf0a/);assert.match(R.version,/pf0a/);assert.equal(B.version,'pf0a-runtime-authority-binding-v1.1.7')});
+t('PF0A-01 module versions',()=>{assert.match(PS.version,/pf0a/);assert.match(R.version,/pf0a/);assert.equal(B.version,'pf0a-runtime-authority-binding-v1.1.8')});
 t('PF0A-02 capture state identity',()=>assert.equal(obs.sourceStateId,'st:5:bottom:10.000'));
 t('PF0A-03 structural board evidence retained',()=>{assert.equal(obs.boardStructureKnown,true);assert.equal(obs.boardFollowers.length,1)});
 t('PF0A-04 recognized hand expands',()=>assert.ok(state.players.self.hand.some(x=>x.cardId==='quickBlader')));

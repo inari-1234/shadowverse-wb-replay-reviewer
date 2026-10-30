@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const W=window.WB;if(!W)return;
-const VERSION='replay-session-clean-1.16';
+const VERSION='replay-session-clean-1.17';
 const DB_NAME='wb-replay-session-v1',DB_VERSION=2,SESSION_STORE='sessions',SCENE_STORE='scene-images',RUN_STORE='analysis-runs',MAX_CONTIGUOUS_GAP=3,SESSION_SCHEMA='replay-session-v3';
 W.registerModule('replay-session',VERSION);
 
@@ -307,6 +307,7 @@ function commitAuthorityPresentations(){return schedulePersist()}
 function actionLabel(a){if(a.type==='opponent-hp-change')return`相手HP ${a.data.from} → ${a.data.to}`;if(a.type==='pp-change')return`PP ${a.data.from} → ${a.data.to}`;if(a.type==='resource-change')return`${a.data.resource}: ${a.data.from} → ${a.data.to}`;if(a.type==='ward-change')return`守護: ${a.data.from} → ${a.data.to}`;if(a.type==='board-damage-change')return`盤面打点 ${a.data.from} → ${a.data.to}`;if(a.type==='turn-transition')return`${a.data.fromTurn??'?'}T → ${a.data.toTurn??'?'}T`;return'観測間隔が空いているため詳細は推定しません'}
 const REVIEW_FIELD_LABELS=Object.freeze({pp:'PP',opponentHP:'相手HP',extraPP:'ExPP',ep:'EP',sep:'SEP',opponentWard:'相手守護',boardDamage:'盤面打点',state:'状態'});
 function reviewFlag(v){return v==='yes'?'使用可':v==='no'?'使用不可':'未確認'}
+function reviewResourceFlag(v,key,authority,state){const direct=reviewFlag(v);if(direct!=='未確認'||!authority||String(authority?.anchorStateId||'')!==String(state?.id||''))return direct;if(String(authority?.carried?.[key]||'')!=='yes')return direct;const t=finite(authority?.sourceTime);return t==null?'使用可（事前観測から引き継ぎ）':`使用可（${t.toFixed(3)}秒の観測から引き継ぎ）`;}
 function reviewWard(v){return v==='present'?'あり確認':v==='none'?'なし確認':'未確認'}
 function reviewChangedKeys(changes=[]){
   const out=new Set();
@@ -324,14 +325,14 @@ function reviewChangedKeys(changes=[]){
   }
   return out
 }
-function reviewStateRows(state,changedKeys=[]){
+function reviewStateRows(state,changedKeys=[],resourceAuthority=null){
   const s=state||{},r=s.resources||{},boardKnown=s.boardDamageKnown===true&&finite(s.boardDamage)!=null,changed=new Set(changedKeys||[]);
   return[
     {key:'pp',label:'PP',value:finite(s.pp)==null?'未確認':String(finite(s.pp)),changed:changed.has('pp')},
     {key:'opponentHP',label:'相手HP',value:finite(s.opponentHP)==null?'未確認':String(finite(s.opponentHP)),changed:changed.has('opponentHP')},
     {key:'extraPP',label:'ExPP',value:reviewFlag(r.extraPP),changed:changed.has('extraPP')},
-    {key:'ep',label:'EP',value:reviewFlag(r.ep),changed:changed.has('ep')},
-    {key:'sep',label:'SEP',value:reviewFlag(r.sep),changed:changed.has('sep')},
+    {key:'ep',label:'EP',value:reviewResourceFlag(r.ep,'ep',resourceAuthority,state),changed:changed.has('ep')},
+    {key:'sep',label:'SEP',value:reviewResourceFlag(r.sep,'sep',resourceAuthority,state),changed:changed.has('sep')},
     {key:'opponentWard',label:'相手守護',value:reviewWard(s.opponentWard),changed:changed.has('opponentWard')},
     {key:'boardDamage',label:'盤面打点',value:boardKnown?String(finite(s.boardDamage)):'未確認',changed:changed.has('boardDamage')}
   ]
@@ -342,7 +343,7 @@ function reviewWindowModels(session=current){
     const id=String(window?.id||''),authority=s?.authorityPresentations?.[id],coachPresentation=s?.comparisonCoachPresentations?.[id],useAuthority=!!runId&&presentationRunMatches(authority,s)&&authority?.authority==='fresh-exact',useCoach=!!runId&&presentationRunMatches(coachPresentation,s),
       beforeState=useAuthority?clone(authority.beforeState):clone(window.beforeState),afterState=useAuthority?clone(authority.afterState):clone(window.afterState),
       points=(window.reviewPointIds||[]).map(pid=>pointById.get(pid)).filter(Boolean),first=points[0]||null,observedChanges=clone(window.observedChanges||[]),changedKeys=[...reviewChangedKeys(observedChanges)],
-      model={id:window.id,turn:useAuthority?(finite(authority.turn)??finite(beforeState?.turn)??finite(afterState?.turn)):(window.turn??first?.turn??null),reviewStart:useAuthority?finite(authority.reviewStart):finite(window.reviewStart),reviewEnd:useAuthority?finite(authority.reviewEnd):finite(window.reviewEnd),title:first?.title||'重要な状態変化',priority:first?.priority||'review',beforeState,afterState,beforeRows:reviewStateRows(beforeState,changedKeys),afterRows:reviewStateRows(afterState,changedKeys),observedChanges,changedKeys,importanceReasons:clone(window.importanceReasons||[]),confidence:useAuthority?'fresh-exact':(window.confidence||'observed'),unknownFields:clone(window.unknownFields||[]),unresolved:clone(window.unresolved||[]),causalAttribution:false,reviewPointIds:clone(window.reviewPointIds||[]),authorityPresentation:useAuthority?clone(authority):null,comparisonCoach:useCoach?clone(coachPresentation):null};
+      model={id:window.id,turn:useAuthority?(finite(authority.turn)??finite(beforeState?.turn)??finite(afterState?.turn)):(window.turn??first?.turn??null),reviewStart:useAuthority?finite(authority.reviewStart):finite(window.reviewStart),reviewEnd:useAuthority?finite(authority.reviewEnd):finite(window.reviewEnd),title:first?.title||'重要な状態変化',priority:first?.priority||'review',beforeState,afterState,beforeRows:reviewStateRows(beforeState,changedKeys,useAuthority?authority?.preActionResourceAuthority:null),afterRows:reviewStateRows(afterState,changedKeys,null),observedChanges,changedKeys,importanceReasons:clone(window.importanceReasons||[]),confidence:useAuthority?'fresh-exact':(window.confidence||'observed'),unknownFields:clone(window.unknownFields||[]),unresolved:clone(window.unresolved||[]),causalAttribution:false,reviewPointIds:clone(window.reviewPointIds||[]),authorityPresentation:useAuthority?clone(authority):null,comparisonCoach:useCoach?clone(coachPresentation):null};
     model.coach=useCoach?null:(typeof W.ReviewEngine?.deriveWindowCoach==='function'?W.ReviewEngine.deriveWindowCoach(model):null);
     model.cardUseCandidates=typeof W.ReviewEngine?.deriveCardUseCandidates==='function'?W.ReviewEngine.deriveCardUseCandidates(model):[];
     return model

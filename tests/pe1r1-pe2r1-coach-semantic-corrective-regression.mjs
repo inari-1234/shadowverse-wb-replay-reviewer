@@ -22,7 +22,7 @@ const playedUnknown={status:'UNKNOWN',reason:'NO_CANDIDATE_MATCH',playedCandidat
 const allUserText=e=>[e.headline,...(e.whyBest||[]),...(e.alternative?.reasons||[]),...(e.alternative?.reversalConditions||[]),...(e.cautions||[]),e.playedMoveComparison?.text,...(e.playedMoveComparison?.reasons||[]),e.text].filter(Boolean).join('\n');
 function treeText(el){if(!el)return'';return [el.textContent,...(el.children||[]).map(treeText)].filter(Boolean).join('\n')}
 let n=0;const t=async(name,fn)=>{await fn();n++;console.log(`PASS ${name}`)};
-await t('E1R1-01 version',()=>assert.equal(E.version,'pe1-coach-explanation-v1.1.1'));
+await t('E1R1-01 version',()=>assert.equal(E.version,'pe1-coach-explanation-v1.2.0'));
 await t('E1R1-02 ordinary dominance is not called confirmed',()=>{const x=E.explainDecision(decision(),{playedMove:playedConfirmed});assert.equal(x.claim,'CONDITIONAL');assert.doesNotMatch(x.headline,/確定/)});
 await t('E1R1-03 human readable best action',()=>{const x=E.explainDecision(decision(),{playedMove:playedConfirmed});assert.match(x.headline,/刹那のクイックブレイダー/);assert.match(x.headline,/リーダーを攻撃/);assert.doesNotMatch(x.headline,/seq-best|Best|Candidate/)});
 await t('E1R1-04 best reason is directional',()=>{const x=E.explainDecision(decision(),{playedMove:playedConfirmed});assert.ok(x.whyBest.some(s=>s.includes('即時打点')));assert.ok(x.whyBest.every(s=>!s.includes('Alternative')))});

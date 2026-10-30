@@ -46,6 +46,6 @@ const bindingSource=fs.readFileSync(new URL('../runtime-authority-binding.js',im
 const replaySource=fs.readFileSync(new URL('../replay-session.js',import.meta.url),'utf8');
 assert.match(bindingSource,/preActionResourceAuthority\s*:/,'single-presentation authority must carry pre-action resource provenance as metadata');
 assert.match(replaySource,/観測から引き継ぎ/,'Review Card must disclose carried EP provenance to the reader');
-assert.match(replaySource,/reviewStateRows\(before,changedKeys,[^)]+preActionResourceAuthority/,'carry provenance must be applied only through Review Card rendering rather than mutating the exact beforeState');
+assert.match(replaySource,/reviewStateRows\(beforeState,changedKeys,[^)]+preActionResourceAuthority/,'carry provenance must be applied only through Review Card rendering rather than mutating the exact beforeState');
 
 console.log('P-F1-R2 COACH CLARITY CORRECTIVE REGRESSION PASS');
