@@ -1,3 +1,4 @@
+// Final clean-tree gate trigger; semantic assertions below are unchanged.
 import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
