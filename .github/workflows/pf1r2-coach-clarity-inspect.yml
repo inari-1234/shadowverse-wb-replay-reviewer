@@ -17,9 +17,14 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
-      - name: Show runtime manifest and build-id authority code
+      - name: Show review-card and runtime manifest hooks
         shell: bash
         run: |
+          echo '--- replay presentation hooks ---'
+          grep -n -E 'reviewStateRows|reviewFlag|beforeRows|afterRows|authorityPresentations|presentationForWindow' replay-session.js
+          echo '--- runtime presentation hooks ---'
+          grep -n -E 'presentationForWindow|preActionResourceAuthorities' runtime-authority-binding.js | tail -30
+          echo '--- runtime manifest ---'
           grep -n -E '__wbRuntimeAssetManifest|candidate-assets-|runtimeAsset|sha256-' index.html | tail -80
           echo '--- latest.json ---'
           cat latest.json
