@@ -81,7 +81,11 @@ function makeCapture(row,mode){
   check(coach?.explanation?.bestCandidateId==null&&coach?.explanation?.whyBest?.length===0,'COACH_HAS_NO_RECOMMENDED_CANDIDATE');
   check(pmc?.visible===true&&pmc?.status==='CONFIRMED_TRADE_OFF'&&pmc?.text?.includes('確認')&&pmc?.text?.includes('単独の推奨はしません'),'CONFIRMED_PLAYED_MOVE_VISIBLE_WITHOUT_RANKING',JSON.stringify(pmc));
   check((pmc?.actualAdvantages||[]).some(x=>x.includes(fixture.expected.actualStrengthKeyword))&&!(pmc?.actualAdvantages||[]).some(x=>x.includes('EP')||x.includes('手札')),'ACTUAL_ADVANTAGES_DIRECTION_SAFE',JSON.stringify(pmc?.actualAdvantages));
-  check(fixture.expected.otherStrengthKeywords.every(k=>(pmc?.otherAdvantages||[]).some(x=>x.includes(k)))&&!(pmc?.otherAdvantages||[]).some(x=>x.includes('盤面')),'OTHER_ADVANTAGES_DIRECTION_SAFE',JSON.stringify(pmc?.otherAdvantages));
+  // Assertion migration: the old flat list required EP and hand to be human-visible and no board text. The new contract keeps every directional reason in candidate-attributed structured groups, while the human summary shows at most three named alternatives. Dedicated corrective regression proves old implementation RED / new implementation GREEN.
+  const altGroups=pmc?.otherCandidateAdvantages||[],allOtherReasons=altGroups.flatMap(g=>g.reasons||[]);
+  check(fixture.expected.otherStrengthKeywords.every(k=>allOtherReasons.some(x=>x.includes(k)))&&altGroups.every(g=>g.candidateId&&g.description&&!(g.reasons||[]).some(x=>x.includes('盤面'))),'OTHER_ADVANTAGES_DIRECTION_SAFE',JSON.stringify(altGroups));
+  check((pmc?.otherAdvantages||[]).length<=3&&(pmc?.otherAdvantages||[]).every(x=>x.includes('：'))&&(pmc?.otherAdvantages||[]).some(x=>x.includes('リーダーを攻撃する手')&&x.includes('即時打点')),'OTHER_ADVANTAGES_ARE_NAMED_AND_LIMITED',JSON.stringify(pmc?.otherAdvantages));
+  check(!((pmc?.otherAdvantages||[]).some(x=>x==='即時打点で1点上回ります。')&&(pmc?.otherAdvantages||[]).some(x=>x==='即時打点で3点上回ります。')),'NO_ANONYMOUS_DAMAGE_CONTRADICTION',JSON.stringify(pmc?.otherAdvantages));
   const unresolved=WB.CoachExplanation.explainDecision(pipe.decision,{playedMove:{status:'UNRESOLVED'}});
   check(unresolved.playedMoveComparison?.visible===false,'UNCONFIRMED_PLAYED_MOVE_STAYS_HIDDEN');
 
