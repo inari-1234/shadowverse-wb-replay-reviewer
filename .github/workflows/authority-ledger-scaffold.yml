@@ -1,0 +1,31 @@
+name: Authority Ledger Scaffold Gate
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'candidate/authority-ledger-v0-1-scaffold'
+    paths:
+      - 'authority/**'
+      - 'tools/check-authority-ledger.mjs'
+      - 'tools/check-version-literal-only-test-diff.mjs'
+      - 'tests/authority-ledger-regression.mjs'
+      - 'tests/version-literal-only-diff-regression.mjs'
+      - '.github/workflows/authority-ledger-scaffold.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  ledger-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Authority ledger invalidation regression
+        run: node tests/authority-ledger-regression.mjs
+      - name: Version-literal-only exception regression
+        run: node tests/version-literal-only-diff-regression.mjs
