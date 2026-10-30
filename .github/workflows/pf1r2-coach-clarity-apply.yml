@@ -23,6 +23,8 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
+      - name: Install pinned integrated-acceptance dependencies
+        run: npm install --no-audit --no-fund --ignore-scripts
       - name: Apply exact corrective patch
         run: node tools/pf1r2-coach-clarity-patch.mjs
       - name: New semantic contract GREEN
