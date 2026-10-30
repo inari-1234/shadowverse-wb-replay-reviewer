@@ -1,0 +1,119 @@
+{
+  "ledger_version": "0.1",
+  "project": "shadowverse-wb-replay-reviewer",
+  "baseline_sha": "2c108dda12083f9190caf2b883f93a1c216ff727",
+  "status_definitions": {
+    "CONFIRMED": "Directly observed in the target environment.",
+    "REPRODUCED": "Reproduced by replaying the same input or equivalent recorded evidence through the declared implementation.",
+    "INFERRED": "Inferred from code or surrounding evidence; not directly observed in the target environment."
+  },
+  "verified_by_definitions": {
+    "IMPLEMENTER": "Checked by the implementation actor.",
+    "INDEPENDENT_REVIEW": "Checked independently from the implementation report.",
+    "DEVICE_OBSERVATION": "Observed on the target device/runtime."
+  },
+  "claims": [
+    {
+      "claim_id": "SV-PF1R2-RUNTIME-001",
+      "claim": "The 09-23 iPhone Human Review run executed the exact candidate-assets-30043285ebe1 runtime asset set with all 20 declared assets matching their expected SHA-256 values.",
+      "status": "CONFIRMED",
+      "evidence_sha": "2c108dda12083f9190caf2b883f93a1c216ff727",
+      "evidence_method": "IPHONE_DEVICE_RUNTIME_BUILD_AUTHORITY",
+      "verified_by": ["DEVICE_OBSERVATION", "INDEPENDENT_REVIEW"],
+      "invalidation_paths": [
+        "index.html",
+        "latest.json",
+        "app-core.js",
+        "turn-recognition.js",
+        "mulligan-class.js",
+        "card-db.js",
+        "hand-recognition.js",
+        "state-recognition.js",
+        "replay-session.js",
+        "review-engine.js",
+        "counterfactual-review.js",
+        "diagnostics.js",
+        "coach-integration.js",
+        "coach-explanation.js",
+        "runtime-decision-pipeline.js",
+        "runtime-authority-binding.js",
+        "legal-action-sequence.js",
+        "outcome-backtracking.js",
+        "comparison-decision.js",
+        "played-move-authority.js",
+        "position-state-runtime.js",
+        "common-rule-engine-runtime.js"
+      ],
+      "evidence": {
+        "diagnostic": "shadowverse-wb-diagnostic-v4.13.94-2026-10-30T0911.json",
+        "createdAt": "2026-10-30T09:11:53.247Z",
+        "buildId": "candidate-assets-30043285ebe1",
+        "verifiedAssets": 20,
+        "totalAssets": 20,
+        "runtimeAuthorityOk": true,
+        "serviceWorkerControlled": false
+      },
+      "scope": "09-23 source video on the recorded iPhone Safari target environment; exact runtime asset identity only."
+    },
+    {
+      "claim_id": "SV-PF1R2-EP-CARRY-001",
+      "claim": "For the accepted turn-8 decision anchor at 113.638s, EP availability was carried from the same-run pre-action state st:8:bottom:113.188 with a 0.45s gap, positive availability only, and no after-state use.",
+      "status": "CONFIRMED",
+      "evidence_sha": "2c108dda12083f9190caf2b883f93a1c216ff727",
+      "evidence_method": "IPHONE_DEVICE_DIAGNOSTIC_PROVENANCE",
+      "verified_by": ["DEVICE_OBSERVATION", "INDEPENDENT_REVIEW"],
+      "invalidation_paths": [
+        "app-core.js",
+        "state-recognition.js",
+        "runtime-authority-binding.js",
+        "position-state-runtime.js",
+        "legal-action-sequence.js",
+        "diagnostics.js"
+      ],
+      "evidence": {
+        "diagnostic": "shadowverse-wb-diagnostic-v4.13.94-2026-10-30T0911.json",
+        "runId": "match:1793351466806:48afe943-e834-4f18-a371-d0013d0d21f3",
+        "sourceStateId": "st:8:bottom:113.188",
+        "sourceTime": 113.188,
+        "anchorStateId": "st:8:bottom:113.638",
+        "anchorTime": 113.638,
+        "gapSeconds": 0.45,
+        "carried": {"ep": "yes"},
+        "afterStateUsed": false
+      },
+      "scope": "Direct provenance of the turn-8 EP carry used in the 09-23 iPhone Human Review run."
+    },
+    {
+      "claim_id": "SV-PF1R2-HUMAN-COACH-001",
+      "claim": "In the 09-23 iPhone Human Review run, the decision remained TRADE_OFF with no best candidate; Quick Blader plus Evolution was shown as the confirmed played move without a single recommendation, with actual-move advantages and other-candidate advantages kept directionally separate.",
+      "status": "CONFIRMED",
+      "evidence_sha": "2c108dda12083f9190caf2b883f93a1c216ff727",
+      "evidence_method": "IPHONE_DEVICE_FINAL_COACH_DIAGNOSTIC",
+      "verified_by": ["DEVICE_OBSERVATION", "INDEPENDENT_REVIEW"],
+      "invalidation_paths": [
+        "app-core.js",
+        "replay-session.js",
+        "runtime-decision-pipeline.js",
+        "comparison-decision.js",
+        "played-move-authority.js",
+        "coach-explanation.js",
+        "coach-integration.js",
+        "diagnostics.js"
+      ],
+      "evidence": {
+        "diagnostic": "shadowverse-wb-diagnostic-v4.13.94-2026-10-30T0911.json",
+        "runId": "match:1793351466806:48afe943-e834-4f18-a371-d0013d0d21f3",
+        "decisionStatus": "OK",
+        "classification": "TRADE_OFF",
+        "bestCandidateId": null,
+        "playedMoveStatus": "CONFIRMED",
+        "playedMoveActions": ["PLAY_CARD:quickBlader", "EVOLVE:quickBlader"],
+        "playedMovePresentationStatus": "CONFIRMED_TRADE_OFF",
+        "singleRecommendation": false,
+        "actualAdvantageAxes": ["board_attack", "board_followers", "board_defense"],
+        "otherCandidateAdvantageAxes": ["ep_preservation", "hand_preservation", "immediate_damage", "opponent_hp"]
+      },
+      "scope": "Human-facing turn-8 coach presentation for the 09-23 iPhone Human Review run; does not assert a globally best action."
+    }
+  ]
+}
