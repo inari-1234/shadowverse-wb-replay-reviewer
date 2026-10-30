@@ -1,12 +1,28 @@
 {
   "holdout_id": "SV-HOLDOUT-20261030-002",
   "filename": "ScreenRecording_09-23-2026 23-53-13_1(2).mp4",
-  "status": "UNUSED_HOLDOUT",
+  "status": "INVALIDATED_KNOWN_SOURCE",
   "registered_at": "2026-10-30T23:01:26+09:00",
   "baseline_sha": "2e97c9b8ec8abbf93f3bd78ba00ff61c8b6db473",
   "sha256": "a4a1443d54c9fa9a4ea7ec0ba98741fd362207e04dd4af77224edc09b7cf3fba",
   "size_bytes": 102210492,
   "duration_seconds": 142.2,
   "container_creation_time": "2026-10-30T13:58:35.000000Z",
-  "registration_scope": "Identity and container metadata only; gameplay content was not inspected before registration."
+  "registration_scope": "Identity and container metadata only; gameplay content was not inspected before registration.",
+  "invalidated_at": "2026-10-30T23:09:49+09:00",
+  "invalidation_reason": "Post-registration frame-sequence comparison proved this is the same gameplay source as the previously invalidated 09-23 recording, with a trim/transcode time offset rather than an independent match.",
+  "known_source_reference": {
+    "prior_holdout_id": "SV-HOLDOUT-20261030-001",
+    "known_fixture": "tests/pf1r2-0923-tradeoff-integrated-acceptance-fixture.json",
+    "alignment": {
+      "observed_time_offset_seconds": 1.5,
+      "example_match": {
+        "prior_upload_time": 86.0,
+        "current_upload_time": 84.5,
+        "visual_state": "YOUR TURN / TURN 7 with the same board, hand and HP state"
+      },
+      "full_sequence_check": "Low-resolution frame-sequence comparison across the recording produced its strongest alignment at +1.5 seconds."
+    }
+  },
+  "acceptance_use": "PROHIBITED_AS_HOLDOUT"
 }
