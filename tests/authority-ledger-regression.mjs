@@ -5,6 +5,7 @@ import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {evaluateClaim, evaluateLedger, validateClaim} from '../tools/check-authority-ledger.mjs';
 
+// v0.1 scaffold: invalidation is exact-path based and fail-closed.
 const baseClaim={
   claim_id:'AUTH-T01',
   claim:'played move is confirmed by exact authority',
