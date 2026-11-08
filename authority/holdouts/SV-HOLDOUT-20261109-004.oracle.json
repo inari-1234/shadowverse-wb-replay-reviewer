@@ -1,0 +1,292 @@
+{
+  "oracle_id": "SV-ORACLE-20261109-004",
+  "holdout_id": "SV-HOLDOUT-20261109-004",
+  "video_sha256": "7b9c8abb14e8b91894d138e424073e2c92bf346b526442fb42eb9f776e33d8e8",
+  "baseline_sha": "2e97c9b8ec8abbf93f3bd78ba00ff61c8b6db473",
+  "source_scope": "Video-only independent observation. No candidate runtime or diagnostic data was consulted while creating this oracle.",
+  "method": "Visual review of full-frame and cropped samples. Approximate turn boundaries cross-checked against the visible right-side ENEMY TURN / YOUR TURN medallion and its stable color (video pixels only). HP values read visually from corresponding leader HP shields. No inference of action identity, damage source or card text.",
+  "sampling_note": "Turn-boundary start times are approximate (typically +/-0.75s); cinematic overlays and transient occlusion are excluded. HP anchors are instantaneous visible readings, not inferred continuous ranges.",
+  "video_quality": {
+    "structural_hud": "READABLE",
+    "leader_hp": "READABLE_ON_SELECTED_STABLE_FRAMES",
+    "small_card_names": "PARTIALLY_UNREADABLE",
+    "ep_sep_carry": "NOT_ORACLE_CONFIRMED",
+    "original_video_required_now": false
+  },
+  "turn_transition_anchors": [
+    {
+      "approx_sec": 20.5,
+      "active_side": "bottom",
+      "evidence": "stable visible turn medallion"
+    },
+    {
+      "approx_sec": 25,
+      "active_side": "top",
+      "evidence": "stable visible turn medallion"
+    },
+    {
+      "approx_sec": 30.5,
+      "active_side": "bottom",
+      "evidence": "stable visible turn medallion"
+    },
+    {
+      "approx_sec": 34,
+      "active_side": "top",
+      "evidence": "stable visible turn medallion"
+    },
+    {
+      "approx_sec": 38,
+      "active_side": "bottom",
+      "evidence": "stable visible turn medallion"
+    },
+    {
+      "approx_sec": 41,
+      "active_side": "top",
+      "evidence": "stable visible turn medallion"
+    },
+    {
+      "approx_sec": 48,
+      "active_side": "bottom",
+      "evidence": "stable visible turn medallion"
+    },
+    {
+      "approx_sec": 57,
+      "active_side": "top",
+      "evidence": "stable visible turn medallion"
+    },
+    {
+      "approx_sec": 64,
+      "active_side": "bottom",
+      "evidence": "stable visible turn medallion"
+    },
+    {
+      "approx_sec": 77,
+      "active_side": "top",
+      "evidence": "stable visible turn medallion"
+    },
+    {
+      "approx_sec": 85.5,
+      "active_side": "bottom",
+      "evidence": "stable visible turn medallion"
+    },
+    {
+      "approx_sec": 93,
+      "active_side": "top",
+      "evidence": "stable visible turn medallion"
+    },
+    {
+      "approx_sec": 103.5,
+      "active_side": "bottom",
+      "evidence": "stable visible turn medallion"
+    },
+    {
+      "approx_sec": 113,
+      "active_side": "top",
+      "evidence": "stable visible turn medallion"
+    },
+    {
+      "approx_sec": 123.5,
+      "active_side": "bottom",
+      "evidence": "stable visible turn medallion"
+    },
+    {
+      "approx_sec": 132.5,
+      "active_side": "top",
+      "evidence": "stable visible turn medallion"
+    },
+    {
+      "approx_sec": 140,
+      "active_side": "bottom",
+      "evidence": "stable visible turn medallion"
+    },
+    {
+      "approx_sec": 152.5,
+      "active_side": "top",
+      "evidence": "stable visible turn medallion"
+    },
+    {
+      "approx_sec": 165,
+      "active_side": "bottom",
+      "evidence": "stable visible turn medallion"
+    },
+    {
+      "approx_sec": 173,
+      "active_side": "top",
+      "evidence": "stable visible turn medallion"
+    },
+    {
+      "approx_sec": 180,
+      "active_side": "bottom",
+      "evidence": "stable visible turn medallion"
+    },
+    {
+      "approx_sec": 190,
+      "active_side": "top",
+      "evidence": "stable visible turn medallion"
+    },
+    {
+      "approx_sec": 198,
+      "active_side": "bottom",
+      "evidence": "stable visible turn medallion"
+    }
+  ],
+  "leader_hp_anchors": [
+    {
+      "time_sec": 20,
+      "top_hp": 20,
+      "bottom_hp": 20,
+      "evidence": "leader shield visible in video frame"
+    },
+    {
+      "time_sec": 35,
+      "top_hp": 20,
+      "bottom_hp": 20,
+      "evidence": "leader shield visible in video frame"
+    },
+    {
+      "time_sec": 52,
+      "top_hp": 20,
+      "bottom_hp": 20,
+      "evidence": "leader shield visible in video frame"
+    },
+    {
+      "time_sec": 75,
+      "top_hp": 20,
+      "bottom_hp": 20,
+      "evidence": "leader shield visible in video frame"
+    },
+    {
+      "time_sec": 95,
+      "top_hp": 20,
+      "bottom_hp": 19,
+      "evidence": "leader shield visible in video frame"
+    },
+    {
+      "time_sec": 105,
+      "top_hp": 20,
+      "bottom_hp": 13,
+      "evidence": "leader shield visible in video frame"
+    },
+    {
+      "time_sec": 120,
+      "top_hp": 20,
+      "bottom_hp": 13,
+      "evidence": "leader shield visible in video frame"
+    },
+    {
+      "time_sec": 125,
+      "top_hp": 20,
+      "bottom_hp": 5,
+      "evidence": "leader shield visible in video frame"
+    },
+    {
+      "time_sec": 135,
+      "top_hp": 19,
+      "bottom_hp": 13,
+      "evidence": "leader shield visible in video frame"
+    },
+    {
+      "time_sec": 140,
+      "top_hp": 19,
+      "bottom_hp": 8,
+      "evidence": "leader shield visible in video frame"
+    },
+    {
+      "time_sec": 148,
+      "top_hp": 19,
+      "bottom_hp": 8,
+      "evidence": "leader shield visible in video frame"
+    },
+    {
+      "time_sec": 160,
+      "top_hp": 18,
+      "bottom_hp": 8,
+      "evidence": "leader shield visible in video frame"
+    },
+    {
+      "time_sec": 165,
+      "top_hp": 18,
+      "bottom_hp": 7,
+      "evidence": "leader shield visible in video frame"
+    },
+    {
+      "time_sec": 175,
+      "top_hp": 18,
+      "bottom_hp": 12,
+      "evidence": "leader shield visible in video frame"
+    },
+    {
+      "time_sec": 180,
+      "top_hp": 18,
+      "bottom_hp": 7,
+      "evidence": "leader shield visible in video frame"
+    },
+    {
+      "time_sec": 185,
+      "top_hp": 18,
+      "bottom_hp": 7,
+      "evidence": "leader shield visible in video frame"
+    },
+    {
+      "time_sec": 190,
+      "top_hp": 18,
+      "bottom_hp": 11,
+      "evidence": "leader shield visible in video frame"
+    },
+    {
+      "time_sec": 195,
+      "top_hp": 20,
+      "bottom_hp": 11,
+      "evidence": "leader shield visible in video frame"
+    },
+    {
+      "time_sec": 200,
+      "top_hp": 20,
+      "bottom_hp": 6,
+      "evidence": "leader shield visible in video frame"
+    }
+  ],
+  "quality_cautions": [
+    "A non-game overlay temporarily occludes the screen near 25 seconds; not authoritative for HUD state.",
+    "Large spell/evolution animations mask portions of the HUD near 80-85, 100-110, 125-131, 149-156 and 168-172 seconds.",
+    "Card names and effect descriptions are not asserted when the compressed recording does not support legible confirmation.",
+    "Do not classify HP changes between anchors as false positives until compared with continuous frame evidence."
+  ],
+  "observed_contrast_sequences": [
+    {
+      "description": "bottom HP temporarily reaches 5 and later returns to 13",
+      "anchors": [
+        125,
+        135
+      ]
+    },
+    {
+      "description": "bottom HP rises from 7 to 12 and later returns to 7",
+      "anchors": [
+        165,
+        175,
+        180
+      ]
+    },
+    {
+      "description": "top HP changes from 18 to 20 late in the match",
+      "anchors": [
+        190,
+        195
+      ]
+    }
+  ],
+  "unknown_fields": [
+    "exact played card identifiers for each window",
+    "effects or sources causing leader HP changes",
+    "EP and SEP state at all decision anchors",
+    "candidate recommendation correctness before comparing the candidate output",
+    "whether any candidate window is CHAIN_OK"
+  ],
+  "independence": {
+    "candidate_runtime_executed": false,
+    "candidate_diagnostic_read": false,
+    "candidate_code_changed": false
+  },
+  "status": "VIDEO_ORACLE_RECORDED_CANDIDATE_COMPARISON_PENDING"
+}
