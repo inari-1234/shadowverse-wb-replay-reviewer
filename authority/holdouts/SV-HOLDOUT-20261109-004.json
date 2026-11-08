@@ -1,0 +1,21 @@
+{
+  "holdout_id": "SV-HOLDOUT-20261109-004",
+  "filename": "minimo_ScreenRecording_11-07-2026 10-23-20_1(1).mp4",
+  "status": "UNUSED_HOLDOUT",
+  "registered_at": "2026-11-09T07:59:36+09:00",
+  "baseline_sha": "2e97c9b8ec8abbf93f3bd78ba00ff61c8b6db473",
+  "runtime_build_id": "candidate-assets-5d7731fe2659",
+  "sha256": "7b9c8abb14e8b91894d138e424073e2c92bf346b526442fb42eb9f776e33d8e8",
+  "size_bytes": 147034911,
+  "duration_seconds": 204.5,
+  "video_width": 1114,
+  "video_height": 512,
+  "fps": 30,
+  "video_codec": "h264",
+  "registration_scope": "Filename, bytes, hash and container metadata only. Gameplay content not inspected before registration.",
+  "source": "User-supplied conversation attachment, 2026-11-09",
+  "duplicate_check": "PENDING",
+  "human_oracle": "NOT_STARTED",
+  "candidate_comparison": "NOT_STARTED",
+  "acceptance_use": "PENDING_DUPLICATE_CHECK"
+}
