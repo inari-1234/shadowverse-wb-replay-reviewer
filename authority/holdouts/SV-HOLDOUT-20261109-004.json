@@ -59,5 +59,21 @@
   "acceptance_use": "PENDING_DEVICE_HUMAN_REVIEW",
   "human_oracle_path": "authority/holdouts/SV-HOLDOUT-20261109-004.oracle.json",
   "human_oracle_blob_sha": "904e211841406c72d87df39579a5199b0a77c223",
-  "original_video_request": "NOT_REQUIRED_FOR_STRUCTURAL_ORACLE_AT_PRESENT"
+  "original_video_request": "NOT_REQUIRED_FOR_STRUCTURAL_ORACLE_AT_PRESENT",
+  "candidate_authority_invalidation": {
+    "baseline_candidate_sha": "2e97c9b8ec8abbf93f3bd78ba00ff61c8b6db473",
+    "old_evidence_sha": "2c108dda12083f9190caf2b883f93a1c216ff727",
+    "ledger_branch_checker_scope": "Authority ledger HEAD lacks the intervening candidate-live production changes; checker CURRENT on ledger HEAD must not be treated as candidate-live verification.",
+    "against_candidate_live": {
+      "REVERIFY_REQUIRED": [
+        "SV-PF1R2-RUNTIME-001",
+        "SV-PF1R2-EP-CARRY-001",
+        "SV-PF1R2-HUMAN-COACH-001",
+        "SV-KNOWN-COACH-ALT-LABEL-001",
+        "SV-KNOWN-COACH-ACTION-PHRASE-001",
+        "SV-KNOWN-EP-PRESENTATION-001"
+      ],
+      "rule": "At least one invalidation_path changed from old evidence SHA to fixed candidate SHA. Does not retroactively disprove the earlier device observations."
+    }
+  }
 }
