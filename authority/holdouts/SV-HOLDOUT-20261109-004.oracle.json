@@ -11,7 +11,8 @@
     "leader_hp": "READABLE_ON_SELECTED_STABLE_FRAMES",
     "small_card_names": "PARTIALLY_UNREADABLE",
     "ep_sep_carry": "NOT_ORACLE_CONFIRMED",
-    "original_video_required_now": false
+    "original_video_required_now": false,
+    "original_video_preferred_for_full_device_recognition_acceptance": true
   },
   "turn_transition_anchors": [
     {
@@ -288,5 +289,11 @@
     "candidate_diagnostic_read": false,
     "candidate_code_changed": false
   },
-  "status": "VIDEO_ORACLE_RECORDED_CANDIDATE_COMPARISON_PENDING"
+  "status": "AI_VIDEO_OBSERVATION",
+  "comparison_status": "PENDING_DEVICE_DIAGNOSTIC",
+  "evidence_class": "AI_VIDEO_OBSERVATION",
+  "not_human_confirmed": true,
+  "observation_scope": "Independently AI-observed from the compressed gameplay recording; neither a certified human ground truth nor a direct target-device confirmation.",
+  "discrepancy_handling": "Treat either side as potentially wrong. Reinspect exact source frames and adjacent stable frames before adjudication; if compressed text/HP is ambiguous request original video. Unresolved disagreements remain UNKNOWN, not NG or PASS.",
+  "hp_transient_guard_review": "Inspect both false HP transient acceptance and false suppression of real consecutive heal/damage changes. Sampled values alone do not establish the complete causal sequence."
 }
