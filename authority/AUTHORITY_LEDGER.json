@@ -207,5 +207,42 @@
   "target_branch": "candidate-live",
   "target_candidate_sha": "2e97c9b8ec8abbf93f3bd78ba00ff61c8b6db473",
   "target_runtime_build_id": "candidate-assets-5d7731fe2659",
-  "target_semantics": "Current candidate invalidation target for the 2026-11-07 holdout. The historical baseline_sha and CONFIRMED evidence are retained as historical facts, not as a current candidate PASS."
+  "target_semantics": "Current candidate invalidation target for the 2026-11-07 holdout. The historical baseline_sha and CONFIRMED evidence are retained as historical facts, not as a current candidate PASS.",
+  "known_issue_resolution_tracking": {
+    "policy": "Historical CONFIRMED claims about defects observed on the 2c108dda iPhone run are immutable. A repaired behavior is represented by a NEW resolution record referencing the original claim; RESOLVED is not a claim.status, and does not overwrite or erase the historical claim.",
+    "target_candidate_sha": "2e97c9b8ec8abbf93f3bd78ba00ff61c8b6db473",
+    "target_runtime_build_id": "candidate-assets-5d7731fe2659",
+    "pending_claim_ids": [
+      "SV-KNOWN-COACH-ALT-LABEL-001",
+      "SV-KNOWN-COACH-ACTION-PHRASE-001",
+      "SV-KNOWN-EP-PRESENTATION-001"
+    ],
+    "resolution_records": [],
+    "new_resolution_record_required_fields": [
+      "resolution_id",
+      "resolves_claim_id",
+      "outcome",
+      "resolved_in_candidate_sha",
+      "runtime_build_id",
+      "diagnostic_filename",
+      "diagnostic_sha256",
+      "analysis_run_id",
+      "original_source_key",
+      "observed_behavior",
+      "evidence_anchor",
+      "verified_by"
+    ],
+    "outcome_semantics": {
+      "RESOLVED": "A qualifying test scene occurred in the frozen candidate runtime, the original issue no longer appears, and device/runtime evidence plus independent human-facing review confirms the correction. Add a new record with the exact observed evidence.",
+      "REVERIFY_REQUIRED": "Default until a qualifying device scene and evidence are available, including when the holdout only demonstrates runtime asset identity.",
+      "UNRESOLVED": "Evidence contradicts the expected correction or exposes the original issue; report the observed behavior without modifying the historical claim."
+    },
+    "issue_specific_acceptance": {
+      "SV-KNOWN-COACH-ALT-LABEL-001": "A TRADE_OFF with multiple alternatives is displayed; each directional advantage is explicitly attributed to its own candidate, without contradictory flattened reasons.",
+      "SV-KNOWN-COACH-ACTION-PHRASE-001": "A confirmed multi-step card play plus evolution (or equivalent same-card chain) occurs and its displayed description is natural and avoids repeated card name/comma-chaining.",
+      "SV-KNOWN-EP-PRESENTATION-001": "A same-run pre-action EP carry occurs while raw before-state EP remains unknown; the Review Card displays the carried value and its source/provenance without replacing the raw before-state."
+    },
+    "verification_rule": "Do not infer RESOLVED from code diffs, automated tests, 20/20 runtime asset matching, or a scene where the target condition never occurs. Record no resolution when a qualifying scene is absent. The holdout may independently PASS on structural/no-wrong-coach criteria while these three issues stay REVERIFY_REQUIRED.",
+    "source_requirement": "For the 2026-11-07 original recording, collect replaySessionV1.analysisRun.sourceKey from the same diagnostic and compare against video metadata. It is not cryptographic identity; compare actual gameplay with the compressed Oracle before using it as cross-source evidence."
+  }
 }
