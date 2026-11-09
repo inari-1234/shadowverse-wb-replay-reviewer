@@ -55,11 +55,11 @@
     "scope_limit": "Compared with the five accessible known historical recordings and documented fixture source names; absence of a detected match is not an exhaustive repository usage proof."
   },
   "human_oracle": "VIDEO_ONLY_RECORDED",
-  "candidate_comparison": "WAITING_FOR_DEVICE_RUNTIME_DIAGNOSTIC_AND_ORIGINAL_IDENTITY_IF_USED",
-  "acceptance_use": "PENDING_DEVICE_HUMAN_REVIEW",
+  "candidate_comparison": "AWAITING_IPHONE_DIAGNOSTIC_SOURCE_KEY_AND_CANDIDATE_COMPARISON",
+  "acceptance_use": "PENDING_IPHONE_DIAGNOSTIC_AND_ORACLE_RECONCILIATION",
   "human_oracle_path": "authority/holdouts/SV-HOLDOUT-20261109-004.oracle.json",
   "human_oracle_blob_sha": "904e211841406c72d87df39579a5199b0a77c223",
-  "original_video_request": "PREFERRED_FOR_IPHONE_FULL_RECOGNITION_HOLDOUT",
+  "original_video_request": "DEVICE_ORIGINAL_ALLOWED_WITHOUT_CHAT_UPLOAD",
   "candidate_authority_invalidation": {
     "baseline_candidate_sha": "2e97c9b8ec8abbf93f3bd78ba00ff61c8b6db473",
     "old_evidence_sha": "2c108dda12083f9190caf2b883f93a1c216ff727",
@@ -77,7 +77,7 @@
     }
   },
   "device_acceptance_policy": {
-    "primary_runtime_source": "ORIGINAL_IOS_SCREEN_RECORDING_PREFERRED",
+    "primary_runtime_source": "ORIGINAL_IOS_SCREEN_RECORDING_ON_IPHONE",
     "compressed_source": {
       "filename": "minimo_ScreenRecording_11-07-2026 10-23-20_1(1).mp4",
       "sha256": "7b9c8abb14e8b91894d138e424073e2c92bf346b526442fb42eb9f776e33d8e8",
@@ -98,12 +98,24 @@
       "interpretation": "Missing recognitions from this resized source are not candidate FAIL and do not prove cross-video recognition generalization. A wrong positive, unsupported coach or structural defect still counts."
     },
     "original_source": {
-      "status": "NOT_PROVIDED",
-      "sha256": null,
-      "size_bytes": null,
+      "status": "AWAITING_DEVICE_DIAGNOSTIC",
       "filename": null,
-      "registration_rule": "Compute filename, byte length and SHA-256, and append identity to this Ledger record before any iPhone run on the original. Verify it represents the same 2026-11-07 match before reusing the video-only Oracle.",
-      "all_recognition_checks_available_only_after_original_identity_verified": true
+      "size_bytes": null,
+      "last_modified_ms": null,
+      "source_key": null,
+      "sha256": null,
+      "sha256_status": "DEFERRED_OPTIONAL_ENRICHMENT",
+      "capture_from": "replaySessionV1.analysisRun.sourceKey",
+      "consistency_checks": [
+        "sourceKey equals replaySessionV1.sourceKey",
+        "sourceKey equals `${video.name}|${video.size}|${video.lastModified}` from the same diagnostic",
+        "analysisRun.runId is present and tied to the same replay session",
+        "runtimeBuildAuthority.buildId equals candidate-assets-5d7731fe2659 with ok=true and 20/20 assets"
+      ],
+      "registration_rule": "The original recording is a linked source variant of the already preregistered 2026-11-07 holdout. On receipt of the iPhone diagnostic, register the exact sourceKey and parsed filename/size/lastModified in this ledger without requiring the original file upload or SHA-256 before the device analysis. Record diagnostic identity and run ID. Append SHA-256 only if actual original bytes become available.",
+      "same_match_requirement": "Independently reconcile original-video turn/HP scene sequence in diagnostic with the existing compressed-video AI Oracle. Matching sourceKey metadata alone does not prove identical gameplay.",
+      "acceptance_scope": "Recognition-level results on the original recording may be assessed after original-source metadata is consistent and same-match correspondence is independently confirmed. If this cannot be confirmed, hold acceptance as inconclusive.",
+      "caveat": "sourceKey is a metadata-derived identifier, not a cryptographic hash or proof of content identity."
     },
     "required_runtime_attestation": {
       "candidate_commit": "2e97c9b8ec8abbf93f3bd78ba00ff61c8b6db473",
@@ -117,7 +129,7 @@
       "natural wording of chained confirmed move",
       "Review Card displays provenance of pre-action EP carry without overwriting raw before-state unknown"
     ],
-    "no_implicit_confirmation": "A valid 20/20 runtime attestation or absence of a relevant scene does not by itself confirm each behavior correction."
+    "no_implicit_confirmation": "New build ID and 20/20 asset verification establish runtime identity only; claim-specific behavior is confirmed only when the holdout contains a matching inspectable scene."
   },
   "oracle_evidence_policy": {
     "source": "AI_VIDEO_OBSERVATION",
