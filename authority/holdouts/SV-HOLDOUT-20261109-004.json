@@ -55,11 +55,11 @@
     "scope_limit": "Compared with the five accessible known historical recordings and documented fixture source names; absence of a detected match is not an exhaustive repository usage proof."
   },
   "human_oracle": "VIDEO_ONLY_RECORDED",
-  "candidate_comparison": "WAITING_FOR_IPHONE_SAFARI_DIAGNOSTIC",
+  "candidate_comparison": "WAITING_FOR_DEVICE_RUNTIME_DIAGNOSTIC_AND_ORIGINAL_IDENTITY_IF_USED",
   "acceptance_use": "PENDING_DEVICE_HUMAN_REVIEW",
   "human_oracle_path": "authority/holdouts/SV-HOLDOUT-20261109-004.oracle.json",
   "human_oracle_blob_sha": "904e211841406c72d87df39579a5199b0a77c223",
-  "original_video_request": "NOT_REQUIRED_FOR_STRUCTURAL_ORACLE_AT_PRESENT",
+  "original_video_request": "PREFERRED_FOR_IPHONE_FULL_RECOGNITION_HOLDOUT",
   "candidate_authority_invalidation": {
     "baseline_candidate_sha": "2e97c9b8ec8abbf93f3bd78ba00ff61c8b6db473",
     "old_evidence_sha": "2c108dda12083f9190caf2b883f93a1c216ff727",
@@ -75,5 +75,55 @@
       ],
       "rule": "At least one invalidation_path changed from old evidence SHA to fixed candidate SHA. Does not retroactively disprove the earlier device observations."
     }
+  },
+  "device_acceptance_policy": {
+    "primary_runtime_source": "ORIGINAL_IOS_SCREEN_RECORDING_PREFERRED",
+    "compressed_source": {
+      "filename": "minimo_ScreenRecording_11-07-2026 10-23-20_1(1).mp4",
+      "sha256": "7b9c8abb14e8b91894d138e424073e2c92bf346b526442fb42eb9f776e33d8e8",
+      "size_bytes": 147034911,
+      "resolution": "1114x512",
+      "codec": "H.264 re-encoded",
+      "eligible_checks": [
+        "run isolation",
+        "HP structural consistency (with frame adjudication)",
+        "no stale presentation or replay seek mismatch",
+        "unsupported/reversed coach advice",
+        "HOLD reason matches observed facts"
+      ],
+      "ineligible_negative_checks": [
+        "missed recognition of small cards or HUD due to compression",
+        "failure to produce CHAIN_OK where no qualified observable window exists"
+      ],
+      "interpretation": "Missing recognitions from this resized source are not candidate FAIL and do not prove cross-video recognition generalization. A wrong positive, unsupported coach or structural defect still counts."
+    },
+    "original_source": {
+      "status": "NOT_PROVIDED",
+      "sha256": null,
+      "size_bytes": null,
+      "filename": null,
+      "registration_rule": "Compute filename, byte length and SHA-256, and append identity to this Ledger record before any iPhone run on the original. Verify it represents the same 2026-11-07 match before reusing the video-only Oracle.",
+      "all_recognition_checks_available_only_after_original_identity_verified": true
+    },
+    "required_runtime_attestation": {
+      "candidate_commit": "2e97c9b8ec8abbf93f3bd78ba00ff61c8b6db473",
+      "runtime_build_id": "candidate-assets-5d7731fe2659",
+      "verified_assets": 20,
+      "total_assets": 20,
+      "require_exact_build_id_and_counts": true
+    },
+    "one_run_can_verify_prior_correctives_only_if_exercised": [
+      "candidate-name attributed reasons",
+      "natural wording of chained confirmed move",
+      "Review Card displays provenance of pre-action EP carry without overwriting raw before-state unknown"
+    ],
+    "no_implicit_confirmation": "A valid 20/20 runtime attestation or absence of a relevant scene does not by itself confirm each behavior correction."
+  },
+  "oracle_evidence_policy": {
+    "source": "AI_VIDEO_OBSERVATION",
+    "status": "PROVISIONAL_NOT_HUMAN_CONFIRMED",
+    "oracle_path": "authority/holdouts/SV-HOLDOUT-20261109-004.oracle.json",
+    "conflict_rule": "Do not declare the candidate or oracle correct upon a disagreement. Re-inspect the exact video frame(s), and use original recording if compressed source is insufficient; leave unresolved if still ambiguous.",
+    "hp_guard_check": "Compare visible HP at time anchors and intermediate contiguous frames. Check BOTH suppression of real heal/damage transitions and acceptance of animation/transient readings. No implied effect-source identification."
   }
 }
