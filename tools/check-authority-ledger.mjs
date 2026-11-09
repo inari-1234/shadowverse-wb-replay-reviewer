@@ -49,8 +49,9 @@ export function changedPathsBetween(evidenceSha, head = 'HEAD', cwd = process.cw
   return out.split(/\r?\n/).map(normalizePath).filter(Boolean);
 }
 
-export function evaluateLedger(ledger, {head = 'HEAD', cwd = process.cwd(), changedPathsBySha = null} = {}) {
+export function evaluateLedger(ledger, {head = null, cwd = process.cwd(), changedPathsBySha = null} = {}) {
   if (!ledger || typeof ledger !== 'object') throw new Error('ledger must be an object');
+  const targetHead = head || ledger.target_candidate_sha || 'HEAD';
   const claims = Array.isArray(ledger.claims) ? ledger.claims : [];
   const diffCache = new Map();
   const results = claims.map(claim => {
@@ -60,7 +61,7 @@ export function evaluateLedger(ledger, {head = 'HEAD', cwd = process.cwd(), chan
     let changed;
     if (changedPathsBySha && Object.hasOwn(changedPathsBySha, sha)) changed = changedPathsBySha[sha];
     else {
-      if (!diffCache.has(sha)) diffCache.set(sha, changedPathsBetween(sha, head, cwd));
+      if (!diffCache.has(sha)) diffCache.set(sha, changedPathsBetween(sha, targetHead, cwd));
       changed = diffCache.get(sha);
     }
     return evaluateClaim(claim, changed);
@@ -70,7 +71,7 @@ export function evaluateLedger(ledger, {head = 'HEAD', cwd = process.cwd(), chan
     REVERIFY_REQUIRED: results.filter(x => x.state === 'REVERIFY_REQUIRED').length,
     REFERENCE_ONLY: results.filter(x => x.state === 'REFERENCE_ONLY').length
   };
-  return {ledger_version: ledger.ledger_version || null, project: ledger.project || null, head, summary, results};
+  return {ledger_version: ledger.ledger_version || null, project: ledger.project || null, head: targetHead, target_runtime_build_id: ledger.target_runtime_build_id || null, summary, results};
 }
 
 function isMain() {
@@ -80,7 +81,7 @@ function isMain() {
 
 if (isMain()) {
   const ledgerPath = process.argv[2];
-  const head = process.argv[3] || 'HEAD';
+  const head = process.argv[3] || null;
   if (!ledgerPath) {
     console.error('Usage: node tools/check-authority-ledger.mjs <ledger.json> [HEAD-or-ref]');
     process.exit(2);
