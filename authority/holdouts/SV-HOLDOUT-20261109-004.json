@@ -1,7 +1,7 @@
 {
   "holdout_id": "SV-HOLDOUT-20261109-004",
   "filename": "minimo_ScreenRecording_11-07-2026 10-23-20_1(1).mp4",
-  "status": "UNUSED_HOLDOUT",
+  "status": "FIXED_CANDIDATE_RUN_PENDING_WRONG_BUILD_ATTEMPT_RECORDED",
   "registered_at": "2026-11-09T07:59:36+09:00",
   "baseline_sha": "2e97c9b8ec8abbf93f3bd78ba00ff61c8b6db473",
   "runtime_build_id": "candidate-assets-5d7731fe2659",
@@ -55,8 +55,8 @@
     "scope_limit": "Compared with the five accessible known historical recordings and documented fixture source names; absence of a detected match is not an exhaustive repository usage proof."
   },
   "human_oracle": "VIDEO_ONLY_RECORDED",
-  "candidate_comparison": "AWAITING_IPHONE_DIAGNOSTIC_SOURCE_KEY_AND_CANDIDATE_COMPARISON",
-  "acceptance_use": "PENDING_IPHONE_DIAGNOSTIC_AND_ORACLE_RECONCILIATION",
+  "candidate_comparison": "BLOCKED_OUT_OF_SCOPE_BUILD_RETRY_FIXED_PREVIEW",
+  "acceptance_use": "PENDING_TARGET_BUILD_IPHONE_DIAGNOSTIC",
   "human_oracle_path": "authority/holdouts/SV-HOLDOUT-20261109-004.oracle.json",
   "human_oracle_blob_sha": "904e211841406c72d87df39579a5199b0a77c223",
   "original_video_request": "DEVICE_ORIGINAL_ALLOWED_WITHOUT_CHAT_UPLOAD",
@@ -98,13 +98,13 @@
       "interpretation": "Missing recognitions from this resized source are not candidate FAIL and do not prove cross-video recognition generalization. A wrong positive, unsupported coach or structural defect still counts."
     },
     "original_source": {
-      "status": "AWAITING_DEVICE_DIAGNOSTIC",
-      "filename": null,
-      "size_bytes": null,
-      "last_modified_ms": null,
-      "source_key": null,
+      "status": "SOURCE_KEY_REGISTERED_FROM_OUT_OF_SCOPE_BUILD",
+      "filename": "ScreenRecording_11-07-2026 10-23-20_1.MP4",
+      "size_bytes": 384494110,
+      "last_modified_ms": 1794014600000,
+      "source_key": "ScreenRecording_11-07-2026 10-23-20_1.MP4|384494110|1794014600000",
       "sha256": null,
-      "sha256_status": "DEFERRED_OPTIONAL_ENRICHMENT",
+      "sha256_status": "DEFERRED_NOT_FILE_BYTES",
       "capture_from": "replaySessionV1.analysisRun.sourceKey",
       "consistency_checks": [
         "sourceKey equals replaySessionV1.sourceKey",
@@ -115,7 +115,21 @@
       "registration_rule": "The original recording is a linked source variant of the already preregistered 2026-11-07 holdout. On receipt of the iPhone diagnostic, register the exact sourceKey and parsed filename/size/lastModified in this ledger without requiring the original file upload or SHA-256 before the device analysis. Record diagnostic identity and run ID. Append SHA-256 only if actual original bytes become available.",
       "same_match_requirement": "Independently reconcile original-video turn/HP scene sequence in diagnostic with the existing compressed-video AI Oracle. Matching sourceKey metadata alone does not prove identical gameplay.",
       "acceptance_scope": "Recognition-level results on the original recording may be assessed after original-source metadata is consistent and same-match correspondence is independently confirmed. If this cannot be confirmed, hold acceptance as inconclusive.",
-      "caveat": "sourceKey is a metadata-derived identifier, not a cryptographic hash or proof of content identity."
+      "caveat": "sourceKey is a metadata-derived identifier, not a cryptographic hash or proof of content identity.",
+      "duration_seconds": 204.485,
+      "width_px": 2622,
+      "height_px": 1206,
+      "first_diagnostic_filename": "shadowverse-wb-diagnostic-v4.13.94-2026-11-18T1001.json",
+      "first_diagnostic_sha256": "393ec9aab39a9115dcfb30f5d0634d94d29239aa0d554c219efbc25462d3a0c5",
+      "metadata_consistency": "PASS_SOURCE_KEY_EQUALS_VIDEO_METADATA_REPLAY_SESSION_AND_RUN_SOURCE_KEY",
+      "same_match_evidence": {
+        "status": "SUPPORTED_BY_INDEPENDENT_AI_ORACLE_NOT_CRYPTOGRAPHIC",
+        "turn_transition_anchors_matched": 23,
+        "turn_transition_anchors_total": 23,
+        "max_offset_seconds": 0.295,
+        "video_duration_consistent": true
+      },
+      "original_capture_attestation": "RUN_ON_A_DIFFERENT_VERCEL_PROJECT_NOT_ON_FIXED_2e97c9b_CANDIDATE"
     },
     "required_runtime_attestation": {
       "candidate_commit": "2e97c9b8ec8abbf93f3bd78ba00ff61c8b6db473",
@@ -137,5 +151,48 @@
     "oracle_path": "authority/holdouts/SV-HOLDOUT-20261109-004.oracle.json",
     "conflict_rule": "Do not declare the candidate or oracle correct upon a disagreement. Re-inspect the exact video frame(s), and use original recording if compressed source is insufficient; leave unresolved if still ambiguous.",
     "hp_guard_check": "Compare visible HP at time anchors and intermediate contiguous frames. Check BOTH suppression of real heal/damage transitions and acceptance of animation/transient readings. No implied effect-source identification."
-  }
+  },
+  "out_of_scope_device_runs": [
+    {
+      "diagnostic_filename": "shadowverse-wb-diagnostic-v4.13.94-2026-11-18T1001.json",
+      "diagnostic_sha256": "393ec9aab39a9115dcfb30f5d0634d94d29239aa0d554c219efbc25462d3a0c5",
+      "diagnostic_created_at": "2026-11-18T10:01:08.060Z",
+      "user_agent_kind": "iPhone Safari as reported by diagnostic",
+      "source_key": "ScreenRecording_11-07-2026 10-23-20_1.MP4|384494110|1794014600000",
+      "match_run_id": "match:1794995997508:7dc156b3-3d22-49f2-9f68-d01777e1f164",
+      "observed_build_id": "candidate-assets-e6df245421e1",
+      "required_build_id": "candidate-assets-5d7731fe2659",
+      "runtime_verified_assets": 20,
+      "runtime_declared_assets": 20,
+      "runtime_sha256_verification_ok": true,
+      "runtime_invariant_ok": false,
+      "runtime_invariant_issue": "unexpected position-state-runtime module (moduleVersionsOk=false)",
+      "deployment_project": "shadowverse-wb-seek-diagnostics",
+      "target_deployment_project": "shadowverse-wb-fixed-2e97c9b-preview",
+      "diagnostic_source_url_host": "shadowverse-wb-seek-diagnostics-bz2djwmsu-shouri95-9462.vercel.app",
+      "original_same_match_check": "23/23 AI-oracle turn markers correspond within 0.295s, not definitive content proof",
+      "run_isolation_observation": "single runId across session, states, actions and PF1-R2 input trace; previousRunId null; no older-run contamination observed",
+      "match_analysis": {
+        "total_target_turns": 13,
+        "completed_turns": 1,
+        "skipped_turns": 12,
+        "skipped_for_no_safe_pair": 11,
+        "skipped_for_seek_timeout": 1,
+        "seek_timeout_reason": "turn-analysis-capture-mid",
+        "seek_timeout_time": 73.04,
+        "review_points": 0,
+        "decision_windows": 0,
+        "comparison_coach_items": 0
+      },
+      "hp_transient_guard": {
+        "status": "NOOP",
+        "correction_count": 0,
+        "coverage": "Only 1 completed turn; no evidence that true HP heal/damage transitions survived guard"
+      },
+      "acceptance_verdict": "OUT_OF_SCOPE_BUILD_HOLDOUT_NOT_EVALUATED",
+      "historical_issue_resolution": "UNVERIFIED_NO_QUALIFYING_SCENE",
+      "interpretation": "Valid runtime hash self-consistency applies only to e6df... build. Must not count toward fixed 2e97c9b / 5d7731fe2659 acceptance; do not relabel previous 09-23 claims as resolved."
+    }
+  ],
+  "status_explanation": "The 2026-11-07 original was analyzed on 2026-11-18 against separate e6df245421e1 runtime; target 5d7731fe2659 remains untested. Original sourceKey recorded as metadata only. Do not infer target HOLDOUT PASS or FAIL from the out-of-scope run."
 }
