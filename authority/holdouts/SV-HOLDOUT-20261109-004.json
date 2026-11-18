@@ -1,7 +1,7 @@
 {
   "holdout_id": "SV-HOLDOUT-20261109-004",
   "filename": "minimo_ScreenRecording_11-07-2026 10-23-20_1(1).mp4",
-  "status": "FIXED_CANDIDATE_RUN_PENDING_WRONG_BUILD_ATTEMPT_RECORDED",
+  "status": "TARGET_DEVICE_RUN_RECORDED_ACCEPTANCE_INCONCLUSIVE",
   "registered_at": "2026-11-09T07:59:36+09:00",
   "baseline_sha": "2e97c9b8ec8abbf93f3bd78ba00ff61c8b6db473",
   "runtime_build_id": "candidate-assets-5d7731fe2659",
@@ -55,10 +55,10 @@
     "scope_limit": "Compared with the five accessible known historical recordings and documented fixture source names; absence of a detected match is not an exhaustive repository usage proof."
   },
   "human_oracle": "VIDEO_ONLY_RECORDED",
-  "candidate_comparison": "BLOCKED_OUT_OF_SCOPE_BUILD_RETRY_FIXED_PREVIEW",
-  "acceptance_use": "PENDING_TARGET_BUILD_IPHONE_DIAGNOSTIC",
+  "candidate_comparison": "TARGET_RUNTIME_PASS_BEHAVIORAL_INCONCLUSIVE_SEEK_FAILURES_AND_NO_WINDOWS",
+  "acceptance_use": "HOLD_PENDING_ROOT_CAUSE_AND_INDEPENDENT_EVIDENCE",
   "human_oracle_path": "authority/holdouts/SV-HOLDOUT-20261109-004.oracle.json",
-  "human_oracle_blob_sha": "904e211841406c72d87df39579a5199b0a77c223",
+  "human_oracle_blob_sha": "f27e78e5952cb5d7bd84ee477da1e7b43fe9b835",
   "original_video_request": "DEVICE_ORIGINAL_ALLOWED_WITHOUT_CHAT_UPLOAD",
   "candidate_authority_invalidation": {
     "baseline_candidate_sha": "2e97c9b8ec8abbf93f3bd78ba00ff61c8b6db473",
@@ -194,5 +194,119 @@
       "interpretation": "Valid runtime hash self-consistency applies only to e6df... build. Must not count toward fixed 2e97c9b / 5d7731fe2659 acceptance; do not relabel previous 09-23 claims as resolved."
     }
   ],
-  "status_explanation": "The 2026-11-07 original was analyzed on 2026-11-18 against separate e6df245421e1 runtime; target 5d7731fe2659 remains untested. Original sourceKey recorded as metadata only. Do not infer target HOLDOUT PASS or FAIL from the out-of-scope run."
+  "status_explanation": "Pinned 2e97c9b candidate runtime integrity verified by iPhone Safari diagnostic, but only 1/13 own turns completed; seek failures 2 and no review/coaching windows. SourceKey and independent AI turn Oracle reconcile, but full structural/HP/coach acceptance is not shown.",
+  "target_candidate_device_runs": [
+    {
+      "diagnostic_filename": "shadowverse-wb-diagnostic-v4.13.94-2026-11-18T1015.json",
+      "diagnostic_sha256": "2aa35c712fbedba9928e1e04f7a1b5f89d336041695caf1de47bab0ac839dfda",
+      "diagnostic_created_at": "2026-11-18T10:15:11.393Z",
+      "original_source_key": "ScreenRecording_11-07-2026 10-23-20_1.MP4|384494110|1794014600000",
+      "candidate_sha": "2e97c9b8ec8abbf93f3bd78ba00ff61c8b6db473",
+      "runtime_build_id": "candidate-assets-5d7731fe2659",
+      "device_environment": "iPhone Safari as reported in exported diagnostic",
+      "runtime_attestation": {
+        "evidence_strength": "CONFIRMED_BY_TARGET_DEVICE_DIAGNOSTIC_AND_INDEPENDENT_JSON_INSPECTION",
+        "runtime_build_id": "candidate-assets-5d7731fe2659",
+        "verified_assets": 20,
+        "total_assets": 20,
+        "all_manifest_sha256_rows_match": true,
+        "runtime_authority_ok": true,
+        "runtime_invariant_ok": true,
+        "module_version_mismatches": 0,
+        "service_worker_controlled": false,
+        "code_source_host": "shadowverse-wb-fixed-2e97c9b-preview-d1koh9thp-shouri95-9462.vercel.app"
+      },
+      "source_match": {
+        "source_key_matches_video_metadata": true,
+        "source_key_matches_replay_session_and_input_trace": true,
+        "duration_seconds": 204.485,
+        "oracle_type": "AI_VIDEO_OBSERVATION",
+        "video_only_turn_transitions_matched": 23,
+        "video_only_turn_transitions_total": 23,
+        "max_turn_transition_delta_seconds": 0.295,
+        "hp_oracle_crosscheck": "opponentHP=19 at 146.55s agrees with nearby 148s video-only anchor; 151.5s endpoint is UNKNOWN; other 17 HP anchors not validated from finalized states",
+        "same_match_status": "STRONGLY_SUPPORTED_NOT_CRYPTOGRAPHICALLY_PROVEN"
+      },
+      "analysis_run": {
+        "run_id": "match:1794996824598:08d6625b-beec-48b8-af70-30163d5e8af0",
+        "nonce": "08d6625b-beec-48b8-af70-30163d5e8af0",
+        "started_at": "2026-11-18T10:13:44.598Z",
+        "finished_at": "2026-11-18T10:15:05.551Z",
+        "cancellation": false,
+        "consistent_run_id_count": 18,
+        "distinct_run_ids": 1,
+        "states": 2,
+        "actions": 1,
+        "observation_only_gap_actions": 1,
+        "observed_episodes": 0,
+        "decision_windows": 0,
+        "observation_review_points": 0,
+        "comparison_coach_items": 0,
+        "run_isolation_assessment": "OBSERVED_SINGLE_RUN_CONSISTENT_NO_CROSS_RUN_MIXING",
+        "total_own_turns": 13,
+        "completed_own_turns": 1,
+        "skipped_own_turns": 12,
+        "skipped_no_safe_stable_pair": 10,
+        "skipped_seek_failure": 2
+      },
+      "seek_failures": [
+        {
+          "own_turn": 5,
+          "probe": "turn-analysis-probe-fallback",
+          "target_seconds": 51.64,
+          "seek_start_time": "2026-11-18T10:13:54.720Z",
+          "outcome": "NO_SEEK_COMPLETE_RECORDED_AND_TURN_SKIPPED"
+        },
+        {
+          "own_turn": 6,
+          "probe": "turn-analysis-probe-fallback",
+          "target_seconds": 66.74,
+          "seek_start_time": "2026-11-18T10:14:05.220Z",
+          "outcome": "NO_SEEK_COMPLETE_RECORDED_AND_TURN_SKIPPED"
+        }
+      ],
+      "hp_transient_guard": {
+        "version": "pf1r2-hp-transient-guard-v1.1.0",
+        "status": "NOOP",
+        "correction_count": 0,
+        "evidence_limit": "ONLY turn 10 produced endpoints (opponent HP 19→UNKNOWN); multiple real self-HP heal/damage changes independently observed in the Oracle were not captured in production states. Thus neither false-suppression nor real-change preservation is proven.",
+        "verdict": "NOT_VERIFIED"
+      },
+      "hold_and_coach": {
+        "fresh_e2e_status": "SAFE_HOLD",
+        "pipeline_status": "NO_WINDOWS",
+        "decision_window_authority_status": "OK",
+        "comparison_coach_items": 0,
+        "hold_reason_consistency": "NO_WINDOWS_AGREES_WITH_ZERO_DECISION_WINDOWS_AND_ZERO_COACH_ITEMS",
+        "wrong_coach_verdict": "NO_COACH_GENERATED_NOT_A_POSITIVE_CORRECTNESS_TEST",
+        "known_issue_resolutions": [
+          {
+            "claim_id": "SV-KNOWN-COACH-ALT-LABEL-001",
+            "outcome": "REVERIFY_REQUIRED",
+            "reason": "NO_QUALIFYING_SCENE"
+          },
+          {
+            "claim_id": "SV-KNOWN-COACH-ACTION-PHRASE-001",
+            "outcome": "REVERIFY_REQUIRED",
+            "reason": "NO_QUALIFYING_SCENE"
+          },
+          {
+            "claim_id": "SV-KNOWN-EP-PRESENTATION-001",
+            "outcome": "REVERIFY_REQUIRED",
+            "reason": "NO_QUALIFYING_SCENE"
+          }
+        ]
+      },
+      "review_playback_seek": "NOT_TESTED_NO_DECISION_WINDOWS",
+      "acceptance_verdict": "INCONCLUSIVE_HOLDOUT_NOT_PASSED",
+      "acceptance_reasons": [
+        "2 real analysis seek failures in the Safari runtime",
+        "10 other own turns lack a safe stable state pair",
+        "HP real-change preservation not exercised by the captured states",
+        "No Decision Window or coach exists to evaluate corrections or false recommendations",
+        "Replay-to-review playback seek cannot be evaluated without a review window"
+      ],
+      "interpretation": "This is a valid first iPhone Safari run on the pinned candidate; runtime authority is confirmed but the holdout behavioral acceptance is not. Do not use its data to tune a future candidate and then count this recording as an independent holdout for that revised build."
+    }
+  ]
 }
